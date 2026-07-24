@@ -13,18 +13,32 @@ An end-to-end automation pipeline that converts mobile app screenshots into:
 
 ```text
 Project13_Captstone/
-|-- agents/
-|-- artifacts/
-|-- config/
-|-- models/
-|-- pipelines/
-|-- prompts/
-|-- services/
-|-- tests/
-|-- utils/
+|-- agents/                            # AI and generation agents (vision, locator, appium, reviewer)
+|-- artifacts/                         # Runtime outputs (kept via .gitkeep, generated at run time)
+|   |-- input_screenshots/
+|   |-- ssm_json_output/
+|   |-- manual_testcases/
+|   |-- locator_output/
+|   |-- generated_appium_scripts/
+|   |-- review_reports/
+|   |-- test_execution_reports/
+|-- config/                            # App configuration and environment-backed settings
+|-- models/                            # Domain models (for example Screen Semantic Model)
+|-- pipelines/                         # Stage runners and orchestration entry points
+|   |-- run_all.py
+|   |-- run_all_enhanced.py
+|   |-- pipeline_composer.py
+|   |-- stage_runners.py
+|-- prompts/                           # Prompt templates used by agents
+|-- services/                          # Shared services (config, prompt manager, llm client)
+|-- tests/                             # Unit/integration tests and snapshots
+|-- utils/                             # Self-healing and shared Appium session utilities
 |-- web/
-|-- live_demo.py
+|   |-- templates/live_demo.html       # Live demo UI
+|-- live_demo.py                       # Flask upload UI + enhanced pipeline execution
 |-- README.md
+|-- LIVE_DEMO_RUN_STEPS.md
+|-- CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md
 ```
 
 Important artifact folders:
@@ -36,6 +50,51 @@ Important artifact folders:
 - artifacts/generated_appium_scripts/
 - artifacts/review_reports/
 - artifacts/test_execution_reports/
+
+## Architecture Overview
+
+The platform follows a staged artifact-driven architecture. Each stage writes outputs to an artifact folder and the next stage consumes those artifacts.
+
+```mermaid
+flowchart LR
+		A[Uploaded Screenshot or Input Folder] --> B[Stage 1: Vision Analysis]
+		B --> C[SSM JSON]
+		C --> D[Stage 2: Testcase Generation]
+		D --> E[Manual Testcases]
+		C --> F[Stage 3: Locator Generation]
+		E --> F
+		F --> G[Locator JSON]
+		G --> H[Stage 4: Appium Script Generation]
+		H --> I[Generated Appium Scripts]
+		I --> J[Stage 5: Review Agent]
+		J --> K[Review Reports]
+		I --> L[Stage 6: Reporter Agent]
+		L --> M[Timestamped HTML Execution Report]
+```
+
+## Component Responsibilities
+
+- `live_demo.py`
+	- Hosts Flask UI for screenshot upload and run trigger.
+	- Starts Appium if needed.
+	- Runs enhanced pipeline and exposes per-run artifact links.
+	- Uses strict run-delta filtering so results only show files produced by the current upload.
+
+- `pipelines/pipeline_composer.py`
+	- Central orchestrator for the 6-stage flow.
+	- Handles stage ordering and directory reset behavior for deterministic runs.
+
+- `pipelines/stage_runners.py`
+	- Implements reusable stage classes (Vision, Testcase, Locator, Appium, Review, Report).
+	- Shared by standard and enhanced pipeline entrypoints.
+
+- `agents/self_healing_appium_generator.py`
+	- Generates robust Appium scripts with multi-strategy locator healing.
+	- Startup stabilization uses explicit wait behavior (no hardcoded sleep in generated flow).
+
+- `agents/reviewer_agent.py`
+	- Reviews generated scripts for common anti-patterns.
+	- Produces markdown reports in `artifacts/review_reports/`.
 
 ## Setup
 
@@ -99,6 +158,12 @@ python pipelines/run_all_enhanced.py artifacts/input_screenshots --no-browser
 ```powershell
 python pipelines/run_all.py artifacts/input_screenshots
 ```
+
+Execution modes:
+
+- `run_all.py`: baseline pipeline behavior.
+- `run_all_enhanced.py`: preferred mode with latest orchestration/stability improvements.
+- `live_demo.py`: upload-driven walkthrough mode for stakeholders.
 
 ## Live Demo Mode (HTML Upload UI)
 
@@ -183,7 +248,8 @@ python -m unittest tests.test_ssm_model
 
 ## Architecture Notes
 
-- Stages are loosely coupled and communicate through artifacts folders.
+- Stages are loosely coupled and communicate through artifact contracts.
 - Providers are swappable between openai and mock via environment settings.
-- Prompts are externalized in prompts/ and can be tuned without code changes.
+- Prompts are externalized in `prompts/` and can be tuned without code changes.
 - Reporter output is timestamped for traceable test execution history.
+- Live demo output lists are run-scoped and filtered for user-facing artifacts only.
