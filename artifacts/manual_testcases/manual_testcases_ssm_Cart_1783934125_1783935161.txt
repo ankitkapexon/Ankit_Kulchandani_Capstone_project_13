@@ -1,0 +1,87 @@
+Screen: Cart
+
+Test Case 1: Verify Cart screen loads with all key cart components
+Description: Validate that the Cart screen presents the expected UI elements required for reviewing items before checkout.
+Steps:
+  1. Navigate to the Cart screen.
+  2. Observe the top section of the screen.
+  3. Verify the presence of the "Cart title".
+  4. Verify the "Cart items" list is displayed.
+  5. For at least one listed item, verify that "Quantity controls" are visible.
+  6. Verify that a "Remove item" button is available for cart items.
+  7. Verify that the "Subtotal" text is displayed.
+  8. Verify that the "Checkout" button is displayed.
+Expected Result:
+  - The Cart screen opens successfully.
+  - "Cart title", "Cart items", "Quantity controls", "Remove item", "Subtotal", and "Checkout" are visible as applicable.
+  - The screen is usable for cart review and checkout preparation.
+
+Test Case 2: Verify cart items list supports scrolling when multiple items exist
+Description: Ensure the "Cart items" list can be scrolled to review all products added to the cart.
+Steps:
+  1. Open the Cart screen with multiple items in the cart.
+  2. Swipe up within the "Cart items" list.
+  3. Continue scrolling until lower items become visible.
+  4. Swipe down to return toward the top of the list.
+Expected Result:
+  - The "Cart items" list scrolls smoothly.
+  - Additional cart items become visible when scrolling down the list.
+  - Returning upward restores earlier visible items without layout issues.
+
+Test Case 3: Verify increasing item quantity using Quantity controls
+Description: Validate that the quantity stepper increases the selected item's quantity and updates cart totals accordingly.
+Steps:
+  1. Open the Cart screen with at least one item present.
+  2. Note the current quantity for an item and the current "Subtotal".
+  3. Tap the plus/increase option in the "Quantity controls" for that item.
+  4. Observe the updated quantity shown for the item.
+  5. Observe the updated "Subtotal".
+Expected Result:
+  - The item quantity increases by one.
+  - The cart reflects the updated quantity immediately.
+  - The "Subtotal" increases appropriately based on the item's price.
+
+Test Case 4: Verify decreasing item quantity using Quantity controls
+Description: Validate that the quantity stepper decreases the selected item's quantity and updates cart totals accordingly.
+Steps:
+  1. Open the Cart screen with an item whose quantity is greater than 1.
+  2. Note the current quantity and the current "Subtotal".
+  3. Tap the minus/decrease option in the "Quantity controls" for that item.
+  4. Observe the updated quantity shown for the item.
+  5. Observe the updated "Subtotal".
+Expected Result:
+  - The item quantity decreases by one.
+  - The cart reflects the updated quantity immediately.
+  - The "Subtotal" decreases appropriately based on the item's price.
+
+Test Case 5: Verify quantity cannot be reduced below the minimum allowed value
+Description: Confirm the cart prevents invalid quantity reduction, such as decreasing below 1 if the item remains in cart.
+Steps:
+  1. Open the Cart screen with an item quantity set to 1.
+  2. Tap the minus/decrease option in the "Quantity controls" for that item.
+  3. Observe the item quantity and cart state.
+Expected Result:
+  - The quantity does not go below the minimum allowed value.
+  - If the app uses direct removal instead of zero quantity, the item remains at 1 until explicitly removed using "Remove item".
+  - No incorrect negative or zero quantity is displayed unless supported by design.
+
+Test Case 6: Verify removing a single item from the cart
+Description: Ensure that tapping "Remove item" deletes the selected product from the cart and refreshes the subtotal.
+Steps:
+  1. Open the Cart screen with at least two items in the cart.
+  2. Note the current number of items in the "Cart items" list and the current "Subtotal".
+  3. Tap the "Remove item" button for one product.
+  4. Observe the "Cart items" list.
+  5. Observe the "Subtotal".
+Expected Result:
+  - The selected item is removed from the cart.
+  - The "Cart items" list refreshes and no longer shows the removed product.
+  - The "Subtotal" decreases accordingly.
+
+Test Case 7: Verify removing the last remaining item updates cart state correctly
+Description: Validate cart behavior when the final item is removed.
+Steps:
+  1. Open the Cart screen with exactly one item in the cart.
+  2. Verify the item is displayed in the "Cart items" list.
+  3. Tap "Remove item" for that item.
+  4. Observe the

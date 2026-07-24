@@ -1,0 +1,37 @@
+# Review Prompt
+
+Review the generated test cases for correctness, completeness, and flakiness risks.
+
+Provide: suggestions, detected issues, and a revised version annotated with rationale.
+
+Create a new file:
+
+agents/reviewer_agent.py
+
+Requirements:
+
+1. Read every generated Appium script from:
+
+artifacts/generated_appium_scripts/
+
+2. Review each script for Appium best practices.
+
+Check for:
+
+- hardcoded sleep()
+- XPath usage
+- missing WebDriverWait
+- missing AppiumBy
+- repeated code
+- poor method names
+- verify whether text/image elements are tapped unnecessarily
+
+3. Generate one Markdown report per script.
+
+Save reports into:
+
+artifacts/review_reports/
+
+4. At the end print:
+
+Reviewed X scripts successfully.

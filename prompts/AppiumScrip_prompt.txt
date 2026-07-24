@@ -1,0 +1,48 @@
+I have completed my Locator Agent.
+
+Now create a new Python file named:
+
+agents/appium_generator_agent.py
+
+Project details:
+
+Input folder:
+artifacts/locator_output/
+
+Each locator JSON contains screen elements with:
+- element
+- action
+- locator_strategy
+- locator_value
+
+Requirements:
+
+1. Read every locator JSON file from artifacts/locator_output/.
+
+2. Generate one Android Appium pytest script for each JSON.
+
+3. Save generated scripts into:
+artifacts/generated_appium_scripts/
+
+4. Use:
+
+from appium.webdriver.common.appiumby import AppiumBy
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+5. Use UiAutomator2 locators.
+
+6. Generate helper methods for:
+- tap
+- type
+- scroll
+
+7. Never generate:
+- time.sleep()
+- fragile XPath
+
+8. Use explicit waits.
+
+9. Add comments explaining each generated section because I am learning Python.
+
+10. Create a main() function that automatically processes every locator JSON file.
