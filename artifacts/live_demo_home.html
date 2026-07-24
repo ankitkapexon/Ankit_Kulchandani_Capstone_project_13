@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Test Generator Live Demo</title>
+  <style>
+    :root {
+      --bg1: #f4f8ff;
+      --bg2: #eaf7ef;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #475569;
+      --line: #d4dde7;
+      --accent: #0f4c81;
+      --good: #166534;
+      --bad: #991b1b;
+    }
+    body {
+      margin: 0;
+      font-family: Segoe UI, Arial, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 10%, var(--bg1), transparent 45%),
+                  radial-gradient(circle at 85% 20%, var(--bg2), transparent 40%),
+                  #f7fafc;
+    }
+    .wrap {
+      max-width: 1080px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 8px 0; }
+    p.muted { margin-top: 0; color: var(--muted); }
+    label { display: block; font-weight: 600; margin: 10px 0 6px; }
+    input[type="file"], select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    button {
+      margin-top: 14px;
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { filter: brightness(0.95); }
+    .error {
+      white-space: pre-wrap;
+      color: var(--bad);
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .ok {
+      color: var(--good);
+      background: #dcfce7;
+      border-left: 4px solid #22c55e;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+    }
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.98rem;
+    }
+    ul { margin: 0; padding-left: 20px; }
+    li { margin: 4px 0; }
+    pre {
+      white-space: pre-wrap;
+      background: #0b1220;
+      color: #dbeafe;
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid #334155;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Live Demo: Screenshot to Test Automation</h1>
+      <p class="muted">Upload one mobile screenshot and run the enhanced pipeline to generate SSM, test cases, locators, Appium scripts, review reports, and execution report.</p>
+      <form method="post" action="/run-demo" enctype="multipart/form-data">
+        <label for="screenshot">Screenshot</label>
+        <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+
+        <label for="mode">Mode</label>
+        <select id="mode" name="mode">
+          <option value="mock" selected>Mock (No external LLM dependency)</option>
+          <option value="real">Real (Use environment OpenAI/LiteLLM settings)</option>
+        </select>
+
+        <button type="submit">Run Live Demo</button>
+      </form>
+    </div>
+
+    
+
+    
+  </div>
+</body>
+</html>

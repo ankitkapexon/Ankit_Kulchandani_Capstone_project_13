@@ -226,10 +226,17 @@ python live_demo.py
 
 Open http://127.0.0.1:8080 and:
 
-1. Upload one screenshot (png, jpg, jpeg, webp, bmp).
+1. Select flow type:
+	- Check Flow By Uploading A Screenshot, or
+	- Realtime End To End Flow Of Application (strict sequence, no upload required).
 2. Select mock or real mode.
 3. Run the demo.
 4. Review generated artifacts and open report links from the page.
+
+Live UI defaults:
+
+- Realtime End To End Flow Of Application is selected by default on first page load.
+- Screenshot upload section is shown only when Check Flow By Uploading A Screenshot is selected.
 
 Current live demo behavior:
 
@@ -243,6 +250,38 @@ Current live demo behavior:
 - displays pipeline logs and stderr in the UI,
 - uses a cleaner header layout (removed non-functional stats section),
 - supports compact filename display in result sections.
+
+Live demo now supports both execution paths in one UI:
+
+- `screenshot_pipeline`: Check Flow By Uploading A Screenshot (upload one screenshot and run the full six-stage pipeline).
+- `deterministic_realtime`: run strict emulator flow (`tests/test_realtime_e2e_flow.py`) and publish an HTML report from that run.
+
+## Deterministic Realtime E2E Flow (Latest)
+
+To support a strict single-pass emulator journey (without repeated login typing and with explicit ordered actions), a dedicated deterministic test was added:
+
+- `tests/test_realtime_e2e_flow.py`
+
+Implemented sequence:
+
+1. Open app and relaunch if already open.
+2. Dismiss startup popup if present.
+3. Open product listing/base page.
+4. Open product details and add product to cart.
+5. Open cart.
+6. Open menu.
+7. Open login, enter username/password, submit login.
+8. Close application.
+
+Run command:
+
+```powershell
+python -m pytest tests/test_realtime_e2e_flow.py -q
+```
+
+Latest validation result:
+
+- `1 passed` on local emulator run.
 
 ## Running Individual Steps
 

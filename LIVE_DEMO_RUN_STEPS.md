@@ -49,10 +49,18 @@ python live_demo.py
 
 Open http://127.0.0.1:8080 and then:
 
-1. Upload one screenshot.
-2. Select mock or real mode.
-3. Click Run Live Demo.
-4. Open generated artifact links and the HTML execution report from the same page.
+1. Select flow type:
+	- Check Flow By Uploading A Screenshot, or
+	- Realtime End To End Flow Of Application.
+2. If upload flow is selected, upload one screenshot.
+3. Select mock or real mode.
+4. Click Run Live Demo.
+5. Open generated artifact links and the HTML execution report from the same page.
+
+Default UI behavior:
+
+- Realtime End To End Flow Of Application is selected by default.
+- Screenshot upload section is visible only when Check Flow By Uploading A Screenshot is selected.
 
 Notes:
 
@@ -63,6 +71,7 @@ Notes:
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
 - Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
+- Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend and publishes an HTML report under `artifacts/test_execution_reports/<timestamp>/report.html`.
 
 ### Path B: Enhanced CLI flow
 
@@ -94,8 +103,34 @@ After completion, share these outputs:
 - Generated login script does not use hardcoded sleep for screen transitions.
 - Login navigation flow uses actionable elements and avoids unnecessary taps on static UI.
 - Report HTML exists in the latest timestamped execution folder.
+- Deterministic realtime E2E flow passes with one test run:
+
+```powershell
+python -m pytest tests/test_realtime_e2e_flow.py -q
+```
+
+- Expected output:
+	- `1 passed`
+
+## 6) Deterministic Realtime Flow (Strict Step Order)
+
+When stakeholders ask for one fixed journey in one run, execute:
+
+- `tests/test_realtime_e2e_flow.py`
+
+Flow covered in order:
+
+1. Relaunch app (if open, restart app state).
+2. Dismiss popup if present.
+3. Reach product listing/base screen.
+4. Open product detail and add item to cart.
+5. Open cart.
+6. Open menu.
+7. Open login, enter credentials, submit login.
+8. Close app.
 
 ## 6) Troubleshooting
+## 7) Troubleshooting
 
 - If imports or commands fail, reactivate venv and run pip install -r requirements.txt.
 - If real mode fails, switch to mock mode or verify OPENAI_API_KEY and API base values.
@@ -109,7 +144,7 @@ appium --session-override
 - If UI appears stale after updates, stop all running live_demo.py processes, start one fresh server, then hard refresh the browser.
 - If old scripts/reviews appear in UI, run one fresh upload after restart; result panels should now include only delta files created/updated by that run.
 
-## 7) Suggested Talk Track
+## 8) Suggested Talk Track
 
 1. Input screenshot is analyzed into SSM JSON.
 2. Manual test cases are generated from SSM.

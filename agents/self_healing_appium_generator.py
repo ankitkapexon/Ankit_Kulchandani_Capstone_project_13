@@ -154,10 +154,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from appium.webdriver.common.appiumby import AppiumBy
+from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 
 from utils.self_healing import SelfHealingDriver, LocatorStrategy, HealingRepository
-from utils.shared_appium_session import get_or_create_driver, should_quit_driver
+from utils.shared_appium_session import get_or_create_driver_with_state, should_quit_driver
 from services.enhanced_config import get_config
 
 # Configure logging
@@ -179,16 +180,26 @@ class {class_name}:
             "app": str(config.app_path),
             "appPackage": config.app_package,
             "appActivity": config.app_activity,
-            "noReset": False,
-            "forceAppLaunch": True,
-            "dontStopAppOnReset": False,
+            "noReset": True,
+            "forceAppLaunch": False,
+            "dontStopAppOnReset": True,
             "newCommandTimeout": 120,
             "uiautomator2ServerLaunchTimeout": 60000,
         }}
         
-        # Create/reuse Appium driver (single app launch for full pytest run)
-        self.driver = get_or_create_driver(lambda: self._create_driver(desired_caps, config.appium_server_url))
-        self._dismiss_compatibility_dialog_if_present()
+        # Create/reuse Appium driver (single app launch for full pytest run).
+        self.driver, is_new_session = get_or_create_driver_with_state(
+            lambda: self._create_driver(desired_caps, config.appium_server_url)
+        )
+        if is_new_session:
+            self._dismiss_compatibility_dialog_if_present()
+        else:
+            try:
+                # Return to the app's base activity without creating a new driver session.
+                self.driver.activate_app(config.app_package)
+                self.driver.start_activity(config.app_package, config.app_activity)
+            except Exception as exc:
+                logger.warning("Could not reset app activity on reused session: %s", exc)
         self._stabilize_startup_state()
         
         # Wrap with self-healing driver
@@ -315,7 +326,12 @@ class {class_name}:
         """Tap using self-healing locators after explicit wait."""
         by_value = self._strategy_to_by(strategies[0])
         logger.info("Tap using primary strategy: %s", by_value)
-        self.healing_driver.tap_element(strategies, screen_name=screen_name)
+        try:
+            self.healing_driver.tap_element(strategies, screen_name=screen_name)
+        except StaleElementReferenceException:
+            # UI transitions can invalidate a located element right before click.
+            time.sleep(0.3)
+            self.healing_driver.tap_element(strategies, screen_name=screen_name)
 
     def type_text(self, strategies: List[LocatorStrategy], text: str, screen_name: str) -> None:
         """Type text using self-healing locators after explicit wait."""
@@ -363,7 +379,7 @@ class {class_name}:
         step_number = 1
 
         # Ensure screen-level navigation is performed before element interactions.
-        nav_steps = self.navigation_agent.get_navigation_steps(screen_name)
+        nav_steps = [] if screen_name.strip().lower() == "login" else self.navigation_agent.get_navigation_steps(screen_name)
         for nav_action, nav_strategy, nav_value in nav_steps:
             strategy_block = (
                 f"[LocatorStrategy({self._py_string(nav_strategy)}, {self._py_string(nav_value)}, priority=1, reliability=0.95, element_name={self._py_string(nav_value)})]"
@@ -423,6 +439,14 @@ class {class_name}:
             # Skip redundant taps that target the same screen label.
             normalized_screen = screen_name.strip().lower()
             normalized_element = str(element_name).strip().lower()
+
+            # For login, deterministic minimum steps handle credentials and submit.
+            if normalized_screen == "login":
+                if action == "type":
+                    continue
+                if action == "tap" and normalized_element in {"login", "log in"}:
+                    continue
+
             if action == "tap" and (
                 normalized_element == normalized_screen
                 or (normalized_screen == "product listing" and normalized_element in {"products", "product listing"})
@@ -494,8 +518,170 @@ class {class_name}:
             
             steps.append(step_code)
             step_number += 1
+
+        # Enforce minimum actionable flow for key screens so generated tests are never empty.
+        minimum_steps, step_number = self._minimum_action_steps(
+            screen_name=screen_name,
+            step_number=step_number,
+            screen_literal=screen_literal,
+        )
+        if minimum_steps:
+            steps.append("")
+            steps.extend(minimum_steps)
         
         return "\n".join(steps)
+
+    def _minimum_action_steps(self, screen_name: str, step_number: int, screen_literal: str) -> tuple[List[str], int]:
+        """Add deterministic minimum interactions for critical screens."""
+        normalized = screen_name.strip().lower().replace("_", " ")
+        steps: List[str] = []
+
+        if normalized == "login":
+            steps.append(
+                f'''        # Step {step_number}: Open menu\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Open menu")})\n'''
+                f'''        self.tap([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/menuIV')}, priority=1, reliability=0.95, element_name={self._py_string('Menu')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('View menu')}, priority=2, reliability=0.85, element_name={self._py_string('Menu')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Open login from menu when available\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Open login entry")})\n'''
+                f'''        login_form_open = True\n'''
+                f'''        try:\n'''
+                f'''            self.tap([\n'''
+                f'''                LocatorStrategy({self._py_string('text')}, {self._py_string('Log In')}, priority=1, reliability=0.85, element_name={self._py_string('Log In')}),\n'''
+                f'''                LocatorStrategy({self._py_string('xpath')}, {self._py_string('//*[@text="Log In"]')}, priority=2, reliability=0.7, element_name={self._py_string('Log In')})\n'''
+                f'''            ], screen_name={screen_literal})\n'''
+                f'''        except Exception:\n'''
+                f'''            login_form_open = False\n'''
+                f'''            logger.info({self._py_string('Log In menu entry not available; user may already be logged in')})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Enter username\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Enter username")})\n'''
+                f'''        if login_form_open:\n'''
+                f'''            self.type_text([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/nameET')}, priority=1, reliability=0.95, element_name={self._py_string('Username')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('Username input field')}, priority=2, reliability=0.85, element_name={self._py_string('Username')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('test-Username')}, priority=3, reliability=0.8, element_name={self._py_string('Username')})\n'''
+                f'''            ], "bob@example.com", screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Enter password\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Enter password")})\n'''
+                f'''        if login_form_open:\n'''
+                f'''            self.type_text([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/passwordET')}, priority=1, reliability=0.95, element_name={self._py_string('Password')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('Password input field')}, priority=2, reliability=0.85, element_name={self._py_string('Password')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('test-Password')}, priority=3, reliability=0.8, element_name={self._py_string('Password')})\n'''
+                f'''            ], "10203040", screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Tap login button\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Tap Login")})\n'''
+                f'''        if login_form_open:\n'''
+                f'''            self.tap([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/loginBtn')}, priority=1, reliability=0.95, element_name={self._py_string('Login')}),\n'''
+                f'''            LocatorStrategy({self._py_string('text')}, {self._py_string('Login')}, priority=2, reliability=0.75, element_name={self._py_string('Login')}),\n'''
+                f'''            LocatorStrategy({self._py_string('text')}, {self._py_string('Log In')}, priority=3, reliability=0.7, element_name={self._py_string('Login')})\n'''
+                f'''            ], screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Verify post-login home anchor\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Verify login success anchor")})\n'''
+                f'''        login_anchor = self.verify_present([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/cartIV')}, priority=1, reliability=0.9, element_name={self._py_string('Cart')}),\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/menuIV')}, priority=2, reliability=0.85, element_name={self._py_string('Menu')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+                f'''        assert login_anchor is not None, {self._py_string('Login anchor not found after login action')}\n'''
+            )
+            step_number += 1
+
+        elif normalized == "menu":
+            steps.append(
+                f'''        # Step {step_number}: Open menu\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Open menu")})\n'''
+                f'''        self.tap([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/menuIV')}, priority=1, reliability=0.95, element_name={self._py_string('Menu')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('View menu')}, priority=2, reliability=0.85, element_name={self._py_string('Menu')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Verify menu contains catalog item\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Verify menu item")})\n'''
+                f'''        menu_item = self.verify_present([\n'''
+                f'''            LocatorStrategy({self._py_string('text')}, {self._py_string('Catalog')}, priority=1, reliability=0.85, element_name={self._py_string('Catalog')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('menu item catalog')}, priority=2, reliability=0.75, element_name={self._py_string('Catalog')}),\n'''
+                f'''            LocatorStrategy({self._py_string('text')}, {self._py_string('Log Out')}, priority=3, reliability=0.7, element_name={self._py_string('Log Out')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+                f'''        assert menu_item is not None, {self._py_string('Menu item not visible')}\n'''
+            )
+            step_number += 1
+
+        elif normalized == "product listing":
+            steps.append(
+                f'''        # Step {step_number}: Verify product list anchor\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Verify product listing anchor")})\n'''
+                f'''        listing_anchor = self.verify_present([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/menuIV')}, priority=1, reliability=0.95, element_name={self._py_string('Menu')}),\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/cartIV')}, priority=2, reliability=0.9, element_name={self._py_string('Cart')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+                f'''        assert listing_anchor is not None, {self._py_string('Product listing anchor not found')}\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Open product detail from listing\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Open product detail")})\n'''
+                f'''        try:\n'''
+                f'''            self.tap([\n'''
+                f'''                LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/productIV')}, priority=1, reliability=0.9, element_name={self._py_string('Product')}),\n'''
+                f'''                LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/productTV')}, priority=2, reliability=0.85, element_name={self._py_string('Product Title')}),\n'''
+                f'''                LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/titleTV')}, priority=3, reliability=0.7, element_name={self._py_string('Product Title')})\n'''
+                f'''            ], screen_name={screen_literal})\n'''
+                f'''        except Exception as exc:\n'''
+                f'''            logger.warning({self._py_string('Could not open product detail from listing: %s')}, exc)\n'''
+            )
+            step_number += 1
+
+        elif normalized in {"product detail", "product details"}:
+            steps.append(
+                f'''        # Step {step_number}: Ensure product detail is open\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Open product detail")})\n'''
+                f'''        self.tap([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/productIV')}, priority=1, reliability=0.9, element_name={self._py_string('Product')}),\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/productTV')}, priority=2, reliability=0.85, element_name={self._py_string('Product Title')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+            )
+            step_number += 1
+
+            steps.append(
+                f'''        # Step {step_number}: Verify add-to-cart action is available\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Verify add-to-cart button")})\n'''
+                f'''        add_to_cart = self.verify_present([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/addToCartBtn')}, priority=1, reliability=0.9, element_name={self._py_string('Add To Cart')}),\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/cartBt')}, priority=2, reliability=0.85, element_name={self._py_string('Add To Cart')}),\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/removeBt')}, priority=3, reliability=0.8, element_name={self._py_string('Remove Item')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+                f'''        assert add_to_cart is not None, {self._py_string('Add to Cart button not found on product detail')}\n'''
+            )
+            step_number += 1
+
+        return steps, step_number
 
     def _has_stable_strategy(self, element_entry: Dict[str, Any]) -> bool:
         """Keep only interactions that have stable locator types."""

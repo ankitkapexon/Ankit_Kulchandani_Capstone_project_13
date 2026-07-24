@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Test Generator Live Demo</title>
+  <style>
+    :root {
+      --bg1: #f4f8ff;
+      --bg2: #eaf7ef;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #475569;
+      --line: #d4dde7;
+      --accent: #0f4c81;
+      --good: #166534;
+      --bad: #991b1b;
+    }
+    body {
+      margin: 0;
+      font-family: Segoe UI, Arial, sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 10%, var(--bg1), transparent 45%),
+                  radial-gradient(circle at 85% 20%, var(--bg2), transparent 40%),
+                  #f7fafc;
+    }
+    .wrap {
+      max-width: 1080px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0 0 8px 0; }
+    p.muted { margin-top: 0; color: var(--muted); }
+    label { display: block; font-weight: 600; margin: 10px 0 6px; }
+    input[type="file"], select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+    button {
+      margin-top: 14px;
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { filter: brightness(0.95); }
+    .error {
+      white-space: pre-wrap;
+      color: var(--bad);
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .ok {
+      color: var(--good);
+      background: #dcfce7;
+      border-left: 4px solid #22c55e;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfdff;
+    }
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.98rem;
+    }
+    ul { margin: 0; padding-left: 20px; }
+    li { margin: 4px 0; }
+    pre {
+      white-space: pre-wrap;
+      background: #0b1220;
+      color: #dbeafe;
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid #334155;
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Live Demo: Screenshot to Test Automation</h1>
+      <p class="muted">Upload one mobile screenshot and run the enhanced pipeline to generate SSM, test cases, locators, Appium scripts, review reports, and execution report.</p>
+      <form method="post" action="/run-demo" enctype="multipart/form-data">
+        <label for="screenshot">Screenshot</label>
+        <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+
+        <label for="mode">Mode</label>
+        <select id="mode" name="mode">
+          <option value="mock" selected>Mock (No external LLM dependency)</option>
+          <option value="real">Real (Use environment OpenAI/LiteLLM settings)</option>
+        </select>
+
+        <button type="submit">Run Live Demo</button>
+      </form>
+    </div>
+
+    
+
+    
+    <div class="card">
+      <div class="ok">Demo run completed in mock mode.</div>
+      <p><strong>Input:</strong> artifacts/input_screenshots/live_demo_uploads/20260725_024055/Login.png</p>
+      <p><strong>Report:</strong> <a href="/artifacts/artifacts/test_execution_reports/2026-07-25_02-41-01/report.html" target="_blank" rel="noopener">Open HTML Report</a></p>
+    </div>
+
+    <div class="card grid">
+      <div class="panel">
+        <h3>SSM Output</h3>
+        <ul>
+          
+          <li><a href="/artifacts/artifacts/ssm_json_output/ssm_login_1784927460.json" target="_blank" rel="noopener">artifacts/ssm_json_output/ssm_login_1784927460.json</a></li>
+          
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Manual Testcases</h3>
+        <ul>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_login_1784927460_1784927460.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_login_1784927460_1784927460.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_login_1784927276_1784927276.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_login_1784927276_1784927276.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_login_1784927123_1784927123.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_login_1784927123_1784927123.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_login_1784927015_1784927015.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_login_1784927015_1784927015.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/.gitkeep" target="_blank" rel="noopener">artifacts/manual_testcases/.gitkeep</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_Login_1784918044_1784918059.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_Login_1784918044_1784918059.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_Login_1784917219_1784917267.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_Login_1784917219_1784917267.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_Cart_1784917214_1784917252.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_Cart_1784917214_1784917252.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_Product Listing_1784916183_1784916255.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_Product Listing_1784916183_1784916255.txt</a></li>
+          
+          <li><a href="/artifacts/artifacts/manual_testcases/manual_testcases_ssm_Product Listing_1784916178_1784916241.txt" target="_blank" rel="noopener">artifacts/manual_testcases/manual_testcases_ssm_Product Listing_1784916178_1784916241.txt</a></li>
+          
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Locator Output</h3>
+        <ul>
+          
+          <li><a href="/artifacts/artifacts/locator_output/locator_Login.json" target="_blank" rel="noopener">artifacts/locator_output/locator_Login.json</a></li>
+          
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Generated Scripts</h3>
+        <ul>
+          
+          <li><a href="/artifacts/artifacts/generated_appium_scripts/test_login_screen.py" target="_blank" rel="noopener">artifacts/generated_appium_scripts/test_login_screen.py</a></li>
+          
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Review Reports</h3>
+        <ul>
+          
+          <li><a href="/artifacts/artifacts/review_reports/test_login_screen_review.md" target="_blank" rel="noopener">artifacts/review_reports/test_login_screen_review.md</a></li>
+          
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Pipeline Logs</h3>
+      <pre>Reviewed 1 scripts successfully.
+[ReporterAgent] Running tests from: C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\generated_appium_scripts
+[ReporterAgent] Saving report to:   C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\test_execution_reports\2026-07-25_02-41-01\report.html
+[ReporterAgent] Test run complete — FAILED/ERRORS (exit code 1)
+[ReporterAgent] Report: C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\test_execution_reports\2026-07-25_02-41-01\report.html
+</pre>
+      
+    </div>
+    
+  </div>
+</body>
+</html>

@@ -208,6 +208,20 @@ Check if the LiteLLM gateway test runs:
 
 ## 📊 **Workflow Configuration Details**
 
+## Deterministic Realtime Flow Validation (Latest)
+
+In addition to pipeline/integration checks, you can run the strict realtime emulator flow as a targeted validation:
+
+```powershell
+python -m pytest tests/test_realtime_e2e_flow.py -q
+```
+
+Recommended usage:
+
+1. Use full pipeline tests when validating screenshot-driven generation behavior.
+2. Use deterministic flow test when validating fixed business journey stability on emulator.
+3. Run both before release if live demo exposes both options.
+
 ### **Jobs That Always Run:**
 
 1. **Code Quality** - Checks formatting and linting

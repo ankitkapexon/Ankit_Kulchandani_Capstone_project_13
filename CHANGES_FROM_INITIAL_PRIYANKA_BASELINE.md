@@ -134,6 +134,23 @@ Baseline used for comparison:
   - Ensures login path validation without flaky fixed sleeps.
   - File: artifacts/generated_appium_scripts/test_login_screen.py
 
+- Shared Appium session lifecycle and startup optimization updates (latest):
+  - Added shared session state helper to identify newly created vs reused driver sessions.
+  - Generator setup now applies startup stabilization on reused sessions while avoiding unnecessary full reinitialization work.
+  - Added stale-element retry for tap actions in generated scripts to reduce transient emulator failures.
+  - Files: utils/shared_appium_session.py, agents/self_healing_appium_generator.py
+
+- Login de-duplication and flow hardening updates (latest):
+  - Removed duplicate login typing/tap behavior from generated login flows.
+  - Login minimum steps now run in deterministic sequence and tolerate already-logged-in state.
+  - File: agents/self_healing_appium_generator.py
+
+- Deterministic realtime E2E run added (latest):
+  - Added dedicated one-pass emulator test implementing strict business sequence:
+    open/relaunch app -> popup handling -> product listing -> product detail/add to cart -> cart -> menu -> login -> close app.
+  - File: tests/test_realtime_e2e_flow.py
+  - Latest local result: `1 passed`.
+
 ## 3) How These Changes Help Us
 
 - Higher CI reliability:

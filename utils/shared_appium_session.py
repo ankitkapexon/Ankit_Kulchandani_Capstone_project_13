@@ -22,14 +22,20 @@ def _single_session_enabled() -> bool:
 
 def get_or_create_driver(factory: Callable[[], Any]) -> Any:
     """Return a shared Appium driver when single-session mode is enabled."""
+    driver, _is_new = get_or_create_driver_with_state(factory)
+    return driver
+
+
+def get_or_create_driver_with_state(factory: Callable[[], Any]) -> tuple[Any, bool]:
+    """Return shared Appium driver and whether it was created in this call."""
     global _shared_driver
     global _atexit_registered
 
     if not _single_session_enabled():
-        return factory()
+        return factory(), True
 
     if _shared_driver is not None and getattr(_shared_driver, "session_id", None):
-        return _shared_driver
+        return _shared_driver, False
 
     _shared_driver = factory()
 
@@ -37,7 +43,7 @@ def get_or_create_driver(factory: Callable[[], Any]) -> Any:
         atexit.register(close_shared_driver)
         _atexit_registered = True
 
-    return _shared_driver
+    return _shared_driver, True
 
 
 def should_quit_driver() -> bool:

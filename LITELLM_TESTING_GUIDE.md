@@ -213,6 +213,30 @@ You should see:
 
 ## ✅ **Next Steps**
 
+## Live Demo Dual-Flow Notes (Latest)
+
+The HTML live demo now supports two user-selectable flows:
+
+1. `Check Flow By Uploading A Screenshot`
+   - Uses the normal six-stage pipeline and may call LLM providers.
+
+2. `Realtime End To End Flow Of Application`
+   - Runs `tests/test_realtime_e2e_flow.py` directly.
+   - Does not require screenshot upload.
+   - Produces HTML report in `artifacts/test_execution_reports/<timestamp>/report.html`.
+
+UI defaults:
+
+- Realtime End To End Flow Of Application is selected by default.
+- Screenshot upload section appears only when Check Flow By Uploading A Screenshot is selected.
+
+Mode behavior in live demo:
+
+- `mock` mode: provider env vars are forced to mock where applicable.
+- `real` mode: requires valid `OPENAI_API_KEY` and configured gateway/base URL.
+
+Tip: use deterministic flow when you want stable emulator validation independent of screenshot-to-SSM generation.
+
 ### **If All Tests Pass:**
 
 1. **Run Full Pipeline**

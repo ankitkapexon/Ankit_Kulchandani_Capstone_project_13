@@ -77,6 +77,83 @@
       font-weight: 600;
       margin: 10px 0 6px;
     }
+    .flow-choice {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
+      margin-top: 4px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(160deg, #f3f9ff 0%, #edf5fd 60%, #f4fbf2 100%);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .flow-indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      border-radius: 12px;
+      margin: 0;
+      background: linear-gradient(150deg, #ffffff 0%, #f7fbff 55%, #f2fbf2 100%);
+      box-shadow: 0 10px 24px rgba(12, 91, 143, 0.16);
+      border: 1px solid #c5d9ea;
+      transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .flow-btn {
+      margin: 4px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 12px 13px;
+      text-align: left;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+      box-shadow: none;
+      position: relative;
+      z-index: 1;
+    }
+    .flow-btn[data-flow-value="screenshot_pipeline"] {
+      grid-column: 1;
+      margin-right: 6px;
+    }
+    .flow-btn[data-flow-value="deterministic_realtime"] {
+      grid-column: 2;
+      margin-left: 6px;
+    }
+    .upload-section-hidden {
+      display: none !important;
+    }
+    .flow-btn .flow-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.96rem;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+    .flow-btn .flow-sub {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .flow-btn:hover {
+      transform: translateY(-1px);
+      border-color: #bfd5e8;
+      box-shadow: 0 4px 12px rgba(12, 51, 82, 0.09);
+    }
+    .flow-btn.active {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .flow-btn.active .flow-title {
+      color: #0c5b8f;
+    }
     input[type="file"], select {
       width: 100%;
       box-sizing: border-box;
@@ -113,6 +190,37 @@
       border-left: 4px solid #22c55e;
       padding: 12px;
       border-radius: 8px;
+    }
+    .status-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.84rem;
+      background: #f4f8ff;
+      color: var(--ink);
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .badge.good {
+      background: #e9fbe9;
+      color: #13512b;
+      border-color: #bbf7d0;
+    }
+    .badge.warn {
+      background: #fff7e6;
+      color: #8a5800;
+      border-color: #fde68a;
+    }
+    .badge.bad {
+      background: #feecec;
+      color: #8a1f1f;
+      border-color: #fecaca;
     }
     .run-summary {
       display: grid;
@@ -218,17 +326,67 @@
         justify-content: flex-start;
       }
     }
+    @media (max-width: 720px) {
+      .flow-choice {
+        grid-template-columns: 1fr;
+        row-gap: 6px;
+      }
+      .flow-indicator {
+        display: none;
+      }
+      .flow-btn[data-flow-value="screenshot_pipeline"] {
+        grid-column: 1;
+        margin: 4px;
+      }
+      .flow-btn[data-flow-value="deterministic_realtime"] {
+        grid-column: 1;
+        margin: 4px;
+      }
+      .flow-btn.active {
+        border-color: #68a5cf;
+        background: linear-gradient(160deg, #f5fbff 0%, #edf8ff 55%, #f3fbf4 100%);
+      }
+    }
   </style>
 </head>
 <body class="show-filenames">
   <div class="wrap">
+    {% set selected_flow = result.flow_type if result and result.flow_type else 'deterministic_realtime' %}
     <div class="hero">
       <div class="card tone-card">
         <h1>Live Demo: Screenshot to Test Automation</h1>
-        <p class="subtitle">Upload one screenshot and run the enhanced pipeline. The result view below shows only artifacts generated for this upload run.</p>
+        <p class="subtitle">Choose a flow: upload-based pipeline (single screenshot) or deterministic realtime E2E flow. The selected option runs end-to-end and shows run-specific outputs.</p>
         <form method="post" action="/run-demo" enctype="multipart/form-data">
-          <label for="screenshot">Screenshot</label>
-          <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+          <label>Flow Type</label>
+          <input id="flow_type" name="flow_type" type="hidden" value="{{ selected_flow }}" />
+          <div id="flowChoice" class="flow-choice" role="group" aria-label="Flow Type">
+            <span id="flowIndicator" class="flow-indicator" aria-hidden="true"></span>
+            <button
+              id="flowBtnUpload"
+              class="flow-btn"
+              type="button"
+              data-flow-value="screenshot_pipeline"
+              aria-pressed="{{ 'true' if selected_flow == 'screenshot_pipeline' else 'false' }}"
+            >
+              <span class="flow-title">Check Flow By Uploading A Screenshot</span>
+              <span class="flow-sub">Upload one screenshot and run all generation stages.</span>
+            </button>
+            <button
+              id="flowBtnDeterministic"
+              class="flow-btn"
+              type="button"
+              data-flow-value="deterministic_realtime"
+              aria-pressed="{{ 'true' if selected_flow == 'deterministic_realtime' else 'false' }}"
+            >
+              <span class="flow-title">Realtime End To End Flow Of Application</span>
+              <span class="flow-sub">Run strict E2E emulator flow without screenshot upload.</span>
+            </button>
+          </div>
+
+          <div id="uploadSection" class="{% if selected_flow == 'deterministic_realtime' %}upload-section-hidden{% endif %}" {% if selected_flow == 'deterministic_realtime' %}hidden{% endif %}>
+            <label for="screenshot">Screenshot</label>
+            <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+          </div>
 
           <label for="mode">Mode</label>
           <select id="mode" name="mode">
@@ -236,7 +394,7 @@
             <option value="real">Real mode (uses current OpenAI or LiteLLM settings)</option>
           </select>
 
-          <div class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
+          <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
           <button type="submit">Run Live Demo</button>
         </form>
       </div>
@@ -250,7 +408,12 @@
 
     {% if result %}
     <div class="card">
-      <div class="ok">Demo run completed in {{ result.mode }} mode.</div>
+      <div class="ok">Demo run completed in {{ result.mode }} mode using {{ result.flow_type }}.</div>
+      <div class="status-badges">
+        <span class="badge">Flow: {{ result.flow_label }}</span>
+        <span class="badge {% if result.appium_state in ['running', 'started'] %}good{% else %}warn{% endif %}">Appium: {{ result.appium_state }}</span>
+        <span class="badge {% if result.outcome == 'passed' %}good{% elif result.outcome == 'failed' %}bad{% else %}warn{% endif %}">Test outcome: {{ result.outcome }}</span>
+      </div>
       <div class="run-summary">
         <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
         <p class="meta"><strong>Appium:</strong> {{ result.appium_status }}</p>
@@ -366,6 +529,72 @@
   <script>
     (function () {
       const toggle = document.getElementById("filenameToggle");
+      const flowType = document.getElementById("flow_type");
+      const flowButtons = Array.from(document.querySelectorAll(".flow-btn[data-flow-value]"));
+      const flowIndicator = document.getElementById("flowIndicator");
+      const screenshot = document.getElementById("screenshot");
+      const uploadSection = document.getElementById("uploadSection");
+      const screenshotHint = document.getElementById("screenshotHint");
+
+      const currentFlowValue = () => {
+        if (!flowType || !flowType.value) {
+          return "screenshot_pipeline";
+        }
+        return flowType.value;
+      };
+
+      const syncActiveFlowButton = () => {
+        const selected = currentFlowValue();
+        let activeButton = null;
+        flowButtons.forEach((btn) => {
+          const isActive = btn.dataset.flowValue === selected;
+          btn.classList.toggle("active", isActive);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+          if (isActive) {
+            activeButton = btn;
+          }
+        });
+
+        if (flowIndicator && activeButton) {
+          flowIndicator.style.width = `${activeButton.offsetWidth}px`;
+          flowIndicator.style.transform = `translateX(${activeButton.offsetLeft}px)`;
+        }
+      };
+
+      const syncFlowUI = () => {
+        if (!flowType || !screenshot) {
+          return;
+        }
+        const uploadMode = currentFlowValue() === "screenshot_pipeline";
+        screenshot.required = uploadMode;
+        screenshot.disabled = !uploadMode;
+        if (!uploadMode) {
+          screenshot.value = "";
+        }
+        if (uploadSection) {
+          uploadSection.classList.toggle("upload-section-hidden", !uploadMode);
+          uploadSection.hidden = !uploadMode;
+        }
+        if (screenshotHint) {
+          screenshotHint.textContent = uploadMode
+            ? "Tip: upload a focused screen image for cleaner locator and testcase generation."
+            : "Deterministic flow ignores screenshot upload and runs the strict end-to-end emulator sequence.";
+        }
+        syncActiveFlowButton();
+      };
+
+      flowButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          if (!flowType) {
+            return;
+          }
+          flowType.value = btn.dataset.flowValue || "screenshot_pipeline";
+          syncFlowUI();
+        });
+      });
+
+      syncFlowUI();
+
       if (!toggle) {
         return;
       }

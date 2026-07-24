@@ -155,6 +155,23 @@ cat artifacts/token_usage.log
 
 ## 🎯 **Key Improvements**
 
+## ✅ Latest Runtime Updates (Jul 2026)
+
+1. Added deterministic one-pass realtime emulator flow:
+   - `tests/test_realtime_e2e_flow.py`
+   - Covers ordered journey: relaunch app -> popup handling -> product listing -> product detail + add to cart -> cart -> menu -> login -> close app.
+
+2. Removed duplicate login action behavior in generated flow logic:
+   - Login typing and submit actions are now deterministic and non-duplicative.
+
+3. Improved session reuse stability:
+   - Shared session helper now distinguishes new vs reused sessions.
+   - Generator applies fast startup stabilization and stale-click retry handling.
+
+4. Validated latest deterministic flow:
+   - Command: `python -m pytest tests/test_realtime_e2e_flow.py -q`
+   - Result: `1 passed`
+
 ### **1. Locator Reliability**
 
 **Before:**

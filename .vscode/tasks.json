@@ -1,0 +1,1024 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "git-log-latest-doc-sync",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"log",
+				"--oneline",
+				"--decorate",
+				"-15"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-short",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-stage-required-only",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"reset"
+			]
+		},
+		{
+			"label": "git-add-selected-files",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"add",
+				"README.md",
+				"LIVE_DEMO_RUN_STEPS.md",
+				"CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md",
+				"live_demo.py",
+				"web/templates/live_demo.html"
+			]
+		},
+		{
+			"label": "git-status-verify-selection",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"status",
+				"--short"
+			]
+		},
+		{
+			"label": "git-commit-docs-live-demo",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"commit",
+				"-m",
+				"docs+demo: sync README/live demo guide and add live demo UI runner"
+			]
+		},
+		{
+			"label": "git-push-main-latest",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"push",
+				"origin",
+				"main"
+			]
+		},
+		{
+			"label": "git-verify-main-sync",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"rev-parse",
+				"HEAD",
+				"origin/main"
+			]
+		},
+		{
+			"label": "git-show-last-commit",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"show",
+				"--name-only",
+				"--oneline",
+				"-1"
+			]
+		},
+		{
+			"label": "check-cleanup-live-demo-flow",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$target = 'C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup'; if (-not (Test-Path $target)) { Write-Output \"MISSING_PATH`n$target\"; exit 0 }; Write-Output \"EXISTS_PATH`n$target\"; Write-Output \"`nTOP_LEVEL:\"; Get-ChildItem -Path $target -Name; Write-Output \"`nCANDIDATE_FILES:\"; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Name -match 'live_demo|demo|run_all_enhanced|pipeline_composer|stage_runners' -or $_.FullName -match 'web\\\\templates' } | Select-Object -ExpandProperty FullName; Write-Output \"`nCONTENT_HITS:\"; Get-ChildItem -Path $target -Recurse -File -Include *.py,*.html,*.md,*.txt | Select-String -Pattern 'Flask','run-demo','live demo','run_all_enhanced','pipeline_composer','StageFeatureFlags','/run-demo','input_screenshots/live_demo_uploads' | Select-Object -First 120 | ForEach-Object { \"{0}:{1}:{2}\" -f $_.Path, $_.LineNumber, $_.Line.Trim() }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-cleanup-live-demo-flow-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$target = 'C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup'; if (-not (Test-Path $target)) { Write-Output \"MISSING_PATH`n$target\"; exit 0 }; Write-Output \"EXISTS_PATH`n$target\"; Write-Output \"`nTOP_LEVEL:\"; Get-ChildItem -Path $target -Name; Write-Output \"`nCANDIDATE_FILES:\"; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Name -match 'live_demo|demo|run_all_enhanced|pipeline_composer|stage_runners' -or $_.FullName -match 'web\\\\templates' } | Select-Object -ExpandProperty FullName; Write-Output \"`nCONTENT_HITS:\"; Get-ChildItem -Path $target -Recurse -File -Include *.py,*.html,*.md,*.txt | Select-String -Pattern 'Flask','run-demo','live demo','run_all_enhanced','pipeline_composer','StageFeatureFlags','/run-demo','input_screenshots/live_demo_uploads' | Select-Object -First 120 | ForEach-Object { Write-Output ($_.Path + ':' + $_.LineNumber + ':' + $_.Line.Trim()) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-cleanup-broad-sweep",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$target='C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup'; Write-Output 'FILES_UNDER_TARGET:'; Get-ChildItem -Path $target -Recurse -File | Select-Object -ExpandProperty FullName; Write-Output \"`nBROAD_CONTENT_HITS:\"; $patterns = 'live_demo','live demo','flask','run-demo','run_all_enhanced','pipeline_composer','stage_runners','demo'; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Extension -in '.py','.md','.txt','.html','.yml','.yaml','.json' } | Select-String -Pattern $patterns | Select-Object -First 200 | ForEach-Object { Write-Output ($_.Path + ':' + $_.LineNumber + ':' + $_.Line.Trim()) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-live-demo-mock-now",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $file) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 0 }; Write-Output ('USING_SCREENSHOT=' + $file.FullName); $resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/run-demo' -Method Post -Form @{ mode='mock'; screenshot=(Get-Item $file.FullName) }; Write-Output ('HTTP_STATUS=' + $resp.StatusCode); $report = [regex]::Match($resp.Content, '/artifacts/[^\"' + \"'\" + ']*report\\.html').Value; if ($report) { Write-Output ('REPORT_PATH=' + $report) } else { Write-Output 'REPORT_PATH=NOT_FOUND' }; if ($resp.Content -match 'Demo run completed') { Write-Output 'DEMO_STATUS=COMPLETED' } else { Write-Output 'DEMO_STATUS=UNKNOWN' }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-live-demo-mock-now-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $file) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 0 }; Write-Output ('USING_SCREENSHOT=' + $file.FullName); $resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/run-demo' -Method Post -Form @{ mode='mock'; screenshot=(Get-Item $file.FullName) }; Write-Output ('HTTP_STATUS=' + $resp.StatusCode); if ($resp.Content -match 'Demo run completed') { Write-Output 'DEMO_STATUS=COMPLETED' } else { Write-Output 'DEMO_STATUS=UNKNOWN' }; $reportLines = $resp.Content -split \"`n\" | Where-Object { $_ -match 'report\\.html' } | Select-Object -First 3; if ($reportLines) { Write-Output 'REPORT_LINE_START'; $reportLines | ForEach-Object { $_.Trim() }; Write-Output 'REPORT_LINE_END' } else { Write-Output 'REPORT_LINE_NOT_FOUND' }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-live-demo-via-curl",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $file) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 0 }; Write-Output ('USING_SCREENSHOT=' + $file.FullName); curl.exe -s -o artifacts\\live_demo_last_response.html -w \"HTTP_STATUS=%{http_code}`n\" -F mode=mock -F \"screenshot=@$($file.FullName)\" http://127.0.0.1:8080/run-demo; if (Select-String -Path artifacts\\live_demo_last_response.html -Pattern 'Demo run completed' -Quiet) { Write-Output 'DEMO_STATUS=COMPLETED' } else { Write-Output 'DEMO_STATUS=UNKNOWN' }; Write-Output 'REPORT_MATCHES_START'; Select-String -Path artifacts\\live_demo_last_response.html -Pattern 'report.html' | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }; Write-Output 'REPORT_MATCHES_END'"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-live-demo-via-iwr",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $file) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 0 }; Write-Output ('USING_SCREENSHOT=' + $file.FullName); $resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/run-demo' -Method Post -Form @{ mode='mock'; screenshot=(Get-Item $file.FullName) } -OutFile artifacts\\live_demo_last_response.html -PassThru; Write-Output ('HTTP_STATUS=' + $resp.StatusCode); if (Select-String -Path artifacts\\live_demo_last_response.html -Pattern 'Demo run completed' -Quiet) { Write-Output 'DEMO_STATUS=COMPLETED' } else { Write-Output 'DEMO_STATUS=UNKNOWN' }; Write-Output 'REPORT_MATCHES_START'; Select-String -Path artifacts\\live_demo_last_response.html -Pattern 'report.html' | Select-Object -First 3 | ForEach-Object { $_.Line.Trim() }; Write-Output 'REPORT_MATCHES_END'"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "list-latest-artifacts",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-ChildItem -Path artifacts -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 20 FullName, LastWriteTime | Format-Table -AutoSize"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "list-latest-artifacts-detailed",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-ChildItem -Path artifacts -Recurse -File | Sort-Object LastWriteTime -Descending | Select-Object -First 30 | ForEach-Object { '{0} | {1}' -f $_.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'), $_.FullName }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-latest-report",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$latest = Get-ChildItem -Path artifacts/test_execution_reports -Recurse -File -Filter report.html | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if (-not $latest) { Write-Output 'NO_REPORT_FOUND'; exit 0 }; Write-Output ('LATEST_REPORT=' + $latest.FullName); Write-Output ('LATEST_REPORT_TIME=' + $latest.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')); Select-String -Path $latest.FullName -Pattern 'Total Tests|Passed|Failed|Error|Execution|Status|pytest|Scenario|Result' | Select-Object -First 25 | ForEach-Object { $_.Line.Trim() }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-live-demo-server",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('SERVER_HTTP_STATUS=' + $r.StatusCode) } catch { Write-Output ('SERVER_ERROR=' + $_.Exception.Message) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "py-compile-live-demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'PY_COMPILE_OK' } else { Write-Output ('PY_COMPILE_FAIL=' + $LASTEXITCODE) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-jinja-template-parse",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -c \"from jinja2 import Environment, FileSystemLoader; env=Environment(loader=FileSystemLoader('web/templates')); env.get_template('live_demo.html'); print('TEMPLATE_OK')\""
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-jinja-template-parse-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -c 'from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader(\"web/templates\")); env.get_template(\"live_demo.html\"); print(\"TEMPLATE_OK\")'"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-jinja-template-heredoc",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$code = @'\nfrom jinja2 import Environment, FileSystemLoader\nenv = Environment(loader=FileSystemLoader(\"web/templates\"))\nenv.get_template(\"live_demo.html\")\nprint(\"TEMPLATE_OK\")\n'@; .\\.venv\\Scripts\\python.exe -c $code"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "py-compile-pipeline-composer",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile pipelines\\pipeline_composer.py; if ($LASTEXITCODE -eq 0) { Write-Output 'PIPELINE_COMPOSER_OK' } else { Write-Output ('PIPELINE_COMPOSER_FAIL=' + $LASTEXITCODE) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "stop-live-demo-processes",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + ($procs | Measure-Object | Select-Object -ExpandProperty Count))"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-live-demo-updated-ui",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('HTTP=' + $resp.StatusCode); if ($resp.Content -match 'Show compact filenames only') { Write-Output 'TOGGLE_PRESENT=YES' } else { Write-Output 'TOGGLE_PRESENT=NO' }; if ($resp.Content -match 'body class=\"show-filenames\"') { Write-Output 'DEFAULT_COMPACT=YES' } else { Write-Output 'DEFAULT_COMPACT=NO' }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-live-demo-body-tag",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; ($resp.Content -split \"`n\" | Select-Object -First 40) | ForEach-Object { $_ }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-live-demo-markers",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; if ($resp.Content -match '<body[^>]*>') { Write-Output ('BODY_TAG=' + $Matches[0]) } else { Write-Output 'BODY_TAG=NOT_FOUND' }; if ($resp.Content -match 'Space Grotesk') { Write-Output 'NEW_UI_FONT=YES' } else { Write-Output 'NEW_UI_FONT=NO' }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-live-demo-run-scope",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $file) { Write-Output 'NO_SCREENSHOT'; exit 0 }; Write-Output ('USING=' + $file.FullName); & \"$env:SystemRoot\\System32\\curl.exe\" -s -o artifacts/live_demo_check.html -w \"HTTP=%{http_code}`n\" -F \"mode=mock\" -F \"screenshot=@$($file.FullName)\" \"http://127.0.0.1:8080/run-demo\"; $manual = Get-ChildItem artifacts/manual_testcases -File -ErrorAction SilentlyContinue; Write-Output ('MANUAL_COUNT=' + ($manual | Measure-Object | Select-Object -ExpandProperty Count)); $manual | Sort-Object LastWriteTime -Descending | Select-Object -First 5 | ForEach-Object { $_.Name }; if (Select-String -Path artifacts/live_demo_check.html -Pattern 'Show compact filenames only' -Quiet) { Write-Output 'TOGGLE_IN_RESULT=YES' } else { Write-Output 'TOGGLE_IN_RESULT=NO' }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "clean-manual-testcase-history",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$dir = 'artifacts/manual_testcases'; if (Test-Path $dir) { Get-ChildItem $dir -File | Remove-Item -Force }; $count = (Get-ChildItem $dir -File -ErrorAction SilentlyContinue | Measure-Object).Count; Write-Output ('MANUAL_TESTCASE_FILES_NOW=' + $count)"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "clean-generated-scripts-history",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$dir = 'artifacts/generated_appium_scripts'; if (Test-Path $dir) { Get-ChildItem $dir -Recurse -File | Remove-Item -Force }; $count = (Get-ChildItem $dir -Recurse -File -ErrorAction SilentlyContinue | Measure-Object).Count; Write-Output ('GENERATED_SCRIPT_FILES_NOW=' + $count)"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-server-still-up",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('HTTP=' + $r.StatusCode)"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-and-branch",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git branch --show-current; git status --short"
+			]
+		},
+		{
+			"label": "restore-unintended-deletions",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short"
+			]
+		},
+		{
+			"label": "commit-live-demo-fixes",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add live_demo.py pipelines/pipeline_composer.py web/templates/live_demo.html; git commit -m \"Fix live demo run scoping and improve UI readability\""
+			]
+		},
+		{
+			"label": "commit-live-demo-fixes-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add live_demo.py pipelines/pipeline_composer.py web/templates/live_demo.html; git commit -m 'Fix live demo run scoping and improve UI readability'"
+			]
+		},
+		{
+			"label": "push-main",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "git-status-before-push",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git branch --show-current; git status --short"
+			]
+		},
+		{
+			"label": "restore-artifact-placeholders",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short"
+			]
+		},
+		{
+			"label": "commit-ui-section-removal",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add web/templates/live_demo.html; git commit -m 'Remove non-functional live demo stats section'"
+			]
+		},
+		{
+			"label": "push-main-ui-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "restart-live-demo-new-ui",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-live-demo-new-ui-running",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('HTTP=' + $r.StatusCode); if ($r.Content -match 'Show compact filenames only') { Write-Output 'NEW_UI_MARKER=YES' } else { Write-Output 'NEW_UI_MARKER=NO' }"
+			]
+		},
+		{
+			"label": "verify-removed-stats-section",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; if ($r.Content -match 'Input Type|Output Scope|Single Screenshot|Enhanced Flow') { Write-Output 'OLD_STATS_PRESENT=YES' } else { Write-Output 'OLD_STATS_PRESENT=NO' }; if ($r.Content -match 'Live Demo: Screenshot to Test Automation') { Write-Output 'NEW_PAGE_LOADED=YES' } else { Write-Output 'NEW_PAGE_LOADED=NO' }"
+			]
+		},
+		{
+			"label": "check-git-status-for-doc-updates",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git branch --show-current; git status --short"
+			]
+		},
+		{
+			"label": "git-status-before-doc-commit",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short"
+			]
+		},
+		{
+			"label": "restore-unrelated-artifact-deletions-doc-push",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short"
+			]
+		},
+		{
+			"label": "commit-doc-updates-live-demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add README.md CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md LIVE_DEMO_RUN_STEPS.md; git commit -m 'Update docs for run-scoped live demo and new UI behavior'"
+			]
+		},
+		{
+			"label": "push-main-doc-updates",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "validate-live-demo-filter-change",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'LIVE_DEMO_PY_OK' } else { Write-Output ('LIVE_DEMO_PY_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "restart-live-demo-after-gitkeep-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"
+			]
+		},
+		{
+			"label": "git-status-check-before-sleep-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short"
+			]
+		},
+		{
+			"label": "compile-updated-scripts",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py artifacts\\generated_appium_scripts\\test_product_detail_screen.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "rerun-reviewer-for-generated-scripts",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -c \"from agents.reviewer_agent import ReviewerAgent; from pathlib import Path; ReviewerAgent(project_root=Path('.')).review_scripts(); print('REVIEW_DONE')\""
+			]
+		},
+		{
+			"label": "rerun-reviewer-for-generated-scripts-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -c 'from agents.reviewer_agent import ReviewerAgent; from pathlib import Path; ReviewerAgent(project_root=Path(\".\")).review_scripts(); print(\"REVIEW_DONE\")'"
+			]
+		},
+		{
+			"label": "run-reviewer-agent-main",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe agents\\reviewer_agent.py"
+			]
+		},
+		{
+			"label": "status-after-review-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short"
+			]
+		},
+		{
+			"label": "prepare-and-push-latest-fixes",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short; git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add live_demo.py agents/self_healing_appium_generator.py; git commit -m 'Filter placeholder artifacts and remove hardcoded sleep in generated startup flow'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "validate-live-demo-snapshot-filter",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'LIVE_DEMO_OK' } else { Write-Output ('LIVE_DEMO_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "restart-live-demo-after-delta-filter",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"
+			]
+		},
+		{
+			"label": "push-latest-delta-filter-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short; git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add live_demo.py; git commit -m 'Scope live demo artifact panels to current upload run via folder delta snapshots'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "verify-and-push-latest-main",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git branch --show-current; git status --short; git rev-parse HEAD; git rev-parse origin/main; git push origin main"
+			]
+		},
+		{
+			"label": "status-before-doc-refresh",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short; git rev-parse --short HEAD"
+			]
+		},
+		{
+			"label": "status-before-doc-push-latest",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short"
+			]
+		},
+		{
+			"label": "commit-and-push-latest-doc-refresh",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add README.md LIVE_DEMO_RUN_STEPS.md CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md; git commit -m 'Refresh docs with latest live demo run-scoping and artifact filtering updates'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "status-after-readme-architecture-update",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short"
+			]
+		},
+		{
+			"label": "commit-and-push-readme-architecture-update",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short; git add README.md; git commit -m 'Expand README with detailed project structure and architecture overview'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "commit-and-push-architecture-diagram",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git status --short; git add README.md; git commit -m 'Add dedicated system architecture diagram to README'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"
+			]
+		},
+		{
+			"label": "precheck-emulator-and-appium",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"adb devices; try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:4723/status' -UseBasicParsing; Write-Output ('APPIUM_STATUS=' + $r.StatusCode) } catch { Write-Output 'APPIUM_STATUS=DOWN' }; .\\.venv\\Scripts\\python.exe -c \"import os; print('VISION_AGENT_PROVIDER=' + os.getenv('VISION_AGENT_PROVIDER','')); print('TESTCASE_AGENT_PROVIDER=' + os.getenv('TESTCASE_AGENT_PROVIDER','')); print('OPENAI_API_KEY_SET=' + str(bool(os.getenv('OPENAI_API_KEY'))))\""
+			]
+		},
+		{
+			"label": "check-adb-devices",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"adb devices"
+			]
+		},
+		{
+			"label": "check-appium-status",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"try { $r = Invoke-WebRequest -Uri 'http://127.0.0.1:4723/status' -UseBasicParsing; Write-Output ('APPIUM_STATUS=' + $r.StatusCode) } catch { Write-Output 'APPIUM_STATUS=DOWN' }"
+			]
+		},
+		{
+			"label": "run-one-shot-emulator-demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$src = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $src) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 1 }; $demoDir = 'artifacts/input_screenshots/tmp_one_run'; if (Test-Path $demoDir) { Remove-Item $demoDir -Recurse -Force }; New-Item -ItemType Directory -Path $demoDir | Out-Null; Copy-Item $src.FullName -Destination (Join-Path $demoDir $src.Name) -Force; Write-Output ('USING_SCREENSHOT=' + $src.FullName); $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $demoDir --no-browser"
+			]
+		},
+		{
+			"label": "inspect-latest-generated-and-reports",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Write-Output '--- GENERATED SCRIPTS ---'; Get-ChildItem artifacts/generated_appium_scripts -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name; Write-Output '--- LATEST TEST REPORT FOLDER ---'; $latest = Get-ChildItem artifacts/test_execution_reports -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if ($latest) { Write-Output $latest.FullName; Get-ChildItem $latest.FullName -File | Select-Object -ExpandProperty Name }"
+			]
+		},
+		{
+			"label": "inspect-latest-report-testids",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$latest = Get-ChildItem artifacts/test_execution_reports -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if (-not $latest) { Write-Output 'NO_REPORT_DIR'; exit 0 }; $report = Join-Path $latest.FullName 'report.html'; Write-Output ('REPORT=' + $report); if (Test-Path $report) { Select-String -Path $report -Pattern 'generated_appium_scripts/.*::Test' | Select-Object -First 20 | ForEach-Object { $_.Line.Trim() } } else { Write-Output 'REPORT_HTML_NOT_FOUND' }"
+			]
+		},
+		{
+			"label": "list-available-screenshots",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-ChildItem artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object FullName | Format-Table -AutoSize"
+			]
+		},
+		{
+			"label": "find-key-screenshots-by-name",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-ChildItem artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Where-Object { $_.BaseName -match 'login|menu|product|detail|listing|cart' } | Select-Object -First 40 FullName, BaseName | ForEach-Object { $_.BaseName + ' | ' + $_.FullName }"
+			]
+		},
+		{
+			"label": "run-multi-screen-validation-demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } else { Write-Output ('MISSING=' + $n) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"
+			]
+		},
+		{
+			"label": "inspect-generated-flow-depth",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Write-Output '--- TAP COUNTS ---'; Get-ChildItem artifacts/generated_appium_scripts/test_*_screen.py -File | ForEach-Object { $c = (Select-String -Path $_.FullName -Pattern 'self\\.tap\\(' | Measure-Object).Count; Write-Output ($_.Name + ' => tap_steps=' + $c) }; Write-Output '--- TYPE COUNTS ---'; Get-ChildItem artifacts/generated_appium_scripts/test_*_screen.py -File | ForEach-Object { $c = (Select-String -Path $_.FullName -Pattern 'self\\.type_text\\(' | Measure-Object).Count; Write-Output ($_.Name + ' => type_steps=' + $c) }"
+			]
+		},
+		{
+			"label": "validate-generator-syntax",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'GENERATOR_OK' } else { Write-Output ('GENERATOR_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "run-enhanced-pipeline-once",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-enhanced-pipeline-live-demo",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py artifacts\\input_screenshots\\live_demo_uploads"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "run-enhanced-pipeline-root-input",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py artifacts\\input_screenshots"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "compile-generator-and-session-utils",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py utils\\shared_appium_session.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "run-multi-screen-validation-after-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run2'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"
+			]
+		},
+		{
+			"label": "recompile-generator-after-stability-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "run-multi-screen-validation-after-stability-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run3'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"
+			]
+		},
+		{
+			"label": "recompile-generator-after-anchor-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "run-multi-screen-validation-after-anchor-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run4'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"
+			]
+		},
+		{
+			"label": "recompile-generator-after-login-state-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "run-multi-screen-validation-after-login-state-fix",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run5'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"
+			]
+		},
+		{
+			"label": "run-realtime-e2e-flow-test",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m pytest tests/test_realtime_e2e_flow.py -q -s"
+			]
+		},
+		{
+			"label": "rerun-realtime-e2e-flow-test-clean",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m pytest tests/test_realtime_e2e_flow.py -q"
+			]
+		},
+		{
+			"label": "compile-live-demo-dual-flow",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		},
+		{
+			"label": "sanity-check-live-demo-routes",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -c \"import live_demo; print('ROUTES_OK')\""
+			]
+		},
+		{
+			"label": "sanity-check-live-demo-import",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"& 'c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe' -c \"import live_demo; print('ROUTES_OK')\""
+			]
+		},
+		{
+			"label": "compile-live-demo-after-badges",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
+			]
+		}
+	]
+}

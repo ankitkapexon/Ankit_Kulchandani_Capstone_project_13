@@ -19,6 +19,29 @@ Examples:
 - `locator_product_listing.json`
 - `ssm_product_details_1784913925.json`
 
+## Live Demo Flow Modes
+
+The live demo UI supports two execution modes in one form:
+
+1. `screenshot_pipeline`
+	- Display label: `Check Flow By Uploading A Screenshot`
+        - Requires one uploaded screenshot.
+        - Runs full six-stage artifact pipeline.
+
+2. `deterministic_realtime`
+	- Display label: `Realtime End To End Flow Of Application`
+        - No screenshot upload required.
+        - Runs strict emulator sequence from `tests/test_realtime_e2e_flow.py`.
+
+Current UI defaults:
+
+- `deterministic_realtime` is selected by default.
+- Screenshot upload section is displayed only when `screenshot_pipeline` is selected.
+
+Contributor rule:
+
+- If you change flow behavior in `live_demo.py`, update `README.md` and `LIVE_DEMO_RUN_STEPS.md` in the same PR so user-facing behavior and docs remain aligned.
+
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.
 3. **SSM JSON → Locator JSON:** LocatorAgent extracts UI element locators (resource IDs, accessibility IDs).

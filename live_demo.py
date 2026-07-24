@@ -6,6 +6,7 @@ import io
 import os
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import traceback
@@ -129,6 +130,32 @@ def _normalize_pipeline_logs(log_text: str) -> str:
     return normalized
 
 
+def _flow_label(flow_type: str) -> str:
+    if flow_type == "deterministic_realtime":
+        return "Realtime End To End Flow Of Application"
+    return "Check Flow By Uploading A Screenshot"
+
+
+def _appium_state(appium_msg: str) -> str:
+    lower_msg = appium_msg.strip().lower()
+    if "already running" in lower_msg:
+        return "running"
+    if "started" in lower_msg:
+        return "started"
+    return "unknown"
+
+
+def _outcome_from_pipeline_logs(logs: str, stderr: str) -> str:
+    text = f"{logs}\n{stderr}".lower()
+    if "failed/errors" in text or " short test summary info " in text and "failed" in text:
+        return "failed"
+    if "= failed" in text or " failed " in text and "test session starts" in text:
+        return "failed"
+    if " passed" in text or "test completed successfully" in text:
+        return "passed"
+    return "unknown"
+
+
 def _is_appium_healthy() -> bool:
     try:
         with urllib.request.urlopen(APPIUM_STATUS_URL, timeout=2) as response:
@@ -237,6 +264,7 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
 
     return {
         "ok": True,
+        "flow_type": "screenshot_pipeline",
         "report_path": str(report_path.relative_to(PROJECT_ROOT)).replace("\\", "/") if report_path else "",
         "logs": output_logs,
         "stderr": error_logs,
@@ -247,6 +275,68 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
             "scripts": script_artifacts,
             "reviews": review_artifacts,
         },
+    }
+
+
+def _run_deterministic_flow(mode: str) -> dict[str, Any]:
+    if mode == "real":
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key or api_key == "your_openai_api_key_here":
+            raise RuntimeError("Real mode requires OPENAI_API_KEY in environment or .env")
+
+    report_root = ARTIFACTS_ROOT / "test_execution_reports"
+    report_root.mkdir(parents=True, exist_ok=True)
+    report_dir = report_root / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / "report.html"
+
+    python_exe = str((PROJECT_ROOT / ".venv" / "Scripts" / "python.exe").resolve())
+    if not Path(python_exe).exists():
+        python_exe = sys.executable
+
+    env = os.environ.copy()
+    env["SINGLE_APP_SESSION"] = "1"
+    if mode == "mock":
+        env["VISION_AGENT_PROVIDER"] = "mock"
+        env["TESTCASE_AGENT_PROVIDER"] = "mock"
+
+    command = [
+        python_exe,
+        "-m",
+        "pytest",
+        "tests/test_realtime_e2e_flow.py",
+        "-q",
+        f"--html={report_path}",
+        "--self-contained-html",
+    ]
+
+    completed = subprocess.run(
+        command,
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    logs = (completed.stdout or "").strip()
+    stderr = (completed.stderr or "").strip()
+
+    artifacts = {
+        "ssm": [],
+        "manual_testcases": [],
+        "locators": [],
+        "scripts": ["tests/test_realtime_e2e_flow.py"],
+        "reviews": [],
+    }
+
+    return {
+        "ok": completed.returncode == 0,
+        "flow_type": "deterministic_realtime",
+        "report_path": str(report_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
+        "logs": logs,
+        "stderr": stderr,
+        "outcome": "passed" if completed.returncode == 0 else "failed",
+        "artifacts": artifacts,
     }
 
 
@@ -267,36 +357,57 @@ def run_demo() -> str:
 
         upload = request.files.get("screenshot")
         mode = request.form.get("mode", "mock").strip().lower()
+        flow_type = request.form.get("flow_type", "screenshot_pipeline").strip().lower()
 
         if mode not in {"mock", "real"}:
             return render_template("live_demo.html", result=None, error="Invalid mode. Use mock or real.")
 
-        if upload is None or upload.filename is None or upload.filename.strip() == "":
-            return render_template("live_demo.html", result=None, error="Please upload a screenshot file.")
-
-        if not _allowed_file(upload.filename):
+        if flow_type not in {"screenshot_pipeline", "deterministic_realtime"}:
             return render_template(
                 "live_demo.html",
                 result=None,
-                error="Unsupported file type. Use png, jpg, jpeg, webp, or bmp.",
+                error="Invalid flow type. Use screenshot_pipeline or deterministic_realtime.",
             )
 
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        run_dir = UPLOADS_ROOT / timestamp
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if flow_type == "screenshot_pipeline":
+            if upload is None or upload.filename is None or upload.filename.strip() == "":
+                return render_template("live_demo.html", result=None, error="Please upload a screenshot file.")
 
-        filename = secure_filename(upload.filename)
-        saved_path = run_dir / filename
-        upload.save(saved_path)
+            if not _allowed_file(upload.filename):
+                return render_template(
+                    "live_demo.html",
+                    result=None,
+                    error="Unsupported file type. Use png, jpg, jpeg, webp, or bmp.",
+                )
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            run_dir = UPLOADS_ROOT / timestamp
+            run_dir.mkdir(parents=True, exist_ok=True)
+
+            filename = secure_filename(upload.filename)
+            saved_path = run_dir / filename
+            upload.save(saved_path)
+        else:
+            saved_path = None
 
         appium_ok, appium_msg = _ensure_appium_running()
         if not appium_ok:
             return render_template("live_demo.html", result=None, error=f"{appium_msg}. Cannot execute mobile tests.")
 
-        result = _run_demo_pipeline(run_dir, mode)
-        result["input_file"] = str(saved_path.relative_to(PROJECT_ROOT)).replace("\\", "/")
+        if flow_type == "screenshot_pipeline":
+            result = _run_demo_pipeline(run_dir, mode)
+            result["input_file"] = str(saved_path.relative_to(PROJECT_ROOT)).replace("\\", "/")
+            result["outcome"] = _outcome_from_pipeline_logs(result.get("logs", ""), result.get("stderr", ""))
+        else:
+            result = _run_deterministic_flow(mode)
+            result["input_file"] = "N/A (deterministic flow does not require screenshot upload)"
+
         result["mode"] = mode
         result["appium_status"] = appium_msg
+        result["flow_label"] = _flow_label(flow_type)
+        result["appium_state"] = _appium_state(appium_msg)
+        if not result.get("outcome"):
+            result["outcome"] = "unknown"
         return render_template("live_demo.html", result=result, error=None)
 
     except Exception:

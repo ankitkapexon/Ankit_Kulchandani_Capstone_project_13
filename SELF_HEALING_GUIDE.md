@@ -6,6 +6,19 @@ This guide explains how to use the enhanced mobile test automation framework wit
 
 ## 📋 **What's New**
 
+### ✅ **Latest Runtime Updates (Jul 2026)**
+1. ✅ Added deterministic realtime one-pass E2E flow in `tests/test_realtime_e2e_flow.py`.
+2. ✅ Generator login flow de-duplication (no repeated username/password typing).
+3. ✅ Shared-session startup stabilization improvements for faster repeated runs.
+4. ✅ Added stale-element retry handling for generated tap actions.
+5. ✅ Validated deterministic flow command:
+
+```powershell
+python -m pytest tests/test_realtime_e2e_flow.py -q
+```
+
+Result: `1 passed`.
+
 ### ✅ **P0 Fixes Implemented**
 1. ✅ **Fixed hardcoded paths** - Now uses centralized configuration
 2. ✅ **Fixed logger import bug** - Proper `logging` module import in generated scripts
