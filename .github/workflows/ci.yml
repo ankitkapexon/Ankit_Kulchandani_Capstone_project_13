@@ -176,9 +176,9 @@ jobs:
         run: |
           ls -la artifacts/
           echo "Checking for artifact directories..."
-          [ -d "artifacts/ssm_json_output" ] && echo "G£ô SSM output dir exists"
-          [ -d "artifacts/locator_output" ] && echo "G£ô Locator output dir exists"
-          [ -d "artifacts/generated_appium_scripts" ] && echo "G£ô Scripts dir exists"
+          [ -d "artifacts/ssm_json_output" ] && echo "Gï¿½ï¿½ SSM output dir exists"
+          [ -d "artifacts/locator_output" ] && echo "Gï¿½ï¿½ Locator output dir exists"
+          [ -d "artifacts/generated_appium_scripts" ] && echo "Gï¿½ï¿½ Scripts dir exists"
 
   # Job 5: Appium E2E Tests (Android)
   appium-tests:
@@ -213,9 +213,9 @@ jobs:
           pip install pytest pytest-html appium-python-client
       
       - name: Set up Node.js (for Appium)
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
       
       - name: Install Appium
         run: |
@@ -232,7 +232,7 @@ jobs:
           # Verify driver installation
           echo "Installed drivers:"
           appium driver list --installed --verbose
-          echo "G£ô Appium driver setup step completed"
+          echo "Gï¿½ï¿½ Appium driver setup step completed"
       
       # Android-specific setup
       - name: Enable KVM (Android)
@@ -287,7 +287,7 @@ jobs:
           echo "hw.gpu.enabled=yes" >> "$AVD_CONFIG"
           echo "hw.gpu.mode=swiftshader_indirect" >> "$AVD_CONFIG"
           echo "disk.dataPartition.size=4096M" >> "$AVD_CONFIG"
-          echo "G£ô AVD configured successfully"
+          echo "Gï¿½ï¿½ AVD configured successfully"
       
       - name: Start Android Emulator (Android)
         if: matrix.platform == 'Android'
@@ -310,7 +310,7 @@ jobs:
           
           # Verify emulator is running
           adb devices
-          echo "G£ô Emulator started successfully"
+          echo "Gï¿½ï¿½ Emulator started successfully"
       
       # iOS-specific setup
       - name: Download SauceLabs Demo App (iOS)
@@ -355,7 +355,7 @@ jobs:
           for i in {1..60}; do
             STATUS=$(xcrun simctl list devices | grep "$DEVICE_ID" | grep -o "Booted" || echo "")
             if [ "$STATUS" = "Booted" ]; then
-              echo "G£ô Simulator booted successfully"
+              echo "Gï¿½ï¿½ Simulator booted successfully"
               break
             fi
             echo "Waiting... ($i/60)"
@@ -389,7 +389,7 @@ jobs:
           
           # Install app
           if xcrun simctl install "$DEVICE_ID" "${{ matrix.appPath }}"; then
-            echo "G£ô App installed successfully"
+            echo "Gï¿½ï¿½ App installed successfully"
           else
             echo "ERROR: Failed to install app"
             echo "Checking if app exists:"
@@ -414,7 +414,7 @@ jobs:
           echo "Waiting for Appium server to start..."
           for i in {1..30}; do
             if curl -s http://127.0.0.1:4723/status > /dev/null 2>&1; then
-              echo "G£ô Appium server is ready!"
+              echo "Gï¿½ï¿½ Appium server is ready!"
               curl -s http://127.0.0.1:4723/status | head -c 200
               echo ""
               break
@@ -475,7 +475,7 @@ jobs:
           echo "REPORT_DIR=$REPORT_DIR" >> "$GITHUB_ENV"
           mkdir -p "$REPORT_DIR"
           
-          pytest artifacts/generated_appium_scripts/test_login_screen.py \
+          pytest tests/e2e/test_login_screen.py \
             -v \
             --html="$REPORT_DIR/test_report_login_${{ matrix.platform }}.html" \
             --self-contained-html \
@@ -490,9 +490,9 @@ jobs:
           find . -maxdepth 1 -type f -name "*.png" -exec cp {} "$REPORT_DIR/" \; || true
           
           if [ $TEST_EXIT_CODE -eq 0 ]; then
-            echo "G£ô Login test PASSED"
+            echo "Gï¿½ï¿½ Login test PASSED"
           else
-            echo "G£ù Login test FAILED (exit code: $TEST_EXIT_CODE)"
+            echo "Gï¿½ï¿½ Login test FAILED (exit code: $TEST_EXIT_CODE)"
             echo "Appium server log (last 100 lines):"
             tail -100 appium.log || true
             tail -100 appium.log > "$REPORT_DIR/appium_tail.log" || true
@@ -794,7 +794,7 @@ jobs:
       
       - name: Test LangChain Integration
         run: |
-          python -c "from agents.langchain_vision_agent import LangChainVisionAgent; agent = LangChainVisionAgent(); print('G£à LangChain agent initialized successfully')"
+          python -c "from agents.langchain_vision_agent import LangChainVisionAgent; agent = LangChainVisionAgent(); print('Gï¿½ï¿½ LangChain agent initialized successfully')"
 
   # Job 9: Cost Tracking Report
   cost-analysis:
