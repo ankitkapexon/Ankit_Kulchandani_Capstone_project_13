@@ -5,122 +5,285 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mobile Test Generator Live Demo</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&display=swap');
+
     :root {
-      --bg1: #f4f8ff;
-      --bg2: #eaf7ef;
+      --bg1: #fefbf2;
+      --bg2: #e7f4ff;
+      --bg3: #f0f8ec;
       --card: #ffffff;
-      --ink: #1f2937;
-      --muted: #475569;
-      --line: #d4dde7;
-      --accent: #0f4c81;
+      --ink: #1e293b;
+      --muted: #526079;
+      --line: #d9e3ef;
+      --accent: #0c5b8f;
+      --accent2: #2e8f4e;
+      --surface: #f8fbff;
       --good: #166534;
       --bad: #991b1b;
     }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
-      font-family: Segoe UI, Arial, sans-serif;
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
       color: var(--ink);
-      background: radial-gradient(circle at 20% 10%, var(--bg1), transparent 45%),
-                  radial-gradient(circle at 85% 20%, var(--bg2), transparent 40%),
-                  #f7fafc;
+      background:
+        radial-gradient(circle at 10% 12%, var(--bg1), transparent 34%),
+        radial-gradient(circle at 84% 16%, var(--bg2), transparent 30%),
+        radial-gradient(circle at 70% 88%, var(--bg3), transparent 30%),
+        #f6f9fd;
+      min-height: 100vh;
     }
     .wrap {
-      max-width: 1080px;
-      margin: 32px auto;
-      padding: 0 16px;
+      max-width: 1120px;
+      margin: 26px auto 40px;
+      padding: 0 14px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 14px;
+      margin-bottom: 14px;
     }
     .card {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-      margin-bottom: 16px;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 24px rgba(12, 51, 82, 0.08);
+      margin-bottom: 14px;
+      overflow: hidden;
     }
-    h1 { margin: 0 0 8px 0; }
-    p.muted { margin-top: 0; color: var(--muted); }
-    label { display: block; font-weight: 600; margin: 10px 0 6px; }
+    .tone-card {
+      background: linear-gradient(140deg, #ffffff 0%, #f7fbff 60%, #f0f8f1 100%);
+    }
+    .stat-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-self: stretch;
+    }
+    .chip {
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      padding: 10px;
+    }
+    .chip .k {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .chip .v {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: clamp(1.45rem, 2.8vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: 0.2px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 10px 0 6px;
+    }
     input[type="file"], select {
       width: 100%;
       box-sizing: border-box;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 10px;
+      padding: 11px;
       background: #fff;
+      font: inherit;
+      color: var(--ink);
     }
     button {
       margin-top: 14px;
       border: 0;
-      background: var(--accent);
+      background: linear-gradient(105deg, var(--accent), #1c7ab3 70%, var(--accent2));
       color: #fff;
-      padding: 10px 14px;
-      border-radius: 8px;
+      padding: 11px 16px;
+      border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
+      font: inherit;
     }
-    button:hover { filter: brightness(0.95); }
+    button:hover { filter: brightness(1.06); }
     .error {
       white-space: pre-wrap;
       color: var(--bad);
-      background: #fee2e2;
+      background: #ffebeb;
       border-left: 4px solid #ef4444;
       padding: 12px;
       border-radius: 8px;
     }
     .ok {
       color: var(--good);
-      background: #dcfce7;
+      background: #e9fbe9;
       border-left: 4px solid #22c55e;
       padding: 12px;
       border-radius: 8px;
     }
+    .run-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .meta {
+      margin: 0;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      overflow-wrap: anywhere;
+      line-height: 1.4;
+    }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
       gap: 12px;
     }
     .panel {
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 10px;
-      background: #fbfdff;
+      padding: 11px;
+      background: var(--surface);
+      min-width: 0;
+      overflow: hidden;
     }
     .panel h3 {
       margin: 0 0 8px 0;
       font-size: 0.98rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
     }
-    ul { margin: 0; padding-left: 20px; }
-    li { margin: 4px 0; }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      max-height: 250px;
+      overflow: auto;
+    }
+    li {
+      margin: 5px 0;
+      overflow-wrap: anywhere;
+    }
     pre {
       white-space: pre-wrap;
-      background: #0b1220;
+      word-break: break-word;
+      background: #0b1627;
       color: #dbeafe;
       padding: 12px;
       border-radius: 8px;
-      max-height: 360px;
+      max-height: 420px;
       overflow: auto;
-      border: 1px solid #334155;
+      border: 1px solid #2e455c;
     }
-    a { color: var(--accent); }
+    a {
+      color: var(--accent);
+      text-decoration-thickness: 1.4px;
+      overflow-wrap: anywhere;
+    }
+    .hint {
+      margin-top: 8px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+      margin: 6px 0;
+    }
+    .artifact-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 8px;
+    }
+    .toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.88rem;
+      color: var(--muted);
+      background: #f0f6ff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      user-select: none;
+    }
+    .toggle-wrap input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .artifact-path { display: inline; }
+    .artifact-file { display: none; }
+    body.show-filenames .artifact-path { display: none; }
+    body.show-filenames .artifact-file { display: inline; }
+    @media (max-width: 960px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+      .stat-strip {
+        grid-template-columns: 1fr;
+      }
+      .run-summary {
+        grid-template-columns: 1fr;
+      }
+      .artifact-toolbar {
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
-<body>
+<body class="show-filenames">
   <div class="wrap">
-    <div class="card">
-      <h1>Live Demo: Screenshot to Test Automation</h1>
-      <p class="muted">Upload one mobile screenshot and run the enhanced pipeline to generate SSM, test cases, locators, Appium scripts, review reports, and execution report.</p>
-      <form method="post" action="/run-demo" enctype="multipart/form-data">
-        <label for="screenshot">Screenshot</label>
-        <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+    <div class="hero">
+      <div class="card tone-card">
+        <h1>Live Demo: Screenshot to Test Automation</h1>
+        <p class="subtitle">Upload one screenshot and run the enhanced pipeline. The result view below shows only artifacts generated for this upload run.</p>
+        <form method="post" action="/run-demo" enctype="multipart/form-data">
+          <label for="screenshot">Screenshot</label>
+          <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
 
-        <label for="mode">Mode</label>
-        <select id="mode" name="mode">
-          <option value="mock" selected>Mock (No external LLM dependency)</option>
-          <option value="real">Real (Use environment OpenAI/LiteLLM settings)</option>
-        </select>
+          <label for="mode">Mode</label>
+          <select id="mode" name="mode">
+            <option value="mock" selected>Mock mode (no external LLM dependency)</option>
+            <option value="real">Real mode (uses current OpenAI or LiteLLM settings)</option>
+          </select>
 
-        <button type="submit">Run Live Demo</button>
-      </form>
+          <div class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
+          <button type="submit">Run Live Demo</button>
+        </form>
+      </div>
+      <div class="stat-strip">
+        <div class="chip">
+          <div class="k">Input Type</div>
+          <div class="v">Single Screenshot</div>
+        </div>
+        <div class="chip">
+          <div class="k">Pipeline</div>
+          <div class="v">Enhanced Flow</div>
+        </div>
+        <div class="chip">
+          <div class="k">Output Scope</div>
+          <div class="v">Current Run Only</div>
+        </div>
+      </div>
     </div>
 
     {% if error %}
@@ -132,63 +295,132 @@
     {% if result %}
     <div class="card">
       <div class="ok">Demo run completed in {{ result.mode }} mode.</div>
-      <p><strong>Input:</strong> {{ result.input_file }}</p>
-      <p><strong>Appium:</strong> {{ result.appium_status }}</p>
-      <p><strong>Report:</strong> <a href="/artifacts/{{ result.report_path }}" target="_blank" rel="noopener">Open HTML Report</a></p>
+      <div class="run-summary">
+        <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
+        <p class="meta"><strong>Appium:</strong> {{ result.appium_status }}</p>
+      </div>
+      <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="/artifacts/{{ result.report_path }}" target="_blank" rel="noopener">Open HTML report</a></p>
+    </div>
+
+    <div class="artifact-toolbar">
+      <label class="toggle-wrap" for="filenameToggle">
+        <input id="filenameToggle" type="checkbox" checked />
+        Show compact filenames only
+      </label>
     </div>
 
     <div class="card grid">
       <div class="panel">
         <h3>SSM Output</h3>
+        {% if result.artifacts.ssm %}
         <ul>
           {% for item in result.artifacts.ssm %}
-          <li><a href="/artifacts/{{ item }}" target="_blank" rel="noopener">{{ item }}</a></li>
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <p class="empty">No files found for this run.</p>
+        {% endif %}
       </div>
       <div class="panel">
         <h3>Manual Testcases</h3>
+        {% if result.artifacts.manual_testcases %}
         <ul>
           {% for item in result.artifacts.manual_testcases %}
-          <li><a href="/artifacts/{{ item }}" target="_blank" rel="noopener">{{ item }}</a></li>
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <p class="empty">No testcase files found for this run.</p>
+        {% endif %}
       </div>
       <div class="panel">
         <h3>Locator Output</h3>
+        {% if result.artifacts.locators %}
         <ul>
           {% for item in result.artifacts.locators %}
-          <li><a href="/artifacts/{{ item }}" target="_blank" rel="noopener">{{ item }}</a></li>
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <p class="empty">No locator files found for this run.</p>
+        {% endif %}
       </div>
       <div class="panel">
         <h3>Generated Scripts</h3>
+        {% if result.artifacts.scripts %}
         <ul>
           {% for item in result.artifacts.scripts %}
-          <li><a href="/artifacts/{{ item }}" target="_blank" rel="noopener">{{ item }}</a></li>
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <p class="empty">No scripts found for this run.</p>
+        {% endif %}
       </div>
       <div class="panel">
         <h3>Review Reports</h3>
+        {% if result.artifacts.reviews %}
         <ul>
           {% for item in result.artifacts.reviews %}
-          <li><a href="/artifacts/{{ item }}" target="_blank" rel="noopener">{{ item }}</a></li>
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
+        {% else %}
+        <p class="empty">No review reports found for this run.</p>
+        {% endif %}
       </div>
     </div>
 
     <div class="card">
-      <h3>Pipeline Logs</h3>
+      <h3 class="section-title">Pipeline Logs</h3>
       <pre>{{ result.logs }}</pre>
       {% if result.stderr %}
-      <h3>Stderr</h3>
+      <h3 class="section-title">Stderr</h3>
       <pre>{{ result.stderr }}</pre>
       {% endif %}
     </div>
     {% endif %}
   </div>
+  <script>
+    (function () {
+      const toggle = document.getElementById("filenameToggle");
+      if (!toggle) {
+        return;
+      }
+
+      const applyState = () => {
+        document.body.classList.toggle("show-filenames", toggle.checked);
+      };
+
+      applyState();
+      toggle.addEventListener("change", applyState);
+    })();
+  </script>
 </body>
 </html>

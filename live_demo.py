@@ -133,6 +133,7 @@ def _ensure_appium_running() -> tuple[bool, str]:
 
 def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
     run_started_at = time.time()
+    upload_names = {p.stem.lower() for p in input_dir.glob("*") if p.is_file()}
 
     if mode == "mock":
         os.environ["VISION_AGENT_PROVIDER"] = "mock"
@@ -172,9 +173,15 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
     output_logs = _normalize_pipeline_logs(std_buffer.getvalue())
     error_logs = err_buffer.getvalue()
 
-    # Stage-1 output is reset every run, so current SSM stems are reliable run tokens.
-    ssm_artifacts = _safe_artifact_listing(ARTIFACTS_ROOT / "ssm_json_output", limit=25)
+    # Collect only artifacts produced in this run window.
+    ssm_artifacts = _artifact_listing_since(ARTIFACTS_ROOT / "ssm_json_output", run_started_at)
     ssm_name_tokens = {Path(item).stem for item in ssm_artifacts}
+    # Keep testcase matching scoped to this upload's screenshot names.
+    if upload_names:
+        ssm_name_tokens = {
+            token for token in ssm_name_tokens
+            if any(upload_name in token.lower() for upload_name in upload_names)
+        }
 
     manual_testcases = _artifact_listing_by_name_tokens(
         ARTIFACTS_ROOT / "manual_testcases",
@@ -182,7 +189,7 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
         limit=25,
     )
     if not manual_testcases:
-        # Fallback keeps behavior resilient if token-based matching fails unexpectedly.
+        # Fallback: include only testcase files created in this run.
         manual_testcases = _artifact_listing_since(ARTIFACTS_ROOT / "manual_testcases", run_started_at)
 
     return {

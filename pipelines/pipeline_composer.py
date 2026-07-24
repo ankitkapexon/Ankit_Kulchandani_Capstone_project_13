@@ -34,6 +34,8 @@ def run_pipeline(
     step1 = Step1VisionStage(config=config, prompt_manager=prompt_manager, feature_flags=feature_flags)
     ssm_results = step1.run(screenshots_dir)
 
+    reset_directory(config.manual_testcases_dir)
+
     step2 = Step2TestCaseStage(config=config, prompt_manager=prompt_manager)
     step2.run(ssm_results)
 
