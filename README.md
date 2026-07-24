@@ -122,6 +122,8 @@ Current live demo behavior:
 - runs the enhanced pipeline,
 - resets manual testcase artifacts before Stage 2 so downstream generation uses only the current upload run,
 - shows run-scoped artifacts in the results (no historical testcase carry-over),
+- computes artifact lists using pre-run folder snapshots plus post-run deltas, so scripts/reviews/locators shown in UI are only from the current uploaded screenshot run,
+- hides non-user artifacts such as .gitkeep, hidden files, .pyc, and __pycache__ from result panels,
 - displays pipeline logs and stderr in the UI,
 - uses a cleaner header layout (removed non-functional stats section),
 - supports compact filename display in result sections.
@@ -162,6 +164,8 @@ Report output format:
 - Live demo run scoping and UI readability were improved in `live_demo.py`, `pipelines/pipeline_composer.py`, and `web/templates/live_demo.html`.
 - The live demo no longer reuses historical manual testcase files during a new run.
 - The old decorative "Input Type / Pipeline / Output Scope" section was removed from the page.
+- Artifact panels now use strict per-run delta filtering, so old generated scripts and review reports are not shown for new uploads.
+- Self-healing script startup stabilization removed hardcoded sleep in generator output and relies on explicit wait logic.
 
 ## Supported Image Formats
 

@@ -2,7 +2,7 @@
 
 Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
-- Current state includes updates up to: 2206c42
+- Current state includes updates up to: aa32fe1
 
 ## 1) What We Changed Since Initial Baseline
 
@@ -90,6 +90,16 @@ Baseline used for comparison:
   - Live demo UI readability was improved and overlapping blocks were reduced with layout hardening.
   - Removed non-functional decorative stats section (Input Type / Pipeline / Output Scope) from live demo page.
   - Files: pipelines/pipeline_composer.py, live_demo.py, web/templates/live_demo.html
+
+- Live demo artifact panel hardening and strict run-delta scoping:
+  - Artifact panel filtering now excludes .gitkeep and runtime noise files (hidden files, .pyc, __pycache__) from generated links.
+  - Live demo artifact lists now use pre-run folder snapshots with post-run delta comparison, so generated scripts/review reports/locator outputs shown in UI are limited to the current uploaded screenshot run.
+  - Files: live_demo.py
+
+- Self-healing generated startup flow stability update:
+  - Removed hardcoded sleep in generated startup stabilization path and replaced with explicit wait behavior.
+  - This removes reviewer findings about hardcoded sleep in generated scripts like product detail flows.
+  - Files: agents/self_healing_appium_generator.py
 
 - Login script review issues fixed in generated flow:
   - Removed hardcoded sleep usage from generated login script flow.

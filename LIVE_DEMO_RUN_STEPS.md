@@ -60,6 +60,8 @@ Notes:
 - UI run output includes pipeline logs and stderr block for quick troubleshooting.
 - The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
 - Result panels are intended to show only files generated for the current run.
+- Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
+- Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
 
 ### Path B: Enhanced CLI flow
@@ -105,6 +107,7 @@ appium --session-override
 
 - If report does not open automatically, open report.html manually from artifacts/test_execution_reports/<timestamp>/.
 - If UI appears stale after updates, stop all running live_demo.py processes, start one fresh server, then hard refresh the browser.
+- If old scripts/reviews appear in UI, run one fresh upload after restart; result panels should now include only delta files created/updated by that run.
 
 ## 7) Suggested Talk Track
 
