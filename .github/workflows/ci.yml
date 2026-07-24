@@ -602,7 +602,89 @@ jobs:
             *.png
           if-no-files-found: warn
 
-  # Job 6: Build & Package
+  # Job 6: Report Generation Portal
+  report-generation:
+    name: Report Generation
+    runs-on: ubuntu-latest
+    needs: [appium-tests]
+    if: always()
+
+    steps:
+      - name: Download Android test reports artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: appium-test-reports-Android
+          path: reports_input
+        continue-on-error: true
+
+      - name: Build reports portal HTML
+        run: |
+          mkdir -p reports_portal
+
+          REPORT_FILE="$(find reports_input -type f -name 'report.html' | sort | tail -n 1 || true)"
+
+          {
+            echo '<!doctype html>'
+            echo '<html lang="en">'
+            echo '<head>'
+            echo '  <meta charset="utf-8" />'
+            echo '  <meta name="viewport" content="width=device-width, initial-scale=1" />'
+            echo '  <title>Mobile Test Generator Reports Portal</title>'
+            echo '  <style>'
+            echo '    body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; background: #f4f7fb; color: #1f2937; }'
+            echo '    .card { max-width: 980px; background: #fff; border: 1px solid #d8e1eb; border-radius: 12px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }'
+            echo '    h1 { margin: 0 0 8px 0; font-size: 1.5rem; }'
+            echo '    .meta { color: #475569; margin: 4px 0 16px 0; }'
+            echo '    .btn { display: inline-block; padding: 10px 16px; background: #0f4c81; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; }'
+            echo '    .btn:hover { background: #0c3b64; }'
+            echo '    .links { margin-top: 18px; }'
+            echo '    ul { padding-left: 20px; }'
+            echo '    li { margin: 8px 0; }'
+            echo '    a.file-link { color: #0f4c81; text-decoration: none; }'
+            echo '    a.file-link:hover { text-decoration: underline; }'
+            echo '    .warn { color: #92400e; background: #fff7ed; border-left: 4px solid #f59e0b; padding: 10px; border-radius: 6px; }'
+            echo '  </style>'
+            echo '</head>'
+            echo '<body>'
+            echo '  <div class="card">'
+            echo '    <h1>Reports Section</h1>'
+            echo "    <p class=\"meta\">Run ID: ${{ github.run_id }} | Attempt: ${{ github.run_attempt }} | Branch: ${{ github.ref_name }}</p>"
+
+            if [ -n "$REPORT_FILE" ]; then
+              REPORT_REL="${REPORT_FILE#reports_input/}"
+              echo "    <p><a class=\"btn\" href=\"../reports_input/$REPORT_REL\" target=\"_blank\" rel=\"noopener\">View Reports</a></p>"
+            else
+              echo '    <p class="warn">No consolidated report.html file was found in this run artifacts.</p>'
+            fi
+
+            echo '    <div class="links">'
+            echo '      <h2>All Report Files</h2>'
+            echo '      <ul>'
+            while IFS= read -r file; do
+              rel="${file#reports_input/}"
+              safe_rel="${rel//&/&amp;}"
+              safe_rel="${safe_rel//</&lt;}"
+              safe_rel="${safe_rel//>/&gt;}"
+              echo "        <li><a class=\"file-link\" href=\"../reports_input/$safe_rel\" target=\"_blank\" rel=\"noopener\">$safe_rel</a></li>"
+            done < <(find reports_input -type f \( -name '*.html' -o -name '*.xml' -o -name '*.log' -o -name '*.png' \) | sort)
+            echo '      </ul>'
+            echo '    </div>'
+            echo '  </div>'
+            echo '</body>'
+            echo '</html>'
+          } > reports_portal/index.html
+
+      - name: Upload reports section artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-section
+          path: |
+            reports_portal/index.html
+            reports_input/
+          if-no-files-found: warn
+
+  # Job 7: Build & Package
   build:
     name: Build Package
     runs-on: ubuntu-latest
@@ -642,7 +724,7 @@ jobs:
           path: dist/*.tar.gz
           retention-days: 30
 
-  # Job 7: LiteLLM Gateway Test (Optional - runs if secrets configured)
+  # Job 8: LiteLLM Gateway Test (Optional - runs if secrets configured)
   litellm-gateway-test:
     name: LiteLLM Gateway Connection Test
     runs-on: ubuntu-latest
@@ -714,7 +796,7 @@ jobs:
         run: |
           python -c "from agents.langchain_vision_agent import LangChainVisionAgent; agent = LangChainVisionAgent(); print('G£à LangChain agent initialized successfully')"
 
-  # Job 8: Cost Tracking Report
+  # Job 9: Cost Tracking Report
   cost-analysis:
     name: LLM Cost Analysis
     runs-on: ubuntu-latest
