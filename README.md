@@ -72,6 +72,57 @@ flowchart LR
 		L --> M[Timestamped HTML Execution Report]
 ```
 
+## System Architecture Diagram
+
+```mermaid
+flowchart TB
+	subgraph UI[Interface Layer]
+		LD[Live Demo UI - live_demo.py]
+		CLI[CLI Entrypoints - run_all.py / run_all_enhanced.py]
+	end
+
+	subgraph ORCH[Orchestration Layer]
+		PC[pipeline_composer.py]
+		SR[stage_runners.py]
+	end
+
+	subgraph CORE[Agent Layer]
+		VA[Vision Agent]
+		TA[Testcase Agent]
+		LA[Locator Agent]
+		AA[Self-Healing Appium Generator]
+		RA[Reviewer Agent]
+		RPA[Reporter Agent]
+	end
+
+	subgraph DATA[Artifact Layer]
+		IN[input_screenshots]
+		SSM[ssm_json_output]
+		MTC[manual_testcases]
+		LOC[locator_output]
+		SCR[generated_appium_scripts]
+		REV[review_reports]
+		REP[test_execution_reports]
+	end
+
+	LD --> PC
+	CLI --> PC
+	PC --> SR
+	SR --> VA --> SSM
+	SR --> TA --> MTC
+	SR --> LA --> LOC
+	SR --> AA --> SCR
+	SR --> RA --> REV
+	SR --> RPA --> REP
+	IN --> VA
+	SSM --> TA
+	SSM --> LA
+	MTC --> LA
+	LOC --> AA
+	SCR --> RA
+	SCR --> RPA
+```
+
 ## Component Responsibilities
 
 - `live_demo.py`
