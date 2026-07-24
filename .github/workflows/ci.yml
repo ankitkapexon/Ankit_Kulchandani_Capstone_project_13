@@ -472,6 +472,7 @@ jobs:
           set +e  # Don't exit immediately on error, we want to capture exit code
 
           REPORT_DIR="artifacts/test_execution_reports/${{ matrix.platform }}_${{ github.run_id }}_${{ github.run_attempt }}"
+          echo "REPORT_DIR=$REPORT_DIR" >> "$GITHUB_ENV"
           mkdir -p "$REPORT_DIR"
           
           pytest artifacts/generated_appium_scripts/test_login_screen.py \
@@ -499,6 +500,53 @@ jobs:
           
           # Exit with test's exit code (this will fail the job if tests failed)
           exit $TEST_EXIT_CODE
+
+      - name: Build consolidated HTML report index
+        if: always()
+        run: |
+          REPORT_DIR="${REPORT_DIR:-artifacts/test_execution_reports/${{ matrix.platform }}_${{ github.run_id }}_${{ github.run_attempt }}}"
+          mkdir -p "$REPORT_DIR"
+
+          LOGIN_REPORT="$(ls -1 "$REPORT_DIR"/test_report_login_${{ matrix.platform }}.html 2>/dev/null | head -n 1 || true)"
+          JUNIT_REPORT="$(ls -1 "$REPORT_DIR"/junit_login_${{ matrix.platform }}.xml 2>/dev/null | head -n 1 || true)"
+
+          cat > "$REPORT_DIR/report.html" << EOF
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <title>CI Test Report Index - ${{ matrix.platform }}</title>
+            <style>
+              body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; background: #f7f9fb; color: #1f2937; }
+              .card { max-width: 980px; background: #fff; border: 1px solid #d8e1eb; border-radius: 12px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+              h1 { margin: 0 0 8px 0; font-size: 1.4rem; }
+              .meta { color: #475569; margin: 4px 0 16px 0; }
+              ul { margin: 0; padding-left: 20px; }
+              li { margin: 8px 0; }
+              a { color: #0f4c81; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              .badge { display: inline-block; border-radius: 999px; background: #e2e8f0; padding: 4px 10px; font-size: 0.8rem; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <h1>Android CI Test Reports</h1>
+              <p class="meta">Run ID: ${{ github.run_id }} | Attempt: ${{ github.run_attempt }} | Platform: ${{ matrix.platform }}</p>
+              <p><span class="badge">Artifacts Summary</span></p>
+              <ul>
+                <li><a href="test_report_login_${{ matrix.platform }}.html">Pytest HTML Report (Login)</a></li>
+                <li><a href="junit_login_${{ matrix.platform }}.xml">JUnit XML Report (Login)</a></li>
+                <li><a href="appium.log">Appium Full Log</a></li>
+                <li><a href="appium_tail.log">Appium Failure Tail (last 100 lines)</a></li>
+              </ul>
+              <p class="meta">If a link does not open, that file was not produced for this run.</p>
+            </div>
+          </body>
+          </html>
+          EOF
+
+          echo "Generated consolidated report index at $REPORT_DIR/report.html"
       
       # Disabled - Run only login test for now
       # - name: Run Cart Test
