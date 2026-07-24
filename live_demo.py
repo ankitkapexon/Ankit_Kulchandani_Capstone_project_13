@@ -40,10 +40,24 @@ def _allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _is_user_facing_artifact(path: Path) -> bool:
+    """Filter out placeholder and runtime-noise files from UI artifact lists."""
+    name = path.name
+    if name == ".gitkeep":
+        return False
+    if name.startswith("."):
+        return False
+    if name.endswith(".pyc"):
+        return False
+    if "__pycache__" in path.parts:
+        return False
+    return True
+
+
 def _safe_artifact_listing(folder: Path, limit: int = 10) -> list[str]:
     if not folder.exists():
         return []
-    files = [p for p in folder.glob("*") if p.is_file()]
+    files = [p for p in folder.glob("*") if p.is_file() and _is_user_facing_artifact(p)]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return [str(p.relative_to(PROJECT_ROOT)).replace("\\", "/") for p in files[:limit]]
 
@@ -57,7 +71,7 @@ def _artifact_listing_since(folder: Path, since_epoch: float, limit: int = 25) -
     threshold = since_epoch - 1.0
     files = [
         p for p in folder.glob("*")
-        if p.is_file() and p.stat().st_mtime >= threshold
+        if p.is_file() and p.stat().st_mtime >= threshold and _is_user_facing_artifact(p)
     ]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return [str(p.relative_to(PROJECT_ROOT)).replace("\\", "/") for p in files[:limit]]
@@ -70,7 +84,7 @@ def _artifact_listing_by_name_tokens(folder: Path, name_tokens: set[str], limit:
 
     files = [
         p for p in folder.glob("*")
-        if p.is_file() and any(token in p.name for token in name_tokens)
+        if p.is_file() and _is_user_facing_artifact(p) and any(token in p.name for token in name_tokens)
     ]
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
     return [str(p.relative_to(PROJECT_ROOT)).replace("\\", "/") for p in files[:limit]]

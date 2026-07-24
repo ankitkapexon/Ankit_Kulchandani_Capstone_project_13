@@ -144,7 +144,6 @@ Uses centralized configuration and proper logging.
 """
 
 import logging
-import time
 from typing import Any, Dict, List
 from pathlib import Path
 
@@ -282,7 +281,11 @@ class {class_name}:
             except Exception:
                 pass
 
-            time.sleep(1)
+            try:
+                WebDriverWait(self.driver, 2).until(lambda _driver: self._is_home_anchor_visible())
+                return
+            except Exception:
+                pass
 
         logger.warning("Home anchors not visible after startup stabilization retries")
 
