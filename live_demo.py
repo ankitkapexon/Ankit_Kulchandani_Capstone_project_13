@@ -90,6 +90,38 @@ def _artifact_listing_by_name_tokens(folder: Path, name_tokens: set[str], limit:
     return [str(p.relative_to(PROJECT_ROOT)).replace("\\", "/") for p in files[:limit]]
 
 
+def _folder_snapshot(folder: Path) -> dict[str, float]:
+    """Capture file mtimes for one folder to compute per-run delta."""
+    if not folder.exists():
+        return {}
+
+    snapshot: dict[str, float] = {}
+    for path in folder.glob("*"):
+        if path.is_file() and _is_user_facing_artifact(path):
+            snapshot[str(path.resolve())] = path.stat().st_mtime
+    return snapshot
+
+
+def _artifact_listing_delta(folder: Path, before_snapshot: dict[str, float], limit: int = 25) -> list[str]:
+    """Return only files created/updated by this run compared to pre-run snapshot."""
+    if not folder.exists():
+        return []
+
+    changed_files: list[Path] = []
+    for path in folder.glob("*"):
+        if not path.is_file() or not _is_user_facing_artifact(path):
+            continue
+
+        key = str(path.resolve())
+        mtime = path.stat().st_mtime
+        previous_mtime = before_snapshot.get(key)
+        if previous_mtime is None or mtime > previous_mtime + 1e-6:
+            changed_files.append(path)
+
+    changed_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return [str(p.relative_to(PROJECT_ROOT)).replace("\\", "/") for p in changed_files[:limit]]
+
+
 def _normalize_pipeline_logs(log_text: str) -> str:
     """Normalize known warning variants so UI output stays stable across runs."""
     normalized = log_text.replace("LangChain integration smoke test failed.", "LangChain smoke test failed.")
@@ -146,8 +178,17 @@ def _ensure_appium_running() -> tuple[bool, str]:
 
 
 def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
-    run_started_at = time.time()
-    upload_names = {p.stem.lower() for p in input_dir.glob("*") if p.is_file()}
+    ssm_dir = ARTIFACTS_ROOT / "ssm_json_output"
+    manual_dir = ARTIFACTS_ROOT / "manual_testcases"
+    locator_dir = ARTIFACTS_ROOT / "locator_output"
+    scripts_dir = ARTIFACTS_ROOT / "generated_appium_scripts"
+    reviews_dir = ARTIFACTS_ROOT / "review_reports"
+
+    ssm_before = _folder_snapshot(ssm_dir)
+    manual_before = _folder_snapshot(manual_dir)
+    locator_before = _folder_snapshot(locator_dir)
+    scripts_before = _folder_snapshot(scripts_dir)
+    reviews_before = _folder_snapshot(reviews_dir)
 
     if mode == "mock":
         os.environ["VISION_AGENT_PROVIDER"] = "mock"
@@ -187,24 +228,12 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
     output_logs = _normalize_pipeline_logs(std_buffer.getvalue())
     error_logs = err_buffer.getvalue()
 
-    # Collect only artifacts produced in this run window.
-    ssm_artifacts = _artifact_listing_since(ARTIFACTS_ROOT / "ssm_json_output", run_started_at)
-    ssm_name_tokens = {Path(item).stem for item in ssm_artifacts}
-    # Keep testcase matching scoped to this upload's screenshot names.
-    if upload_names:
-        ssm_name_tokens = {
-            token for token in ssm_name_tokens
-            if any(upload_name in token.lower() for upload_name in upload_names)
-        }
-
-    manual_testcases = _artifact_listing_by_name_tokens(
-        ARTIFACTS_ROOT / "manual_testcases",
-        ssm_name_tokens,
-        limit=25,
-    )
-    if not manual_testcases:
-        # Fallback: include only testcase files created in this run.
-        manual_testcases = _artifact_listing_since(ARTIFACTS_ROOT / "manual_testcases", run_started_at)
+    # Show only files created or updated by this specific uploaded run.
+    ssm_artifacts = _artifact_listing_delta(ssm_dir, ssm_before)
+    manual_testcases = _artifact_listing_delta(manual_dir, manual_before)
+    locator_artifacts = _artifact_listing_delta(locator_dir, locator_before)
+    script_artifacts = _artifact_listing_delta(scripts_dir, scripts_before)
+    review_artifacts = _artifact_listing_delta(reviews_dir, reviews_before)
 
     return {
         "ok": True,
@@ -214,9 +243,9 @@ def _run_demo_pipeline(input_dir: Path, mode: str) -> dict[str, Any]:
         "artifacts": {
             "ssm": ssm_artifacts,
             "manual_testcases": manual_testcases,
-            "locators": _artifact_listing_since(ARTIFACTS_ROOT / "locator_output", run_started_at),
-            "scripts": _artifact_listing_since(ARTIFACTS_ROOT / "generated_appium_scripts", run_started_at),
-            "reviews": _artifact_listing_since(ARTIFACTS_ROOT / "review_reports", run_started_at),
+            "locators": locator_artifacts,
+            "scripts": script_artifacts,
+            "reviews": review_artifacts,
         },
     }
 
