@@ -90,7 +90,7 @@ jobs:
         continue-on-error: true
       
       - name: Archive test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-results
@@ -126,7 +126,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload security reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: security-reports
@@ -584,7 +584,7 @@ jobs:
           fi
       
       - name: Upload test reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: appium-test-reports-${{ matrix.platform }}
@@ -593,7 +593,7 @@ jobs:
           if-no-files-found: warn
       
       - name: Upload screenshots on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: failure-screenshots-${{ matrix.platform }}
@@ -611,7 +611,7 @@ jobs:
 
     steps:
       - name: Download Android test reports artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: appium-test-reports-Android
           path: reports_input
@@ -675,7 +675,7 @@ jobs:
           } > reports_portal/index.html
 
       - name: Upload reports section artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: reports-section
@@ -718,7 +718,7 @@ jobs:
             .
       
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: package
           path: dist/*.tar.gz
@@ -818,7 +818,7 @@ jobs:
           echo "This requires actual LLM calls during integration tests." >> cost-report.md
       
       - name: Upload cost report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cost-report
           path: cost-report.md
