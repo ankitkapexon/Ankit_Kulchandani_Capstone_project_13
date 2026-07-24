@@ -120,7 +120,11 @@ Current live demo behavior:
 - stores uploads under artifacts/input_screenshots/live_demo_uploads/<timestamp>/,
 - attempts to auto-start Appium when needed,
 - runs the enhanced pipeline,
-- displays pipeline logs and stderr in the UI.
+- resets manual testcase artifacts before Stage 2 so downstream generation uses only the current upload run,
+- shows run-scoped artifacts in the results (no historical testcase carry-over),
+- displays pipeline logs and stderr in the UI,
+- uses a cleaner header layout (removed non-functional stats section),
+- supports compact filename display in result sections.
 
 ## Running Individual Steps
 
@@ -153,13 +157,11 @@ Report output format:
 
 - artifacts/test_execution_reports/YYYY-MM-DD_HH-MM-SS/report.html
 
-## Current Notable Update on Main
+## Current Notable Updates on Main
 
-Latest commit:
-
-- e908739 fix(login): remove hard sleep and unnecessary tap in generated login test
-
-This aligns generated login automation with reliability guidance by avoiding fixed sleep-based waits and unnecessary static-element actions.
+- Live demo run scoping and UI readability were improved in `live_demo.py`, `pipelines/pipeline_composer.py`, and `web/templates/live_demo.html`.
+- The live demo no longer reuses historical manual testcase files during a new run.
+- The old decorative "Input Type / Pipeline / Output Scope" section was removed from the page.
 
 ## Supported Image Formats
 

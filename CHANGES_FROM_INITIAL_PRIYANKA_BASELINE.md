@@ -2,7 +2,7 @@
 
 Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
-- Current state includes updates up to: e908739
+- Current state includes updates up to: 2206c42
 
 ## 1) What We Changed Since Initial Baseline
 
@@ -83,6 +83,13 @@ Baseline used for comparison:
   - README documents a live demo mode for quick screenshot upload/run experience.
   - Enhanced execution path is implemented via pipelines/run_all_enhanced.py using shared stage composition.
   - Files: README.md, pipelines/run_all_enhanced.py, pipelines/pipeline_composer.py, pipelines/stage_runners.py
+
+- Live demo run isolation and UI cleanup:
+  - Pipeline now resets manual testcase artifacts before Stage 2, preventing reuse of historical testcase files in a new run.
+  - Live demo artifact listing is scoped to the current run window and upload context.
+  - Live demo UI readability was improved and overlapping blocks were reduced with layout hardening.
+  - Removed non-functional decorative stats section (Input Type / Pipeline / Output Scope) from live demo page.
+  - Files: pipelines/pipeline_composer.py, live_demo.py, web/templates/live_demo.html
 
 - Login script review issues fixed in generated flow:
   - Removed hardcoded sleep usage from generated login script flow.

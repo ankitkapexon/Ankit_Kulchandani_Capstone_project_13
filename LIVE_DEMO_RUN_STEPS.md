@@ -58,6 +58,9 @@ Notes:
 
 - Uploaded files are stored under artifacts/input_screenshots/live_demo_uploads/<timestamp>/.
 - UI run output includes pipeline logs and stderr block for quick troubleshooting.
+- The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
+- Result panels are intended to show only files generated for the current run.
+- The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
 
 ### Path B: Enhanced CLI flow
 
@@ -101,6 +104,7 @@ appium --session-override
 ```
 
 - If report does not open automatically, open report.html manually from artifacts/test_execution_reports/<timestamp>/.
+- If UI appears stale after updates, stop all running live_demo.py processes, start one fresh server, then hard refresh the browser.
 
 ## 7) Suggested Talk Track
 
