@@ -18,10 +18,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       
@@ -49,10 +49,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
@@ -75,6 +75,7 @@ jobs:
       - name: Run unit tests with coverage
         run: |
           pytest tests/ \
+            --ignore=tests/e2e \
             --cov=. \
             --cov-report=xml \
             --cov-report=html \
@@ -105,10 +106,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       
@@ -141,10 +142,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
@@ -198,10 +199,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
@@ -210,7 +211,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-html appium-python-client
+          pip install pytest pytest-html pytest-rerunfailures appium-python-client
       
       - name: Set up Node.js (for Appium)
         uses: actions/setup-node@v5
@@ -310,6 +311,16 @@ jobs:
           
           # Verify emulator is running
           adb devices
+
+          # Improve test stability on fresh emulator boots
+          adb shell settings put global window_animation_scale 0 || true
+          adb shell settings put global transition_animation_scale 0 || true
+          adb shell settings put global animator_duration_scale 0 || true
+          adb shell input keyevent 82 || true
+          adb shell am start -a android.intent.action.MAIN -c android.intent.category.HOME || true
+
+          echo "Waiting for package manager and launcher to settle..."
+          sleep 10
           echo "G�� Emulator started successfully"
       
       # iOS-specific setup
@@ -477,6 +488,8 @@ jobs:
           
           pytest tests/e2e/test_login_screen.py \
             -v \
+            --reruns 1 \
+            --reruns-delay 5 \
             --html="$REPORT_DIR/test_report_login_${{ matrix.platform }}.html" \
             --self-contained-html \
             --junitxml="$REPORT_DIR/junit_login_${{ matrix.platform }}.xml" \
@@ -692,10 +705,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       
@@ -733,10 +746,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       
@@ -793,8 +806,39 @@ jobs:
           echo "Skipping LiteLLM gateway connection test because LITELLM_API_KEY is not set."
       
       - name: Test LangChain Integration
+        env:
+          HAS_LITELLM_KEY: ${{ steps.litellm_key_check.outputs.has_key }}
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
         run: |
-          python -c "from agents.langchain_vision_agent import LangChainVisionAgent; agent = LangChainVisionAgent(); print('G�� LangChain agent initialized successfully')"
+          if [ "$HAS_LITELLM_KEY" = "true" ]; then
+            export OPENAI_API_KEY="$LITELLM_API_KEY"
+            export OPENAI_MODEL="Azure#gpt-5.4"
+            export OPENAI_API_BASE="http://107.22.98.31:10501/v1"
+            export VISION_AGENT_PROVIDER=openai
+            export TESTCASE_AGENT_PROVIDER=openai
+            echo "Running LangChain integration in gateway mode."
+          else
+            export OPENAI_API_KEY="mock_key_for_ci"
+            export VISION_AGENT_PROVIDER=mock
+            export TESTCASE_AGENT_PROVIDER=mock
+            unset OPENAI_API_BASE
+            unset OPENAI_MODEL
+            echo "Running LangChain integration in mock mode (no LiteLLM key)."
+          fi
+
+          python - <<'PY'
+          import traceback
+
+          try:
+              from agents.langchain_vision_agent import LangChainVisionAgent
+
+              agent = LangChainVisionAgent()
+              print("LangChain agent initialized successfully")
+          except Exception:
+              print("LangChain integration smoke test failed.")
+              traceback.print_exc()
+              raise
+          PY
 
   # Job 9: Cost Tracking Report
   cost-analysis:
@@ -805,7 +849,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       
       - name: Generate cost report
         run: |

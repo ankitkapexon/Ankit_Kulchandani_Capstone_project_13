@@ -64,7 +64,18 @@ class TestLogin:
 
             options = UiAutomator2Options().load_capabilities(desired_caps)
 
-        return webdriver.Remote(server_url, options=options)
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                return webdriver.Remote(server_url, options=options)
+            except Exception as exc:
+                last_error = exc
+                if attempt < 3:
+                    time.sleep(5)
+                else:
+                    raise RuntimeError(
+                        f"Failed to create Appium session after 3 attempts against {server_url}"
+                    ) from last_error
 
     def _build_locator(self, locator_strategy: str, locator_value: str) -> Tuple[str, str]:
         if locator_strategy == "resource_id":
@@ -119,7 +130,7 @@ class TestLogin:
         return False
 
     def test_login(self) -> None:
-        time.sleep(3)
+        time.sleep(5)
 
         if not self._is_login_form_visible():
             hamburger_locators = [
