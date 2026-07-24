@@ -535,10 +535,10 @@ jobs:
               <p class="meta">Run ID: ${{ github.run_id }} | Attempt: ${{ github.run_attempt }} | Platform: ${{ matrix.platform }}</p>
               <p><span class="badge">Artifacts Summary</span></p>
               <ul>
-                <li><a href="test_report_login_${{ matrix.platform }}.html">Pytest HTML Report (Login)</a></li>
-                <li><a href="junit_login_${{ matrix.platform }}.xml">JUnit XML Report (Login)</a></li>
-                <li><a href="appium.log">Appium Full Log</a></li>
-                <li><a href="appium_tail.log">Appium Failure Tail (last 100 lines)</a></li>
+                <li><a href="test_report_login_${{ matrix.platform }}.html" target="_blank" rel="noopener">Pytest HTML Report (Login)</a></li>
+                <li><a href="junit_login_${{ matrix.platform }}.xml" target="_blank" rel="noopener">JUnit XML Report (Login)</a></li>
+                <li><a href="appium.log" target="_blank" rel="noopener">Appium Full Log</a></li>
+                <li><a href="appium_tail.log" target="_blank" rel="noopener">Appium Failure Tail (last 100 lines)</a></li>
               </ul>
               <p class="meta">If a link does not open, that file was not produced for this run.</p>
             </div>
