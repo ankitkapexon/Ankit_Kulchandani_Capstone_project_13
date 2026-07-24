@@ -1,0 +1,103 @@
+Screen: Product Details
+
+Test Case 1: Verify product details are displayed correctly
+Description: Validate that the Product Details screen shows the core product information needed for purchase decisions.
+Steps:
+  1. Navigate to the Product Details screen.
+  2. Observe the "Product image" area.
+  3. Observe the "Product title" text.
+  4. Observe the "Price" text.
+Expected Result:
+  - The "Product image" is visible on the screen.
+  - The "Product title" is displayed and readable.
+  - The "Price" is displayed and readable.
+  - The screen presents enough product information for the user to identify the item.
+
+Test Case 2: Verify Product image can be viewed properly
+Description: Ensure the product image is present and visually rendered without display issues.
+Steps:
+  1. Open the Product Details screen.
+  2. Check the "Product image" section.
+  3. Verify the image loads fully and is not blank, broken, or distorted.
+Expected Result:
+  - The "Product image" is visible.
+  - The image loads successfully.
+  - No placeholder, broken image, overlap, or rendering issue is seen.
+
+Test Case 3: Verify Product title is displayed on Product Details screen
+Description: Confirm that the product title is shown clearly to identify the selected product.
+Steps:
+  1. Open the Product Details screen for a product.
+  2. Locate the "Product title" text.
+  3. Read the displayed title.
+Expected Result:
+  - The "Product title" is present.
+  - The title text is legible and aligned properly on the screen.
+  - The title appears relevant to the product being viewed.
+
+Test Case 4: Verify Price is displayed on Product Details screen
+Description: Confirm that the product price is visible and associated with the displayed product.
+Steps:
+  1. Open the Product Details screen.
+  2. Locate the "Price" text.
+  3. Verify the price is shown near the product information.
+Expected Result:
+  - The "Price" is visible and readable.
+  - The price appears to belong to the displayed product.
+  - The price does not overlap other UI elements.
+
+Test Case 5: Verify Add to Cart button is visible and enabled
+Description: Validate that the user can see and access the add-to-cart purchase option.
+Steps:
+  1. Open the Product Details screen.
+  2. Locate the "Add to Cart" button.
+  3. Verify the button is visible.
+  4. Check whether the button appears enabled and tappable.
+Expected Result:
+  - The "Add to Cart" button is displayed.
+  - The button is enabled and available for interaction.
+  - The button label is clearly readable.
+
+Test Case 6: Verify Buy Now button is visible and enabled
+Description: Validate that the user can see and access the immediate purchase option.
+Steps:
+  1. Open the Product Details screen.
+  2. Locate the "Buy Now" button.
+  3. Verify the button is visible.
+  4. Check whether the button appears enabled and tappable.
+Expected Result:
+  - The "Buy Now" button is displayed.
+  - The button is enabled and available for interaction.
+  - The button label is clearly readable.
+
+Test Case 7: Verify Add to Cart action from Product Details
+Description: Ensure tapping the Add to Cart button adds the product to the cart successfully.
+Steps:
+  1. Navigate to the Product Details screen for a product.
+  2. Note the displayed "Product title" and "Price".
+  3. Tap the "Add to Cart" button.
+  4. Observe the app response after tapping.
+Expected Result:
+  - The app accepts the tap on "Add to Cart".
+  - The product is added to the cart successfully.
+  - A success indication, cart update, or navigation behavior confirms the add-to-cart action.
+  - No error or crash occurs.
+
+Test Case 8: Verify repeated tapping on Add to Cart is handled correctly
+Description: Validate the app behavior when the user taps Add to Cart multiple times quickly.
+Steps:
+  1. Open the Product Details screen.
+  2. Tap the "Add to Cart" button multiple times in quick succession.
+  3. Observe the app response.
+Expected Result:
+  - The app handles repeated taps gracefully.
+  - The product is not added unpredictably due to accidental multiple taps, or the app clearly reflects the resulting quantity behavior.
+  - No duplicate unintended behavior, freeze, or crash occurs.
+
+Test Case 9: Verify Buy Now action from Product Details
+Description: Ensure tapping Buy Now initiates the immediate purchase flow for the displayed product.
+Steps:
+  1. Navigate to the Product Details screen for a product.
+  2. Note the displayed "Product title" and "Price".
+  3. Tap the "Buy Now" button.
+  4

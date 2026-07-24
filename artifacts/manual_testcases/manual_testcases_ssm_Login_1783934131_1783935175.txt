@@ -1,0 +1,113 @@
+Screen: Login
+
+Test Case 1: Successful login with valid username and password
+Description: Verify that a user can authenticate successfully using valid credentials through the Username and Password fields and the Login button.
+Steps:
+  1. Launch the app and navigate to the Login screen.
+  2. Tap the Username text field.
+  3. Enter a valid registered username.
+  4. Tap the Password text field.
+  5. Enter the correct password for that username.
+  6. Tap the Login button.
+Expected Result:
+  - The entered credentials are accepted.
+  - The user is authenticated successfully.
+  - The app navigates away from the Login screen to the next authenticated area of the app.
+
+Test Case 2: Login fails with invalid password
+Description: Verify that authentication is rejected when a valid username is entered with an incorrect password.
+Steps:
+  1. Open the Login screen.
+  2. Enter a valid registered value in the Username field.
+  3. Enter an incorrect password in the Password field.
+  4. Tap the Login button.
+Expected Result:
+  - Login is not successful.
+  - The user remains on the Login screen.
+  - An appropriate authentication failure indication is shown.
+
+Test Case 3: Login fails with invalid username
+Description: Verify that authentication is rejected when an unregistered or incorrect username is entered.
+Steps:
+  1. Open the Login screen.
+  2. Enter an invalid or unregistered username in the Username field.
+  3. Enter any password in the Password field.
+  4. Tap the Login button.
+Expected Result:
+  - Login is not successful.
+  - The user remains on the Login screen.
+  - An appropriate error or validation message is shown for invalid credentials.
+
+Test Case 4: Login fails when both Username and Password are empty
+Description: Verify validation behavior when the user attempts to log in without entering any credentials.
+Steps:
+  1. Open the Login screen.
+  2. Leave the Username field empty.
+  3. Leave the Password field empty.
+  4. Tap the Login button.
+Expected Result:
+  - Login is prevented.
+  - The user remains on the Login screen.
+  - Validation feedback is shown indicating required fields must be entered.
+
+Test Case 5: Login fails when Username is empty
+Description: Verify that the Username field is required for authentication.
+Steps:
+  1. Open the Login screen.
+  2. Leave the Username field empty.
+  3. Enter a valid password in the Password field.
+  4. Tap the Login button.
+Expected Result:
+  - Login is prevented.
+  - The user remains on the Login screen.
+  - Validation feedback indicates that Username is required.
+
+Test Case 6: Login fails when Password is empty
+Description: Verify that the Password field is required for authentication.
+Steps:
+  1. Open the Login screen.
+  2. Enter a valid username in the Username field.
+  3. Leave the Password field empty.
+  4. Tap the Login button.
+Expected Result:
+  - Login is prevented.
+  - The user remains on the Login screen.
+  - Validation feedback indicates that Password is required.
+
+Test Case 7: Password field accepts text entry for authentication input
+Description: Verify that the Password text field accepts user input and can be used together with the Login action.
+Steps:
+  1. Open the Login screen.
+  2. Tap the Password field.
+  3. Enter a password value.
+  4. Tap the Username field.
+  5. Enter a valid username.
+  6. Tap the Login button.
+Expected Result:
+  - The Password field accepts the entered input.
+  - The login request is submitted when Login is tapped.
+  - Authentication outcome matches the validity of the entered credentials.
+
+Test Case 8: Username field accepts text entry and allows login submission
+Description: Verify that the Username field is editable and can be used as part of the login flow.
+Steps:
+  1. Open the Login screen.
+  2. Tap the Username field.
+  3. Enter a username value.
+  4. Tap the Password field.
+  5. Enter the corresponding password.
+  6. Tap the Login button.
+Expected Result:
+  - The Username field accepts the entered input.
+  - The login request is submitted successfully when Login is tapped.
+  - Authentication outcome matches the validity of the entered credentials.
+
+Test Case 9: Retry login after failed attempt using corrected credentials
+Description: Verify that a user can recover from a failed login attempt by correcting credentials in the same session.
+Steps:
+  1. Open the Login screen.
+  2. Enter a valid username in the Username field.
+  3. Enter an incorrect password in the Password field.
+  4. Tap the Login button.
+  5. After the failed attempt, update the Password field with the correct password.
+  6. Tap the Login

@@ -1,0 +1,98 @@
+Screen: Product Listing
+
+Test Case 1: Verify Product Listing screen loads with core browsing controls
+Description: Validate that the Product Listing screen displays the expected controls needed to browse and select products from the catalog.
+Steps:
+  1. Launch the app and navigate to the Product Listing screen.
+  2. Observe the top and main content areas of the screen.
+  3. Verify the presence of the Search bar.
+  4. Verify the presence of the Category filter control.
+  5. Verify the presence of the Sort button.
+  6. Verify the Product grid is displayed.
+  7. Verify at least one Product item is visible in the Product grid.
+  8. Verify an Add to cart button is available for a product item or within the listing context.
+Expected Result:
+  - The Product Listing screen opens successfully.
+  - Search, Category filter, Sort, Product grid, Product item, and Add to cart controls are visible and usable.
+  - The screen supports product browsing without missing key UI elements.
+
+Test Case 2: Verify product search using valid keyword
+Description: Confirm that entering a valid search term in the Search bar updates the product listing to relevant results.
+Steps:
+  1. Open the Product Listing screen.
+  2. Tap the Search bar.
+  3. Enter a valid product keyword.
+  4. Submit or wait for the search results to refresh.
+  5. Review the Product grid results.
+Expected Result:
+  - The Product grid refreshes based on the entered keyword.
+  - Displayed Product items are relevant to the search term.
+  - No unrelated or stale results remain if search is applied successfully.
+
+Test Case 3: Verify search behavior with no matching results
+Description: Validate that the screen handles unsuccessful searches gracefully when the entered term does not match any product.
+Steps:
+  1. Open the Product Listing screen.
+  2. Tap the Search bar.
+  3. Enter a random or invalid search term that should not match any product.
+  4. Submit the search.
+  5. Observe the Product grid area.
+Expected Result:
+  - The screen updates to reflect that no matching products were found, or the Product grid becomes empty.
+  - The app does not crash or freeze.
+  - Search remains editable so the user can try another keyword.
+
+Test Case 4: Verify search field accepts and processes edited text
+Description: Ensure the Search bar allows users to modify search text and refresh results accordingly.
+Steps:
+  1. Open the Product Listing screen.
+  2. Tap the Search bar and enter a valid keyword.
+  3. Observe the filtered Product grid.
+  4. Tap the Search bar again.
+  5. Replace the existing text with a different valid keyword.
+  6. Submit the updated search.
+Expected Result:
+  - The Search bar accepts updated text.
+  - The Product grid refreshes according to the new keyword.
+  - Results from the previous search are replaced by the new relevant results.
+
+Test Case 5: Verify Category filter opens and applies a product filter
+Description: Confirm the Category filter can be accessed and that selecting a category narrows the product catalog.
+Steps:
+  1. Open the Product Listing screen.
+  2. Tap Category filter.
+  3. Select an available category option.
+  4. Confirm the selection if required.
+  5. Review the Product grid after filter application.
+Expected Result:
+  - The Category filter opens successfully.
+  - A category can be selected.
+  - The Product grid updates to show products belonging to the selected category.
+  - The filtered result set is narrower or more specific than the unfiltered catalog.
+
+Test Case 6: Verify Category filter can be changed to another category
+Description: Validate that users can switch from one category selection to another and see updated results.
+Steps:
+  1. Open the Product Listing screen.
+  2. Tap Category filter and select one category.
+  3. Observe the Product grid results.
+  4. Tap Category filter again.
+  5. Select a different category.
+  6. Review the Product grid.
+Expected Result:
+  - The category selection changes successfully.
+  - The Product grid updates to match the newly selected category.
+  - Products from the old category are no longer shown unless they also belong to the new selection.
+
+Test Case 7: Verify Sort control reorders the Product grid
+Description: Confirm that tapping Sort allows the user to reorder products and that the listing changes accordingly.
+Steps:
+  1. Open the Product Listing screen.
+  2. Note the initial order of visible Product items in the Product grid.
+  3. Tap Sort.
+  4. Select an available sort option.
+  5. Observe the order of Product items after sorting.
+Expected Result:
+  - The Sort options are accessible.
+  - A sort option can be selected.
+  - The Product grid refreshes and the item order changes according to

@@ -1,0 +1,665 @@
+name: Mobile Test Generator CI/CD
+
+on:
+  push:
+    branches: [ main, develop, Aditya ]
+  pull_request:
+    branches: [ main, develop, Aditya ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Job 1: Code Quality & Linting
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+      
+      - name: Run Black (code formatting check)
+        run: black --check .
+        continue-on-error: true
+      
+      - name: Run isort (import sorting check)
+        run: isort --check-only .
+        continue-on-error: true
+      
+      - name: Run Flake8 (linting)
+        run: flake8 . --count --max-line-length=120 --statistics
+        continue-on-error: true
+
+  # Job 2: Unit & Integration Tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-xdist
+      
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          VISION_AGENT_PROVIDER=mock
+          TESTCASE_AGENT_PROVIDER=mock
+          OPENAI_API_KEY=mock_key_for_testing
+          SELF_HEALING_ENABLED=false
+          EOF
+      
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests/ \
+            --cov=. \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            -v
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+        continue-on-error: true
+      
+      - name: Archive test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            htmlcov/
+            coverage.xml
+
+  # Job 3: Security Scanning
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety bandit
+      
+      - name: Run Safety (dependency vulnerability check)
+        run: safety check --json
+        continue-on-error: true
+      
+      - name: Run Bandit (security linter)
+        run: bandit -r agents/ services/ utils/ -f json -o bandit-report.json
+        continue-on-error: true
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+
+  # Job 4: Integration Test (Mock Pipeline)
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: [test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Create mock environment
+        run: |
+          cat > .env << EOF
+          VISION_AGENT_PROVIDER=mock
+          TESTCASE_AGENT_PROVIDER=mock
+          OPENAI_API_KEY=mock_key_for_ci
+          SELF_HEALING_ENABLED=true
+          HEALING_MAX_RETRIES=2
+          EOF
+      
+      - name: Create test screenshots directory
+        run: mkdir -p artifacts/input_screenshots
+      
+      - name: Run SSM generator (mock mode)
+        run: |
+          python pipelines/ssm_generator.py artifacts/input_screenshots
+        continue-on-error: true
+      
+      - name: Verify artifacts structure
+        run: |
+          ls -la artifacts/
+          echo "Checking for artifact directories..."
+          [ -d "artifacts/ssm_json_output" ] && echo "✓ SSM output dir exists"
+          [ -d "artifacts/locator_output" ] && echo "✓ Locator output dir exists"
+          [ -d "artifacts/generated_appium_scripts" ] && echo "✓ Scripts dir exists"
+
+  # Job 5: Appium E2E Tests (iOS & Android)
+  appium-tests:
+    name: Run Appium E2E Tests (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    needs: [test]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS
+            os: macos-latest
+            device: iPhone 17 Pro
+            platformVersion: '17.0'
+            appPath: demo_mobile_apps/SauceLabs-Demo-App.Simulator.app
+            appiumDriver: xcuitest
+          - platform: Android
+            os: ubuntu-latest
+            device: Pixel_6_API_34
+            platformVersion: '14.0'
+            appPath: demo_mobile_apps/Android.SauceLabs.Mobile.Sample.app.2.7.1.apk
+            appiumDriver: uiautomator2
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-html appium-python-client
+      
+      - name: Set up Node.js (for Appium)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Appium
+        run: |
+          # Install Appium stable version (not @next to avoid peer dependency issues)
+          npm install -g appium
+          
+          # Verify Appium installation
+          appium --version
+          
+          # Install platform-specific driver
+          echo "Installing ${{ matrix.appiumDriver }} driver..."
+          appium driver install ${{ matrix.appiumDriver }}
+          
+          # Verify driver installation
+          echo "Installed drivers:"
+          appium driver list --installed
+          
+          # Verify driver can load properly
+          if appium driver list --installed | grep -q "${{ matrix.appiumDriver }}"; then
+            echo "✓ ${{ matrix.appiumDriver }} driver installed successfully"
+          else
+            echo "✗ ERROR: ${{ matrix.appiumDriver }} driver installation failed!"
+            exit 1
+          fi
+      
+      # Android-specific setup
+      - name: Enable KVM (Android)
+        if: matrix.platform == 'Android'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      
+      - name: Set up Android SDK (Android)
+        if: matrix.platform == 'Android'
+        uses: android-actions/setup-android@v3
+      
+      - name: Download SauceLabs Demo App (Android)
+        if: matrix.platform == 'Android'
+        run: |
+          mkdir -p demo_mobile_apps
+          curl -L -o ${{ matrix.appPath }} \
+            https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/Android.SauceLabs.Mobile.Sample.app.2.7.1.apk
+      
+      - name: Create Android Emulator (Android)
+        if: matrix.platform == 'Android'
+        run: |
+          echo "y" | sdkmanager "platform-tools" "platforms;android-34" "emulator" "system-images;android-34;google_apis;x86_64"
+          
+          # Create AVD without device profile (let it use defaults)
+          echo "no" | avdmanager create avd \
+            -n ${{ matrix.device }} \
+            -k "system-images;android-34;google_apis;x86_64" \
+            --force
+          
+          # Verify AVD was created
+          echo "Listing available AVDs:"
+          avdmanager list avd
+          
+          # Find AVD config location (can be in .config or directly in home)
+          if [ -f "$HOME/.config/.android/avd/${{ matrix.device }}.avd/config.ini" ]; then
+            AVD_CONFIG="$HOME/.config/.android/avd/${{ matrix.device }}.avd/config.ini"
+          elif [ -f "$HOME/.android/avd/${{ matrix.device }}.avd/config.ini" ]; then
+            AVD_CONFIG="$HOME/.android/avd/${{ matrix.device }}.avd/config.ini"
+          else
+            echo "ERROR: AVD config not found"
+            echo "Checking possible locations:"
+            ls -la "$HOME/.config/.android/avd/" 2>/dev/null || echo "Not in .config"
+            ls -la "$HOME/.android/avd/" 2>/dev/null || echo "Not in home"
+            exit 1
+          fi
+          
+          echo "Found AVD config at: $AVD_CONFIG"
+          echo "Configuring AVD..."
+          echo "hw.keyboard=yes" >> "$AVD_CONFIG"
+          echo "hw.gpu.enabled=yes" >> "$AVD_CONFIG"
+          echo "hw.gpu.mode=swiftshader_indirect" >> "$AVD_CONFIG"
+          echo "disk.dataPartition.size=4096M" >> "$AVD_CONFIG"
+          echo "✓ AVD configured successfully"
+      
+      - name: Start Android Emulator (Android)
+        if: matrix.platform == 'Android'
+        timeout-minutes: 10
+        env:
+          ANDROID_AVD_HOME: ${{ github.workspace }}/.android/avd
+        run: |
+          # Set AVD home to where it was actually created
+          export ANDROID_AVD_HOME="$HOME/.config/.android/avd"
+          
+          echo "AVD Home: $ANDROID_AVD_HOME"
+          echo "Listing AVDs:"
+          $ANDROID_HOME/emulator/emulator -list-avds
+          
+          # Start emulator
+          $ANDROID_HOME/emulator/emulator -avd ${{ matrix.device }} -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect &
+          
+          # Wait for emulator to be ready
+          adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+          
+          # Verify emulator is running
+          adb devices
+          echo "✓ Emulator started successfully"
+      
+      # iOS-specific setup
+      - name: Download SauceLabs Demo App (iOS)
+        if: matrix.platform == 'iOS'
+        run: |
+          mkdir -p demo_mobile_apps
+          # Download iOS simulator build (comes as a zip)
+          curl -L -o demo_mobile_apps/ios_app.zip \
+            https://github.com/saucelabs/sample-app-mobile/releases/download/2.7.1/iOS.Simulator.SauceLabs.Mobile.Sample.app.2.7.1.zip
+          
+          # Unzip the .app bundle
+          cd demo_mobile_apps
+          unzip -o ios_app.zip
+          
+          # Rename to expected name
+          APP_BUNDLE=$(find . -name "*.app" -type d -maxdepth 1 | head -n 1)
+          if [ -n "$APP_BUNDLE" ]; then
+            mv "$APP_BUNDLE" "SauceLabs-Demo-App.Simulator.app"
+            echo "Renamed $APP_BUNDLE to SauceLabs-Demo-App.Simulator.app"
+          fi
+          
+          # List contents to verify
+          ls -la
+          cd ..
+      
+      - name: Set up iOS Simulator (iOS)
+        if: matrix.platform == 'iOS'
+        timeout-minutes: 10
+        run: |
+          echo "Listing available simulators..."
+          xcrun simctl list devices available
+          
+          # Find and boot simulator
+          DEVICE_ID=$(xcrun simctl list devices available | grep -m 1 '${{ matrix.device }}' | sed -E 's/.*\(([0-9A-F-]+)\).*/\1/')
+          echo "Device ID: $DEVICE_ID"
+          
+          # Boot simulator
+          xcrun simctl boot $DEVICE_ID || echo "Simulator may already be booted"
+          
+          # Wait for simulator to fully boot (check for "Booted" status)
+          echo "Waiting for simulator to boot..."
+          for i in {1..60}; do
+            STATUS=$(xcrun simctl list devices | grep "$DEVICE_ID" | grep -o "Booted" || echo "")
+            if [ "$STATUS" = "Booted" ]; then
+              echo "✓ Simulator booted successfully"
+              break
+            fi
+            echo "Waiting... ($i/60)"
+            sleep 2
+          done
+          
+          # Give simulator extra time to fully initialize
+          echo "Allowing simulator to fully initialize..."
+          sleep 15
+          
+          # Verify simulator is ready
+          xcrun simctl list devices | grep "$DEVICE_ID"
+      
+      - name: Install SauceLabs Demo App (iOS)
+        if: matrix.platform == 'iOS'
+        run: |
+          # Find booted device ID
+          echo "Looking for booted simulators..."
+          xcrun simctl list devices | grep Booted
+          
+          DEVICE_ID=$(xcrun simctl list devices | grep -E 'iPhone.*Booted' | head -n 1 | sed -E 's/.*\(([0-9A-F-]+)\).*/\1/')
+          
+          if [ -z "$DEVICE_ID" ]; then
+            echo "ERROR: No booted simulator found"
+            echo "All devices:"
+            xcrun simctl list devices
+            exit 1
+          fi
+          
+          echo "Installing app on device: $DEVICE_ID"
+          
+          # Install app
+          if xcrun simctl install "$DEVICE_ID" "${{ matrix.appPath }}"; then
+            echo "✓ App installed successfully"
+          else
+            echo "ERROR: Failed to install app"
+            echo "Checking if app exists:"
+            ls -la ${{ matrix.appPath }}
+            exit 1
+          fi
+          
+          # Verify installation
+          echo "Installed apps:"
+          xcrun simctl listapps "$DEVICE_ID" | grep -i sauce || echo "App may not be listed yet"
+      
+      # Common Appium setup
+      - name: Start Appium Server
+        run: |
+          # Start Appium in background
+          appium --log-level info > appium.log 2>&1 &
+          APPIUM_PID=$!
+          echo $APPIUM_PID > appium.pid
+          echo "Appium server PID: $APPIUM_PID"
+          
+          # Wait for Appium to be ready (check port 4723)
+          echo "Waiting for Appium server to start..."
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:4723/status > /dev/null 2>&1; then
+              echo "✓ Appium server is ready!"
+              curl -s http://127.0.0.1:4723/status | head -c 200
+              echo ""
+              break
+            fi
+            if ! ps -p $APPIUM_PID > /dev/null 2>&1; then
+              echo "ERROR: Appium server process died!"
+              echo "Last 50 lines of appium.log:"
+              tail -50 appium.log
+              exit 1
+            fi
+            echo "Waiting for server... ($i/30)"
+            sleep 2
+          done
+          
+          # Final verification
+          if ! curl -s http://127.0.0.1:4723/status > /dev/null 2>&1; then
+            echo "ERROR: Appium server failed to start after 60 seconds"
+            echo "Appium log:"
+            cat appium.log
+            exit 1
+          fi
+      
+      - name: Configure test environment
+        env:
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+        run: |
+          cat > .env << EOF
+          APPIUM_SERVER_URL=http://127.0.0.1:4723
+          PLATFORM_NAME=${{ matrix.platform }}
+          PLATFORM_VERSION=${{ matrix.platformVersion }}
+          DEVICE_NAME=${{ matrix.device }}
+          APP_PATH=$(pwd)/${{ matrix.appPath }}
+          SELF_HEALING_ENABLED=true
+          HEALING_MAX_RETRIES=3
+          OPENAI_API_KEY=${LITELLM_API_KEY:-mock_key}
+          OPENAI_API_BASE=http://107.22.98.31:10501/v1
+          OPENAI_MODEL=Azure#gpt-5.4
+          EOF
+      
+      # Run tests
+      - name: Run Login Test
+        env:
+          APPIUM_SERVER_URL: http://127.0.0.1:4723
+          PLATFORM_NAME: ${{ matrix.platform }}
+          PLATFORM_VERSION: ${{ matrix.platformVersion }}
+          DEVICE_NAME: ${{ matrix.device }}
+          APP_PATH: ${{ github.workspace }}/${{ matrix.appPath }}
+          SELF_HEALING_ENABLED: "true"
+          HEALING_MAX_RETRIES: "3"
+          OPENAI_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+          OPENAI_API_BASE: http://107.22.98.31:10501/v1
+          OPENAI_MODEL: Azure#gpt-5.4
+        run: |
+          echo "Starting login test for ${{ matrix.platform }}..."
+          set +e  # Don't exit immediately on error, we want to capture exit code
+          
+          pytest artifacts/generated_appium_scripts/test_login_screen.py \
+            -v \
+            --html=test_report_login_${{ matrix.platform }}.html \
+            --self-contained-html \
+            --tb=short
+          
+          TEST_EXIT_CODE=$?
+          
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "✓ Login test PASSED"
+          else
+            echo "✗ Login test FAILED (exit code: $TEST_EXIT_CODE)"
+            echo "Appium server log (last 100 lines):"
+            tail -100 appium.log || true
+          fi
+          
+          # Exit with test's exit code (this will fail the job if tests failed)
+          exit $TEST_EXIT_CODE
+      
+      # Disabled - Run only login test for now
+      # - name: Run Cart Test
+      #   run: |
+      #     pytest artifacts/generated_appium_scripts/test_cart_screen.py \
+      #       -v \
+      #       --html=test_report_cart_${{ matrix.platform }}.html \
+      #       --self-contained-html \
+      #       --tb=short
+      #   continue-on-error: true
+      
+      # - name: Run Product Details Test
+      #   run: |
+      #     pytest artifacts/generated_appium_scripts/test_product_details_screen.py \
+      #       -v \
+      #       --html=test_report_product_details_${{ matrix.platform }}.html \
+      #       --self-contained-html \
+      #       --tb=short
+      #   continue-on-error: true
+      
+      # - name: Run Product Listing Test
+      #   run: |
+      #     pytest artifacts/generated_appium_scripts/test_product_listing_screen.py \
+      #       -v \
+      #       --html=test_report_product_listing_${{ matrix.platform }}.html \
+      #       --self-contained-html \
+      #       --tb=short
+      #   continue-on-error: true
+      
+      - name: Stop Appium Server
+        if: always()
+        run: |
+          if [ -f appium.pid ]; then
+            kill $(cat appium.pid) || true
+          fi
+      
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: appium-test-reports-${{ matrix.platform }}
+          path: |
+            test_report_*.html
+            appium.log
+            artifacts/test_execution_reports/
+      
+      - name: Upload screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: failure-screenshots-${{ matrix.platform }}
+          path: screenshots/
+
+  # Job 6: Build & Package
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: [test, code-quality]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools
+      
+      - name: Create package structure
+        run: |
+          echo "Creating distributable package..."
+          mkdir -p dist
+          tar -czf dist/mobile-test-generator-${GITHUB_SHA::7}.tar.gz \
+            --exclude='.git' \
+            --exclude='dist' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            --exclude='.env' \
+            --exclude='artifacts/test_execution_reports' \
+            .
+      
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist/*.tar.gz
+          retention-days: 30
+
+  # Job 7: LiteLLM Gateway Test (Optional - runs if secrets configured)
+  litellm-gateway-test:
+    name: LiteLLM Gateway Connection Test
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name != 'pull_request' && vars.LITELLM_ENABLED == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Create LiteLLM environment
+        env:
+          LITELLM_API_KEY: ${{ secrets.LITELLM_API_KEY }}
+        run: |
+          cat > .env << EOF
+          VISION_AGENT_PROVIDER=openai
+          TESTCASE_AGENT_PROVIDER=openai
+          OPENAI_API_KEY=$LITELLM_API_KEY
+          OPENAI_MODEL=Azure#gpt-5.4
+          OPENAI_API_BASE=http://107.22.98.31:10501/v1
+          SELF_HEALING_ENABLED=true
+          EOF
+      
+      - name: Test LiteLLM Gateway Connection
+        run: |
+          python utils/custom_gateway.py
+      
+      - name: Test LangChain Integration
+        run: |
+          python -c "from agents.langchain_vision_agent import LangChainVisionAgent; agent = LangChainVisionAgent(); print('✅ LangChain agent initialized successfully')"
+
+  # Job 8: Cost Tracking Report
+  cost-analysis:
+    name: LLM Cost Analysis
+    runs-on: ubuntu-latest
+    needs: [integration-test]
+    if: always()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Generate cost report
+        run: |
+          echo "# LLM Token Usage Report" > cost-report.md
+          echo "" >> cost-report.md
+          echo "**Build:** ${GITHUB_SHA::7}" >> cost-report.md
+          echo "**Date:** $(date)" >> cost-report.md
+          echo "" >> cost-report.md
+          echo "Token usage tracking would be implemented here." >> cost-report.md
+          echo "This requires actual LLM calls during integration tests." >> cost-report.md
+      
+      - name: Upload cost report
+        uses: actions/upload-artifact@v4
+        with:
+          name: cost-report
+          path: cost-report.md

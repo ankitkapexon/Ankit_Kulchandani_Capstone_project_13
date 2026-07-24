@@ -1,0 +1,59 @@
+# ========================================
+# Core Dependencies
+# ========================================
+pydantic>=2.5,<3.0
+python-dotenv>=1.0.0
+pytest-html>=4.0.0
+
+# ========================================
+# LangChain & AI Integration
+# ========================================
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-community>=0.0.20
+openai>=1.0.0
+
+# ========================================
+# LangChain Optional Features
+# ========================================
+# Vector stores and embeddings for RAG
+faiss-cpu>=1.7.4  # For vector similarity search
+tiktoken>=0.5.0   # Token counting for OpenAI
+
+# ========================================
+# Self-Healing & Computer Vision
+# ========================================
+Pillow>=10.0.0         # Image processing
+imagehash>=4.3.1       # Perceptual hashing
+numpy>=1.24.0          # Numerical operations
+opencv-python>=4.8.0   # Computer vision (optional but recommended)
+
+# ========================================
+# Caching & Performance
+# ========================================
+diskcache>=5.6.3       # File-based caching for LLM responses
+
+# ========================================
+# Testing & Reporting
+# ========================================
+pytest>=7.4.0
+pytest-html>=4.0.0
+pytest-xdist>=3.3.0    # Parallel test execution
+Flask>=3.0.0
+
+# ========================================
+# Appium & Selenium
+# ========================================
+Appium-Python-Client>=3.0.0
+selenium>=4.15.0
+
+# ========================================
+# Tested with:
+# ========================================
+#   Python 3.11 / 3.12 recommended
+#   pydantic==2.13.4
+#   python-dotenv==1.2.2
+#   openai==2.44.0
+#   langchain==0.1.9
+#   Appium-Python-Client==3.1.1
+#   selenium==4.16.0

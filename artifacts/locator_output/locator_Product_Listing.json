@@ -1,0 +1,53 @@
+{
+  "screen": "Product Listing",
+  "elements": [
+    {
+      "element": "Product grid",
+      "element_type": "list",
+      "action": "scroll",
+      "locator_strategy": "text",
+      "locator_value": "product grid",
+      "confidence": 0.57
+    },
+    {
+      "element": "Search",
+      "element_type": "searchbar",
+      "action": "type",
+      "locator_strategy": "text",
+      "locator_value": "search",
+      "confidence": 0.52
+    },
+    {
+      "element": "Category filter",
+      "element_type": "filter",
+      "action": "tap",
+      "locator_strategy": "text",
+      "locator_value": "category filter",
+      "confidence": 0.41
+    },
+    {
+      "element": "Sort",
+      "element_type": "button",
+      "action": "tap",
+      "locator_strategy": "text",
+      "locator_value": "sort",
+      "confidence": 0.38
+    },
+    {
+      "element": "Add to cart",
+      "element_type": "button",
+      "action": "verify",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/cartBt",
+      "confidence": 0.44
+    },
+    {
+      "element": "Product item",
+      "element_type": "card",
+      "action": "verify",
+      "locator_strategy": "text",
+      "locator_value": "product item",
+      "confidence": 0.56
+    }
+  ]
+}

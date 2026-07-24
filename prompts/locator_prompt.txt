@@ -1,0 +1,102 @@
+# Locator Prompt
+
+Given an element screenshot and DOM/structure description, propose robust locators and fallback strategies.
+
+Return:
+- preferred locator
+- fallbacks
+- confidence score
+- notes about potential flakiness
+
+
+I have an existing GenAI mobile testing project.
+
+Current pipeline:
+
+Screenshot
+    ↓
+Vision Agent
+    ↓
+Screen Semantic Model (SSM) JSON
+    ↓
+Test Case Generation Agent
+    ↓
+Manual Test Case (.txt)
+
+I need to build the next component: Locator Agent.
+
+Create a Python file named:
+
+agents/locator_agent.py
+
+Purpose:
+The Locator Agent should convert SSM JSON + generated manual test cases into a structured locator JSON that can later be used by an Appium script generator.
+
+Input 1:
+SSM JSON format:
+
+{
+  "screen_name": "Cart",
+  "elements": [
+    {
+      "label": "Checkout",
+      "type": "button",
+      "actions": ["tap"],
+      "confidence": 0.78
+    }
+  ]
+}
+
+Input 2:
+Manual test case text file containing steps like:
+
+"Verify Checkout button is displayed"
+"Tap Checkout button"
+
+Output format:
+
+{
+  "screen": "Cart",
+  "elements": [
+    {
+      "element": "Checkout",
+      "action": "tap",
+      "locator_strategy": "text",
+      "locator_value": "Checkout",
+      "confidence": 0.78
+    }
+  ]
+}
+
+Requirements:
+
+1. Create a LocatorAgent class.
+2. Add a method:
+
+generate_locators(ssm_data, test_case_text)
+
+3. The agent should:
+   - Read elements from SSM JSON.
+   - Match test case steps with SSM element labels.
+   - Identify required actions (tap, verify, enter text, scroll).
+   - Generate locator information.
+   - Prefer locator strategies in this order:
+       1. accessibility_id if available
+       2. resource_id if available
+       3. text
+       4. android UIAutomator
+   - If no locator information exists, use the element label as a fallback.
+   - Return valid JSON.
+
+4. Add error handling for:
+   - Missing elements
+   - Invalid JSON
+   - Empty test cases
+
+5. Add a small test example at the bottom showing:
+   - Loading an SSM JSON
+   - Passing a manual test case
+   - Printing generated locator JSON
+
+Keep the code modular because the output will be consumed later by an Appium Script Generator Agent.
+Explain the code comments clearly because I am learning.

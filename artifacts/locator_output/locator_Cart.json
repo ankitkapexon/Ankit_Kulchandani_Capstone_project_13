@@ -1,0 +1,53 @@
+{
+  "screen": "Cart",
+  "elements": [
+    {
+      "element": "Cart title",
+      "element_type": "static_text",
+      "action": "verify",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/titleTV",
+      "confidence": 0.33
+    },
+    {
+      "element": "Checkout",
+      "element_type": "button",
+      "action": "verify",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/cartBt",
+      "confidence": 0.38
+    },
+    {
+      "element": "Cart items",
+      "element_type": "list",
+      "action": "scroll",
+      "locator_strategy": "text",
+      "locator_value": "cart items",
+      "confidence": 0.41
+    },
+    {
+      "element": "Quantity controls",
+      "element_type": "stepper",
+      "action": "tap",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/plusIV",
+      "confidence": 0.28
+    },
+    {
+      "element": "Subtotal",
+      "element_type": "static_text",
+      "action": "verify",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/totalPriceTV",
+      "confidence": 0.22
+    },
+    {
+      "element": "Remove item",
+      "element_type": "button",
+      "action": "tap",
+      "locator_strategy": "resource_id",
+      "locator_value": "com.saucelabs.mydemoapp.android:id/removeBt",
+      "confidence": 0.24
+    }
+  ]
+}
