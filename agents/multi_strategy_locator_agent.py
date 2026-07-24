@@ -298,7 +298,7 @@ class MultiStrategyLocatorAgent(LocatorAgent):
             logger.error(f"SSM directory not found: {ssm_dir}")
             return []
         
-        ssm_files = list(ssm_dir.glob("*.json"))
+        ssm_files = sorted(ssm_dir.glob("*.json"))
         if not ssm_files:
             logger.warning(f"No SSM files found in {ssm_dir}")
             return []
@@ -311,10 +311,13 @@ class MultiStrategyLocatorAgent(LocatorAgent):
             try:
                 # Load SSM data
                 ssm_data = json.loads(ssm_file.read_text(encoding="utf-8"))
-                screen_name = ssm_data.get("screen_name", "unknown")
+                screen_name = str(ssm_data.get("screen_name", "unknown"))
+                screen_token = self._slugify(screen_name)
                 
                 # Find matching test case file (if exists)
                 test_case_files = list(manual_dir.glob(f"*{screen_name}*.txt"))
+                if not test_case_files:
+                    test_case_files = list(manual_dir.glob(f"*{screen_token}*.txt"))
                 test_case_text = ""
                 if test_case_files:
                     test_case_text = test_case_files[0].read_text(encoding="utf-8")
@@ -323,7 +326,7 @@ class MultiStrategyLocatorAgent(LocatorAgent):
                 locator_data = self.generate_locators(ssm_data, test_case_text)
                 
                 # Save to output file
-                output_file = output_dir / f"locator_{screen_name}.json"
+                output_file = output_dir / f"locator_{screen_token}.json"
                 output_file.write_text(
                     json.dumps(locator_data, indent=2),
                     encoding="utf-8"

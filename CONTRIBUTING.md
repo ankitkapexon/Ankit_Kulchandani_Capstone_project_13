@@ -4,6 +4,21 @@
 
 This project is a fully automated six-step pipeline that converts mobile app screenshots into executed Appium test scripts with an HTML test execution report.
 
+## Naming Convention Standard
+
+Use these naming rules across code and generated outputs to keep the project consistent and user-friendly:
+
+1. Python modules and scripts: `snake_case.py`
+2. Python classes: `PascalCase`
+3. Functions, variables, and methods: `snake_case`
+4. Constants and environment variable names: `UPPER_SNAKE_CASE`
+5. Generated artifact file tokens: lowercase `snake_case` only (no spaces, no special characters)
+
+Examples:
+- `manual_testcases_login_1784918044.txt`
+- `locator_product_listing.json`
+- `ssm_product_details_1784913925.json`
+
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.
 3. **SSM JSON → Locator JSON:** LocatorAgent extracts UI element locators (resource IDs, accessibility IDs).

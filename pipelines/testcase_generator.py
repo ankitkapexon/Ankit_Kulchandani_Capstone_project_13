@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
 
 from services.config import load_environment
 from agents.testcase_agent import create_testcase_agent
+from pipelines.orchestration_helpers import to_artifact_token
 
 load_environment()
 
@@ -53,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
 
             result_text = agent.generate_from_ssm(ssm_data, source_ssm=str(ssm_file), filename=ssm_file.stem)
             timestamp = int(time.time())
-            out_path = out_dir_path / f"manual_testcases_{ssm_file.stem}_{timestamp}.txt"
+            out_path = out_dir_path / f"manual_testcases_{to_artifact_token(ssm_file.stem)}_{timestamp}.txt"
             out_path.write_text(result_text, encoding="utf-8")
             print(f"Wrote manual test cases to {out_path}")
         except Exception as exc:

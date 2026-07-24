@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import time
 from pathlib import Path
@@ -40,10 +41,16 @@ def reset_directories(paths: Iterable[Path]) -> None:
         reset_directory(path)
 
 
+def to_artifact_token(value: str) -> str:
+    """Convert a logical name into a stable, user-friendly snake_case token."""
+    token = re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+    return token or "screen"
+
+
 def write_json_timestamped(output_dir: Path, prefix: str, logical_name: str, payload_json: str) -> Path:
     """Write a JSON artifact using a timestamped file name."""
     timestamp = int(time.time())
-    out_path = output_dir / f"{prefix}_{logical_name}_{timestamp}.json"
+    out_path = output_dir / f"{prefix}_{to_artifact_token(logical_name)}_{timestamp}.json"
     out_path.write_text(payload_json, encoding="utf-8")
     return out_path
 
@@ -51,6 +58,6 @@ def write_json_timestamped(output_dir: Path, prefix: str, logical_name: str, pay
 def write_text_timestamped(output_dir: Path, prefix: str, logical_name: str, content: str) -> Path:
     """Write a text artifact using a timestamped file name."""
     timestamp = int(time.time())
-    out_path = output_dir / f"{prefix}_{logical_name}_{timestamp}.txt"
+    out_path = output_dir / f"{prefix}_{to_artifact_token(logical_name)}_{timestamp}.txt"
     out_path.write_text(content, encoding="utf-8")
     return out_path
