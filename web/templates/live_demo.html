@@ -679,7 +679,8 @@
         <p class="empty">Self-healing details are not available for this run.</p>
         {% endif %}
       </div>
-      {% if result.flow_type == 'deterministic_realtime' %}
+      {% set show_realtime_sections = result and result.flow_type == 'deterministic_realtime' and (result.get('dynamic_journey') is not none or result.get('artifacts', {}).get('captured_screenshots') is not none) %}
+      {% if show_realtime_sections %}
       <div class="panel">
         <h3>Captured Step Screenshots</h3>
         {% if result.artifacts.captured_screenshots %}
