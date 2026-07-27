@@ -242,7 +242,7 @@ Run the local demo UI:
 python live_demo.py
 ```
 
-Open http://127.0.0.1:8080 or the fixed launcher URL http://127.0.0.1:8080/live-demo-fixed and:
+Open http://127.0.0.1:8080 or the Cross-Platform Mobile Test Script Generator Live Demo URL http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator and:
 
 1. Select flow type:
 	- Check Flow By Uploading A Screenshot, or
@@ -278,7 +278,7 @@ Localhost launcher scripts (new):
 
 These scripts start the Flask demo server (if needed) and open:
 
-- http://localhost:8080/live-demo-fixed
+- http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator
 
 Live demo now supports both execution paths in one UI:
 
@@ -377,7 +377,7 @@ Report output format:
 - The live demo no longer reuses historical manual testcase files during a new run.
 - Reporter output now supports report scopes so screenshot and realtime report folders stay separated.
 - Deterministic realtime flow now generates artifact pipeline inputs from captured step screenshots.
-- A fixed launcher page is available at `/live-demo-fixed` and includes startup prerequisite/status visibility.
+- The Cross-Platform Mobile Test Script Generator Live Demo launcher page is available at `/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator` and includes startup prerequisite/status visibility.
 - The old decorative "Input Type / Pipeline / Output Scope" section was removed from the page.
 - Artifact panels now use strict per-run delta filtering, so old generated scripts and review reports are not shown for new uploads.
 - Self-healing script startup stabilization removed hardcoded sleep in generator output and relies on explicit wait logic.

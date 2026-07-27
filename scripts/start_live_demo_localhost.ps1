@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
-$url = "http://localhost:8080/live-demo-fixed"
+$url = "http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator"
 $logDir = Join-Path $projectRoot "artifacts\logs"
 $stdoutLog = Join-Path $logDir "live_demo_stdout.log"
 $stderrLog = Join-Path $logDir "live_demo_stderr.log"
@@ -18,7 +18,7 @@ function Test-LiveDemoUp {
 }
 
 if (Test-LiveDemoUp -TargetUrl $url) {
-    Write-Output "Live demo server already running at $url"
+    Write-Output "Cross-Platform Mobile Test Script Generator Live Demo is already running at $url"
     exit 0
 }
 
@@ -36,13 +36,13 @@ if (Test-Path $venvPythonw) {
 
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
-Write-Output "Starting live demo server using $pythonExe ..."
+Write-Output "Starting Cross-Platform Mobile Test Script Generator Live Demo server using $pythonExe ..."
 Start-Process -FilePath $pythonExe -ArgumentList "live_demo.py" -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
 
 $maxAttempts = 90
 for ($i = 1; $i -le $maxAttempts; $i++) {
     if (Test-LiveDemoUp -TargetUrl $url) {
-        Write-Output "Live demo is up at $url"
+        Write-Output "Cross-Platform Mobile Test Script Generator Live Demo is up at $url"
         Write-Output "Logs: $stdoutLog and $stderrLog"
         exit 0
     }

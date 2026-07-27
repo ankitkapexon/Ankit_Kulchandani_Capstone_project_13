@@ -201,12 +201,12 @@ cat artifacts/token_usage.log
 7. Added deterministic no-screenshot fallback:
    - If no seed screenshot exists, backend captures a PNG via adb (`exec-out screencap -p`) and proceeds.
 
-8. Added fixed launcher and one-click localhost run scripts:
-   - Fixed page URL: `/live-demo-fixed`
+8. Added Cross-Platform Mobile Test Script Generator Live Demo launcher and one-click localhost run scripts:
+   - Launcher page URL: `/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator`
    - Startup scripts:
      - `scripts/start_live_demo_localhost.ps1`
-   - Launcher target URL on any local machine:
-     - `http://localhost:8080/live-demo-fixed`
+    - Launcher target URL on any local machine:
+       - `http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator`
 
 9. Enforced deterministic single-run execution contract:
     - One live-demo realtime trigger now maps to one Appium/pytest execution.

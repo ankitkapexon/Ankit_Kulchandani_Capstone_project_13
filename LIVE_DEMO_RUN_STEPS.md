@@ -62,7 +62,7 @@ TESTCASE_AGENT_PROVIDER=mock
 python live_demo.py
 ```
 
-Open http://127.0.0.1:8080/live-demo-fixed and then:
+Open http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator and then:
 
 1. Select flow type:
 	- Check Flow By Uploading A Screenshot, or
@@ -120,7 +120,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_live_demo_loca
 
 Both launchers start live_demo if needed and open:
 
-- `http://localhost:8080/live-demo-fixed`
+- `http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator`
 
 ### Path B: Enhanced CLI flow
 

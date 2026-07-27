@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from flask import Flask, Response, abort, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 
 from pipelines.pipeline_composer import run_pipeline
@@ -1171,11 +1171,17 @@ def index() -> str:
     return render_template("live_demo.html", result=None, error=None, default_mode=_default_mode())
 
 
-@app.get("/live-demo-fixed")
+@app.get("/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator")
 def live_demo_fixed() -> Any:
-    """Fixed URL launcher page for the live demo."""
+    """Cross-Platform Mobile Test Script Generator Live Demo launcher page."""
     static_dir = PROJECT_ROOT / "web" / "static"
     return send_from_directory(str(static_dir), "live_demo_entry.html")
+
+
+@app.get("/live-demo-fixed")
+def live_demo_fixed_legacy() -> Response:
+    """Legacy route kept for backwards compatibility with older bookmarks/docs."""
+    return redirect("/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator", code=302)
 
 
 @app.post("/start-required-services")
