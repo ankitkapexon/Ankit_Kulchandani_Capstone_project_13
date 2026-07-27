@@ -255,7 +255,6 @@ Current live demo behavior:
 Localhost launcher scripts (new):
 
 - PowerShell one-click launcher: scripts/start_live_demo_localhost.ps1
-- CMD wrapper: scripts/start_live_demo_localhost.cmd
 
 These scripts start the Flask demo server (if needed) and open:
 

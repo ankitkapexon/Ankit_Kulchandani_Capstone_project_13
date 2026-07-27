@@ -189,7 +189,6 @@ cat artifacts/token_usage.log
    - Fixed page URL: `/live-demo-fixed`
    - Startup scripts:
      - `scripts/start_live_demo_localhost.ps1`
-     - `scripts/start_live_demo_localhost.cmd`
    - Launcher target URL on any local machine:
      - `http://localhost:8080/live-demo-fixed`
 

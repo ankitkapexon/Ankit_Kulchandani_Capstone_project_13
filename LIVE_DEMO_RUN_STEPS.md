@@ -94,12 +94,6 @@ Notes:
 
 ### Path A.1: One-click localhost launcher (new)
 
-Windows CMD:
-
-```cmd
-scripts\start_live_demo_localhost.cmd
-```
-
 Windows PowerShell:
 
 ```powershell

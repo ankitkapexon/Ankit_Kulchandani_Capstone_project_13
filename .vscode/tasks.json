@@ -1019,6 +1019,17 @@
 				"-Command",
 				"c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"
 			]
+		},
+		{
+			"label": "commit-all-pending-now",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"add",
+				"-A"
+			]
 		}
 	]
 }
