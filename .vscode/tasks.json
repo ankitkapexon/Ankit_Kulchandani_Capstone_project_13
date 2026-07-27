@@ -1594,6 +1594,38 @@
 				".vscode/tasks.json"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "commit-tracked-latest-main-msg",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Finalize latest task configuration updates"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "push-main-latest-now",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "finalize-push-latest-main-once",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".vscode/tasks.json"
+			],
+			"isBackground": false
 		}
 	]
 }
