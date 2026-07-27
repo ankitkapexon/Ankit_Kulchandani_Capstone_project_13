@@ -423,11 +423,11 @@ class {class_name}:
         if nav_steps:
             steps.append("")
 
-        # For login flows, fill fields before tapping login CTA.
+        # For login flows, ignore generic extracted steps and use deterministic
+        # minimum actions only. This avoids brittle steps like scrolling to
+        # fields that are only visible after opening the login form.
         if screen_name.strip().lower() == "login":
-            type_elements = [e for e in elements if str(e.get("action", "")).strip().lower() == "type"]
-            other_elements = [e for e in elements if e not in type_elements]
-            elements = type_elements + other_elements
+            elements = []
         
         for element_entry in elements:
             element_name = element_entry.get("element", "unknown")
@@ -539,6 +539,17 @@ class {class_name}:
 
         if normalized == "login":
             steps.append(
+                f'''        # Step {step_number}: Verify Menu is present\n'''
+                f'''        logger.info({self._py_string(f"Step {step_number}: Verifying 'Menu'")})\n'''
+                f'''        menu_anchor = self.verify_present([\n'''
+                f'''            LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/menuIV')}, priority=1, reliability=0.95, element_name={self._py_string('Menu')}),\n'''
+                f'''            LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('View menu')}, priority=2, reliability=0.85, element_name={self._py_string('Menu')})\n'''
+                f'''        ], screen_name={screen_literal})\n'''
+                f'''        assert menu_anchor is not None, {self._py_string('Menu not found')}\n'''
+            )
+            step_number += 1
+
+            steps.append(
                 f'''        # Step {step_number}: Open menu\n'''
                 f'''        logger.info({self._py_string(f"Step {step_number}: Open menu")})\n'''
                 f'''        self.tap([\n'''
@@ -560,6 +571,18 @@ class {class_name}:
                 f'''        except Exception:\n'''
                 f'''            login_form_open = False\n'''
                 f'''            logger.info({self._py_string('Log In menu entry not available; user may already be logged in')})\n'''
+                f'''\n'''
+                f'''        # Confirm login fields are visible before credential entry\n'''
+                f'''        if login_form_open:\n'''
+                f'''            try:\n'''
+                f'''                self.verify_present([\n'''
+                f'''                    LocatorStrategy({self._py_string('resource_id')}, {self._py_string('com.saucelabs.mydemoapp.android:id/nameET')}, priority=1, reliability=0.95, element_name={self._py_string('Username')}),\n'''
+                f'''                    LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('Username input field')}, priority=2, reliability=0.85, element_name={self._py_string('Username')}),\n'''
+                f'''                    LocatorStrategy({self._py_string('accessibility_id')}, {self._py_string('test-Username')}, priority=3, reliability=0.8, element_name={self._py_string('Username')})\n'''
+                f'''                ], screen_name={screen_literal})\n'''
+                f'''            except Exception:\n'''
+                f'''                login_form_open = False\n'''
+                f'''                logger.info({self._py_string('Username field not visible after opening login; skipping credential entry')})\n'''
             )
             step_number += 1
 

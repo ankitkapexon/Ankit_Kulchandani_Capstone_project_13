@@ -1,5 +1,11 @@
 # 🚀 LiteLLM Gateway - Local Testing Guide
 
+## Latest Documentation Sync (Jul 2026)
+
+- VS Code legacy task automation now uses Python runner dispatch (`scripts/task_runner.py`) instead of PowerShell command dependencies.
+- Screenshot flow Run Context now reports uploaded screenshot name and no longer surfaces Run ID in the UI banner.
+- Live result summary UI no longer shows telemetry/profile/lifecycle/quality-signal rows, but backend endpoints and artifact telemetry remain available for diagnostics.
+
 ## Latest Validation Context (Jul 2026)
 
 - Live demo now includes a Preflight Readiness card to validate services and flow configuration before execution.

@@ -1,5 +1,22 @@
 # 🎉 Implementation Complete: LangChain + Self-Healing
 
+## ✅ Latest Documentation Sync (Jul 2026)
+
+1. ✅ Legacy VS Code PowerShell task commands were migrated to Python-runner dispatch:
+   - `scripts/task_runner.py` now provides label-based execution for migrated legacy tasks.
+   - `.vscode/tasks.json` now routes migrated legacy labels via `run-label`.
+2. ✅ Live demo Run Context contract simplified:
+   - screenshot flow shows uploaded screenshot name,
+   - Run ID removed from Run Context,
+   - contract test updated accordingly (`tests/test_live_demo_ui_state_contract.py`).
+3. ✅ Live result UI simplification completed:
+   - removed Telemetry/App Profile Preset/Artifact lifecycle rows,
+   - removed self-healing quality-signal rows from frontend summary.
+4. ✅ Backend governance/telemetry functionality remains available through APIs and artifact indexes.
+5. ✅ Locator strategy and login generation regressions fixed in latest patch set:
+   - resource_id-first locator selection,
+   - deterministic minimum login actions.
+
 ## ✅ Final Reliability/Productization Completion (Jul 2026)
 
 All previously suggested 12 improvement points are now implemented.

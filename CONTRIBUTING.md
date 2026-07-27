@@ -55,6 +55,16 @@ Latest doc sync rule (Jul 2026):
         - `GITHUB_ACTIONS_SETUP.md`
         - `CONTRIBUTING.md`
 
+Additional latest sync constraints (Jul 2026):
+
+- If task automation behavior changes, keep `.vscode/tasks.json` and `scripts/task_runner.py` in sync and prefer Python label-dispatch over PowerShell-specific task logic.
+- If Run Context tokens in live demo change, update `tests/test_live_demo_ui_state_contract.py` in the same change.
+- If any result summary fields are removed from UI (for example telemetry/profile/lifecycle/quality rows), update:
+          - `README.md`
+          - `LIVE_DEMO_RUN_STEPS.md`
+          - `PRODUCTION_READINESS_CHECKLIST.md`
+  so operator expectations remain accurate.
+
 Additional live-demo consistency rules:
 
 - If flow-switch behavior is changed, preserve clean-run semantics for each user selection (`screenshot_pipeline` / `deterministic_realtime`) and update docs accordingly.

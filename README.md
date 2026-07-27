@@ -1,5 +1,20 @@
 # Mobile Test Generator - Capstone Project
 
+## Latest Documentation Sync (Jul 2026)
+
+- VS Code task automation is now PowerShell-free for legacy task labels:
+	- all migrated labels route through `scripts/task_runner.py` via `run-label`,
+	- `.vscode/tasks.json` no longer depends on `powershell` task commands for the migrated set.
+- Live demo Run Context was simplified:
+	- screenshot flow shows uploaded screenshot name,
+	- Run ID is intentionally removed from the Run Context banner.
+- Live demo result UI intentionally removed these lines/panels:
+	- Telemetry link row,
+	- App Profile Preset line,
+	- Artifact lifecycle line,
+	- self-healing quality signal rows (success rate, fallback depth, recurring failures, unstable elements).
+- Backend capabilities above still exist for ops/debug use (endpoints/indexes/telemetry files), but are no longer surfaced in the main live result summary UI.
+
 ## Latest Updates (Jul 2026)
 
 - Completed reliability/productization improvement set (12 items):

@@ -4,14 +4,17 @@ This guide explains how to use the enhanced mobile test automation framework wit
 
 ---
 
+## ✅ Latest Documentation Sync (Jul 2026)
+
+- Legacy VS Code task execution is now routed via Python label-dispatch (`scripts/task_runner.py`) for migrated legacy labels.
+- Live demo Run Context now shows screenshot name for screenshot flow and does not show Run ID.
+- Self-healing quality-signal lines were intentionally removed from the live result summary UI for simplification.
+- Self-healing telemetry/governance data is still available through backend outputs and artifact files when enabled.
+
 ## ✅ Live Demo Integration Updates (Jul 2026)
 
 - Final reliability additions:
-  - Self-healing quality signals now surfaced in live demo results:
-    - healing success rate,
-    - fallback depth estimate,
-    - recurring failed locators,
-    - top unstable elements.
+  - Self-healing quality signal generation remains available in backend telemetry/governance outputs.
   - App profile presets now available (`generic`, `ecommerce`, `banking`, `social`) to tune locator/navigation bias per app domain.
   - Preflight Readiness card now validates required services and config before execution.
   - Telemetry dashboard endpoint available for stage timing visibility.

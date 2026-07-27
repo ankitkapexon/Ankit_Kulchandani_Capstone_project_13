@@ -256,16 +256,16 @@ class LocatorAgent:
         return existing_action or new_action
 
     def _select_locator_strategy(self, element: Dict[str, Any]) -> tuple[str, str]:
+        value = self._extract_locator_value(element, ("resource_id", "resource-id", "resourceId"))
+        if value:
+            return "resource_id", str(value)
+
         value = self._extract_locator_value(
             element,
             ("accessibility_id", "content_desc", "content-desc", "contentDescription", "accessibilityId"),
         )
         if value:
             return "accessibility_id", str(value)
-
-        value = self._extract_locator_value(element, ("resource_id", "resource-id", "resourceId"))
-        if value:
-            return "resource_id", str(value)
 
         value = self._extract_locator_value(element, ("id", "android_id", "view_id"))
         if value:
@@ -434,6 +434,16 @@ class LocatorAgent:
 
     def _suggest_locator_value(self, element: Dict[str, Any], action: str, step_text: str, fallback_value: str) -> str:
         label = str(element.get("label") or "").strip()
+
+        # If an incoming resource id points to a different app package, prefer
+        # known app-specific resource ids for this project profile.
+        if fallback_value and ":id/" in fallback_value and self.config.app_specific_locator_hints_enabled:
+            app_package = (self.config.app_package or "").strip()
+            if app_package and not fallback_value.startswith(f"{app_package}:"):
+                override = self._guess_app_specific_locator(element)
+                if override and override[0] == "resource_id":
+                    return override[1]
+
         if fallback_value and fallback_value != label:
             return str(fallback_value)
         if label:

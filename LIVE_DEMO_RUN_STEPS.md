@@ -2,6 +2,20 @@
 
 This guide covers the current live demo flow on main branch.
 
+## Latest Documentation Sync (Jul 2026)
+
+- Legacy VS Code task labels were migrated from PowerShell commands to Python runner dispatch:
+	- `.vscode/tasks.json` now routes migrated labels through `scripts/task_runner.py run-label --label <task label>`.
+- Run Context behavior changed for screenshot upload flow:
+	- displays uploaded screenshot name,
+	- no longer displays Run ID in Run Context.
+- Result panel simplification in `web/templates/live_demo.html`:
+	- removed Telemetry link row,
+	- removed App Profile Preset row,
+	- removed Artifact lifecycle row,
+	- removed self-healing quality signal rows from the result UI summary.
+- Telemetry/indexing/lifecycle logic remains available in backend APIs and artifact indexes for governance usage.
+
 ## Latest Updates (Jul 2026)
 
 - Final reliability/productization pack completed:

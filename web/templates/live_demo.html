@@ -582,7 +582,7 @@
             <h3>Run Context</h3>
             <div class="run-context-grid">
               <p class="run-context-item"><strong>Flow:</strong> <span id="ctxFlow">N/A</span></p>
-              <p class="run-context-item"><strong>Run ID:</strong> <span id="ctxRunId">pending</span></p>
+              <p id="ctxScreenshotWrap" class="run-context-item" hidden><strong>Screenshot:</strong> <span id="ctxScreenshotName">N/A</span></p>
               <p class="run-context-item"><strong>Started:</strong> <span id="ctxStartedAt">N/A</span></p>
               <p class="run-context-item"><strong>App Package:</strong> <span id="ctxAppPackage">N/A</span></p>
             </div>
@@ -619,13 +619,8 @@
       <div class="run-summary">
         <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
         <p class="meta"><strong>Appium:</strong> {{ result.appium_status }}</p>
-        <p class="meta"><strong>App Profile Preset:</strong> {{ result.app_profile_preset|default('generic') }}</p>
-        {% if result.artifact_lifecycle %}
-        <p class="meta"><strong>Artifact lifecycle:</strong> removed {{ result.artifact_lifecycle.removed_files|default(0) }} old files (retention {{ result.artifact_lifecycle.retention_days|default(14) }} days)</p>
-        {% endif %}
       </div>
       <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="{{ '/artifacts/' + (result.report_path[10:] if result.report_path.startswith('artifacts/') else result.report_path) }}" target="_blank" rel="noopener">Open HTML report</a></p>
-      <p class="meta" style="margin-top:6px;"><strong>Telemetry:</strong> <a href="/telemetry-dashboard" target="_blank" rel="noopener">Open timing dashboard</a></p>
     </div>
 
     <div class="artifact-toolbar">
@@ -668,18 +663,6 @@
         <p class="meta"><strong>Generated scripts:</strong> {{ result.self_healing.generated_scripts|default(0) }}</p>
         <p class="meta"><strong>Scripts with self-healing markers:</strong> {{ result.self_healing.scripts_with_self_healing_count|default(0) }}</p>
         <p class="meta"><strong>Healing repository updated:</strong> {{ 'Yes' if result.self_healing.healing_repository_updated else 'No' }}</p>
-        {% if result.self_healing.quality_signals %}
-        <p class="meta"><strong>Healing success rate:</strong> {{ result.self_healing.quality_signals.healing_success_rate|default(0) }}%</p>
-        <p class="meta"><strong>Fallback depth estimate:</strong> {{ result.self_healing.quality_signals.fallback_depth_estimate|default(0) }}</p>
-        <p class="meta"><strong>Recurring failed locators:</strong> {{ result.self_healing.quality_signals.recurring_failed_locators|default(0) }}</p>
-        {% if result.self_healing.quality_signals.top_unstable_elements %}
-        <ul>
-          {% for item in result.self_healing.quality_signals.top_unstable_elements %}
-          <li>{{ item.element }} (failures: {{ item.failure_count }}, reliability: {{ item.reliability }})</li>
-          {% endfor %}
-        </ul>
-        {% endif %}
-        {% endif %}
         {% if result.self_healing.scripts_with_self_healing %}
         <ul>
           {% for item in result.self_healing.scripts_with_self_healing %}
@@ -760,7 +743,8 @@
       const runProgressElapsed = document.getElementById("runProgressElapsed");
       const runContext = document.getElementById("runContext");
       const ctxFlow = document.getElementById("ctxFlow");
-      const ctxRunId = document.getElementById("ctxRunId");
+      const ctxScreenshotWrap = document.getElementById("ctxScreenshotWrap");
+      const ctxScreenshotName = document.getElementById("ctxScreenshotName");
       const ctxStartedAt = document.getElementById("ctxStartedAt");
       const ctxAppPackage = document.getElementById("ctxAppPackage");
       const ctxResetNote = document.getElementById("ctxResetNote");
@@ -790,16 +774,30 @@
         return "Check Flow By Uploading A Screenshot";
       };
 
-      const updateRunContext = ({ flow, runId, startedAt, resetMessage } = {}) => {
+      const getSelectedScreenshotName = () => {
+        if (!screenshot || !screenshot.files || screenshot.files.length === 0) {
+          return "N/A";
+        }
+        return screenshot.files[0].name || "N/A";
+      };
+
+      const updateRunContext = ({ flow, runId, startedAt, resetMessage, screenshotName } = {}) => {
         if (!runContext) {
           return;
         }
+        const resolvedFlow = flow || currentFlowValue();
         runContext.classList.add("active");
         if (ctxFlow) {
-          ctxFlow.textContent = flowLabel(flow || currentFlowValue());
+          ctxFlow.textContent = flowLabel(resolvedFlow);
         }
-        if (ctxRunId && typeof runId === "string") {
-          ctxRunId.textContent = runId;
+        if (ctxScreenshotWrap && ctxScreenshotName) {
+          const isScreenshotFlow = resolvedFlow === "screenshot_pipeline";
+          ctxScreenshotWrap.hidden = !isScreenshotFlow;
+          if (isScreenshotFlow) {
+            ctxScreenshotName.textContent = typeof screenshotName === "string" && screenshotName.length > 0
+              ? screenshotName
+              : getSelectedScreenshotName();
+          }
         }
         if (ctxStartedAt && startedAt instanceof Date) {
           ctxStartedAt.textContent = startedAt.toLocaleString();
@@ -987,6 +985,13 @@
           runPreviewPanel.classList.remove("active");
         }
 
+        if (ctxScreenshotWrap && ctxScreenshotName) {
+          ctxScreenshotWrap.hidden = !uploadMode;
+          if (uploadMode) {
+            ctxScreenshotName.textContent = getSelectedScreenshotName();
+          }
+        }
+
         syncActiveFlowButton();
       };
 
@@ -1025,6 +1030,7 @@
           event.preventDefault();
           clearPreviousRunResults();
           const selected = currentFlowValue();
+          const selectedScreenshotName = selected === "screenshot_pipeline" ? getSelectedScreenshotName() : "";
           const startedAt = new Date();
           const resetStateResult = await resetUiStateOnServer();
           updateRunContext({
@@ -1032,6 +1038,7 @@
             runId: "pending",
             startedAt,
             resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+            screenshotName: selectedScreenshotName,
           });
           const formData = new FormData(liveDemoForm);
           const detail = selected === "deterministic_realtime"
@@ -1175,6 +1182,7 @@
               runId,
               startedAt,
               resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+              screenshotName: selectedScreenshotName,
             });
             let statusInterval = null;
 

@@ -1,5 +1,12 @@
 # 🚀 GitHub Actions Setup Guide
 
+## Latest Documentation Sync (Jul 2026)
+
+- Legacy VS Code task labels are now routed through Python label-dispatch (`scripts/task_runner.py`) instead of PowerShell commands.
+- Live demo Run Context now uses screenshot name (screenshot flow) and intentionally omits Run ID.
+- Live result summary UI no longer includes Telemetry/App Profile Preset/Artifact lifecycle/self-healing quality rows.
+- Keep CI assertions aligned with this UI contract (use existing UI/contract tests instead of old text markers).
+
 ## Latest Notes (Jul 2026)
 
 - CI now includes dedicated flow smoke checks:

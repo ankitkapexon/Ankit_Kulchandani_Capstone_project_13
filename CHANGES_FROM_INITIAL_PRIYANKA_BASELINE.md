@@ -4,6 +4,30 @@ Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
 - Current state includes updates up to: 301ce07
 
+## Latest Documentation Sync Addendum (Jul 2026)
+
+- Task automation migration completed for legacy PowerShell labels:
+  - `.vscode/tasks.json` migrated legacy `powershell` task entries to Python-based dispatch.
+  - Added `scripts/task_runner.py` as centralized portable task executor.
+  - Added migration/support utilities:
+    - `scripts/_migrate_powershell_tasks_to_runner.py`
+    - `scripts/legacy_powershell_tasks.json`
+    - `scripts/_dump_ps_tasks.py`
+    - `scripts/_extract_legacy_ps_tasks.py`
+
+- Live demo UI contract updated:
+  - Run Context now shows screenshot name for screenshot flow.
+  - Run ID was removed from Run Context UI contract.
+  - UI contract test updated in `tests/test_live_demo_ui_state_contract.py` to assert `ctxScreenshotWrap` and `ctxScreenshotName`.
+
+- Live demo result summary simplification:
+  - removed frontend rows for Telemetry, App Profile Preset, Artifact lifecycle, and self-healing quality signal details.
+  - backend telemetry/lifecycle/index endpoints remain intact for non-UI operational use.
+
+- Locator and login-generation regressions addressed:
+  - locator strategy preference restored to resource_id-first in `agents/locator_agent.py`.
+  - login generation path hardened to deterministic minimum steps in `agents/self_healing_appium_generator.py`.
+
 ## 1) What We Changed Since Initial Baseline
 
 - CI branch coverage expanded:

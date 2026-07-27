@@ -2,6 +2,13 @@
 
 Use this checklist before demoing, handing over, or promoting a build.
 
+## Latest Sync Notes (Jul 2026)
+
+- Legacy VS Code PowerShell tasks are migrated to Python label-dispatch through `scripts/task_runner.py`.
+- Run Context in live demo now shows screenshot name for screenshot flow; Run ID is intentionally not displayed.
+- Live result summary intentionally omits Telemetry/App Profile Preset/Artifact lifecycle and self-healing quality rows.
+- Governance and telemetry data remain available via backend APIs and artifact index files.
+
 ## Environment
 
 - [ ] `.env` exists and all mandatory keys are set.
@@ -34,8 +41,8 @@ Use this checklist before demoing, handing over, or promoting a build.
 
 ## Self-Healing Quality Signals
 
-- [ ] Healing success rate is visible in run results.
-- [ ] Top unstable elements list is visible and reviewed.
+- [ ] Healing success rate is available from backend telemetry/governance output.
+- [ ] Top unstable elements data is reviewable from backend output when enabled.
 - [ ] Recurring failed locator count is tracked and trending down.
 
 ## CI/CD
