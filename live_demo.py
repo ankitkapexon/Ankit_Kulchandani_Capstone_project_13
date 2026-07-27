@@ -894,12 +894,10 @@ def _collect_self_healing_details(
             scripts_with_self_healing.append(rel_path)
 
     db_updated = False
-    db_artifact = ""
     if db_path.exists():
         try:
             current_mtime = db_path.stat().st_mtime
             db_updated = db_mtime_before is None or current_mtime > db_mtime_before + 1e-6
-            db_artifact = str(db_path.relative_to(PROJECT_ROOT)).replace("\\", "/")
         except Exception:
             db_updated = True
 
@@ -908,7 +906,7 @@ def _collect_self_healing_details(
         "generated_scripts": len(script_artifacts),
         "scripts_with_self_healing": scripts_with_self_healing,
         "scripts_with_self_healing_count": len(scripts_with_self_healing),
-        "healing_repository": db_artifact,
+        "healing_repository": "",
         "healing_repository_updated": db_updated,
     }
 
@@ -998,8 +996,6 @@ def _run_demo_pipeline(
     self_healing = _collect_self_healing_details(script_artifacts, healing_db, healing_db_mtime_before)
 
     self_healing_artifacts: list[str] = []
-    if self_healing.get("healing_repository"):
-        self_healing_artifacts.append(str(self_healing["healing_repository"]))
 
     return {
         "ok": True,
@@ -1593,8 +1589,15 @@ def emulator_frame() -> Response:
 @app.get("/artifacts/<path:subpath>")
 def serve_artifact(subpath: str):
     normalized = Path(subpath)
-    absolute_path = (PROJECT_ROOT / normalized).resolve()
-    if not str(absolute_path).startswith(str(PROJECT_ROOT.resolve())):
+    # Backward compatibility: allow both
+    # - /artifacts/<relative-to-artifacts>
+    # - /artifacts/artifacts/<relative-to-artifacts>
+    parts = normalized.parts
+    if parts and parts[0] == "artifacts":
+        normalized = Path(*parts[1:]) if len(parts) > 1 else Path()
+
+    absolute_path = (ARTIFACTS_ROOT / normalized).resolve()
+    if not str(absolute_path).startswith(str(ARTIFACTS_ROOT.resolve())):
         abort(403)
     if not absolute_path.exists() or not absolute_path.is_file():
         abort(404)

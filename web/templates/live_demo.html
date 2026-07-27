@@ -566,20 +566,6 @@
         <p class="meta"><strong>Generated scripts:</strong> {{ result.self_healing.generated_scripts|default(0) }}</p>
         <p class="meta"><strong>Scripts with self-healing markers:</strong> {{ result.self_healing.scripts_with_self_healing_count|default(0) }}</p>
         <p class="meta"><strong>Healing repository updated:</strong> {{ 'Yes' if result.self_healing.healing_repository_updated else 'No' }}</p>
-        {% if result.artifacts.self_healing %}
-        <ul>
-          {% for item in result.artifacts.self_healing %}
-          {% if not item.endswith('healing_repository.db') %}
-          <li>
-            <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endif %}
-          {% endfor %}
-        </ul>
-        {% endif %}
         {% if result.self_healing.scripts_with_self_healing %}
         <ul>
           {% for item in result.self_healing.scripts_with_self_healing %}
