@@ -110,6 +110,7 @@ Baseline used for comparison:
 - Realtime deterministic flow made truly single-run (latest):
   - Deterministic live demo run now executes Appium/pytest once per user trigger.
   - Artifact pipeline report generation no longer launches a second mobile test execution.
+  - Post-completion artifact publishing now uses explicit report-only execution and does not relaunch app pages before UI result redirect.
   - Implemented with scoped reporter skip flag in live demo deterministic artifact pass.
   - Files: live_demo.py, agents/reporter_agent.py
 
@@ -195,6 +196,11 @@ Baseline used for comparison:
   - Test logs now include explicit INFO milestones for each captured business page.
   - HTML report content for deterministic runs is now richer and easier to troubleshoot.
   - Files: tests/test_realtime_e2e_flow.py, live_demo.py
+
+- Reporter/pipeline report execution control refinement (latest):
+  - Added explicit report execution control flags through reporter, stage runner, and pipeline composer.
+  - Deterministic artifact pass now uses report-only mode via explicit function parameters rather than environment-only signaling.
+  - Files: agents/reporter_agent.py, pipelines/stage_runners.py, pipelines/pipeline_composer.py, live_demo.py
 
 ## 3) How These Changes Help Us
 

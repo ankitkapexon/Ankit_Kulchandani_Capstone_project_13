@@ -236,8 +236,17 @@ class Step6ReportStage:
     def __init__(self, project_root: Path) -> None:
         self.project_root = project_root
 
-    def run(self, open_browser: bool, report_scope: str | None = None) -> Path:
+    def run(
+        self,
+        open_browser: bool,
+        report_scope: str | None = None,
+        execute_tests: bool = True,
+    ) -> Path:
         from agents.reporter_agent import ReporterAgent
 
         reporter = ReporterAgent(project_root=self.project_root)
-        return reporter.run(open_browser=open_browser, report_scope=report_scope)
+        return reporter.run(
+            open_browser=open_browser,
+            report_scope=report_scope,
+            execute_tests=execute_tests,
+        )

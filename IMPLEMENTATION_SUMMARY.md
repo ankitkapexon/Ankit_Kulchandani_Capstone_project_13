@@ -220,6 +220,12 @@ cat artifacts/token_usage.log
    - Realtime deterministic flow now renders live emulator frames only for that flow.
    - File: `web/templates/live_demo.html`
 
+14. Prevented post-realtime relaunch before result redirect:
+   - Added explicit report-only execution control in reporter/pipeline layers.
+   - Deterministic artifact publishing pass now skips test execution by parameterized control.
+   - Expected behavior: once realtime run completes and screen stops, UI transitions to reports without reopening product listing or other app pages.
+   - Files: `agents/reporter_agent.py`, `pipelines/stage_runners.py`, `pipelines/pipeline_composer.py`, `live_demo.py`
+
 ### **1. Locator Reliability**
 
 **Before:**

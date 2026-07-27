@@ -77,6 +77,7 @@ Notes:
 - Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend.
 - Deterministic realtime flow executes Appium/pytest once per user-triggered run.
 - Deterministic artifact pipeline report generation does not trigger a second realtime Appium run.
+- After deterministic run reaches completion, artifact report publishing is report-only and should redirect directly to results without reopening product listing or other app pages.
 - Reports are flow-scoped:
 	- Screenshot flow: `artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html`
 	- Realtime final: `artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html`

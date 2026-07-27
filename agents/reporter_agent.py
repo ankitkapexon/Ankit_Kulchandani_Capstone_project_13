@@ -46,6 +46,7 @@ class ReporterAgent:
         scripts_dir: Optional[Path | str] = None,
         open_browser: bool = True,
         report_scope: Optional[str] = None,
+        execute_tests: bool = True,
     ) -> Path:
         """Run pytest over the generated Appium scripts, save an HTML report, and
         optionally open it in the browser.
@@ -72,7 +73,7 @@ class ReporterAgent:
         print(f"[ReporterAgent] Running tests from: {source}")
         print(f"[ReporterAgent] Saving report to:   {report_html}")
 
-        skip_execution = os.getenv("REPORTER_SKIP_TEST_EXECUTION", "").strip() == "1"
+        skip_execution = (not execute_tests) or (os.getenv("REPORTER_SKIP_TEST_EXECUTION", "").strip() == "1")
         if skip_execution:
             self._write_preflight_report(
                 report_html,
@@ -80,8 +81,8 @@ class ReporterAgent:
             )
             exit_code = 0
             status = "SKIPPED (CONFIGURED)"
-            logger.info("[ReporterAgent] Test execution skipped due to REPORTER_SKIP_TEST_EXECUTION=1")
-            print("[ReporterAgent] Test execution skipped due to REPORTER_SKIP_TEST_EXECUTION=1")
+            logger.info("[ReporterAgent] Test execution skipped by configuration (execute_tests=False or REPORTER_SKIP_TEST_EXECUTION=1)")
+            print("[ReporterAgent] Test execution skipped by configuration (execute_tests=False or REPORTER_SKIP_TEST_EXECUTION=1)")
         else:
             preflight_issue = self._preflight_issue()
             if preflight_issue:

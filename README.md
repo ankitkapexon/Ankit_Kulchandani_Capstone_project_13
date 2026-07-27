@@ -277,6 +277,7 @@ Deterministic run execution contract:
 
 - One live-demo trigger performs one realtime Appium/pytest run.
 - Realtime artifact pipeline reporting does not start a second mobile test execution.
+- After realtime run completion, artifact report generation is report-only and does not relaunch the app/emulator screen before result redirect.
 
 ## Deterministic Realtime E2E Flow (Latest)
 
@@ -364,6 +365,7 @@ Report output format:
 - Self-healing script startup stabilization removed hardcoded sleep in generator output and relies on explicit wait logic.
 - Stale-element retry in generated self-healing scripts now re-waits on target locators instead of fixed sleep.
 - Deterministic realtime report logging now includes verbose pytest CLI output and explicit INFO milestones.
+- Reporter and pipeline now support explicit report-only execution mode to prevent post-run relaunch behavior.
 
 ## Supported Image Formats
 

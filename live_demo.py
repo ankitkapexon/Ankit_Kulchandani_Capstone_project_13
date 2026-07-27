@@ -758,6 +758,7 @@ def _run_demo_pipeline(
     input_dir: Path,
     mode: str,
     report_scope: str = "screenshot_pipeline",
+    execute_report_tests: bool = True,
     progress_cb: Callable[[str, str], None] | None = None,
 ) -> dict[str, Any]:
     ssm_dir = ARTIFACTS_ROOT / "ssm_json_output"
@@ -814,6 +815,7 @@ def _run_demo_pipeline(
             open_browser=False,
             feature_flags=feature_flags,
             report_scope=report_scope,
+            execute_report_tests=execute_report_tests,
         )
 
     output_logs = _normalize_pipeline_logs(std_buffer.getvalue())
@@ -917,20 +919,13 @@ def _run_deterministic_flow(
         if progress_cb:
             progress_cb(stage, f"Artifact pass: {message}")
 
-    previous_skip_flag = os.environ.get("REPORTER_SKIP_TEST_EXECUTION")
-    os.environ["REPORTER_SKIP_TEST_EXECUTION"] = "1"
-    try:
-        pipeline_result = _run_demo_pipeline(
-            seed_input_dir,
-            mode,
-            report_scope="deterministic_realtime/artifact_pipeline",
-            progress_cb=_artifact_progress,
-        )
-    finally:
-        if previous_skip_flag is None:
-            os.environ.pop("REPORTER_SKIP_TEST_EXECUTION", None)
-        else:
-            os.environ["REPORTER_SKIP_TEST_EXECUTION"] = previous_skip_flag
+    pipeline_result = _run_demo_pipeline(
+        seed_input_dir,
+        mode,
+        report_scope="deterministic_realtime/artifact_pipeline",
+        execute_report_tests=False,
+        progress_cb=_artifact_progress,
+    )
 
     if progress_cb:
         progress_cb("Finalizing", "Publishing deterministic run report.")
