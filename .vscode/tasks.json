@@ -1480,6 +1480,120 @@
 				"GITHUB_ACTIONS_SETUP.md"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "commit-latest-doc-and-runner-sync",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Sync docs with latest live-demo contract and finalize PowerShell-to-Python task migration"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "push-main-latest-sync",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-python-processes-now",
+			"type": "shell",
+			"command": "wmic",
+			"args": [
+				"process",
+				"where",
+				"name='python.exe'",
+				"get",
+				"ProcessId,CommandLine",
+				"/format:list"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-port-8080-owner-now",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"netstat -ano | findstr :8080"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-live-demo-process-count-now",
+			"type": "shell",
+			"command": "wmic",
+			"args": [
+				"process",
+				"where",
+				"name='python.exe'",
+				"get",
+				"ProcessId,CommandLine",
+				"/format:list"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "dedupe-live-demo-python-processes",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$listener = (netstat -ano | findstr ':8080' | findstr 'LISTENING' | ForEach-Object { ($_ -split '\\s+')[-1] } | Select-Object -First 1); if (-not $listener) { Write-Output 'NO_LISTENER_FOUND'; exit 1 }; Write-Output ('KEEP_PID=' + $listener); $procs = Get-CimInstance Win32_Process | Where-Object { $_.Name -ieq 'python.exe' -and $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { if ($p.ProcessId -ne [int]$listener) { try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; Write-Output ('KILLED_PID=' + $p.ProcessId) } catch { Write-Output ('KILL_FAILED_PID=' + $p.ProcessId) } } }; Write-Output 'DEDUPE_DONE'"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-live-demo-processes-after-dedupe",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"Get-CimInstance Win32_Process | Where-Object { $_.Name -ieq 'python.exe' -and $_.CommandLine -match 'live_demo\\.py' } | Select-Object ProcessId, CommandLine | Format-Table -AutoSize"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "verify-single-live-demo-process-now",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$procs = Get-CimInstance Win32_Process | Where-Object { $_.Name -ieq 'python.exe' -and $_.CommandLine -match 'live_demo\\.py' }; $count = ($procs | Measure-Object).Count; Write-Output ('LIVE_DEMO_PROCESS_COUNT=' + $count); $procs | Select-Object ProcessId, CommandLine | Format-Table -AutoSize"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "final-dedupe-live-demo-to-one",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$listener = (netstat -ano | findstr ':8080' | findstr 'LISTENING' | ForEach-Object { ($_ -split '\\s+')[-1] } | Select-Object -First 1); if (-not $listener) { Write-Output 'NO_LISTENER_FOUND'; exit 1 }; Write-Output ('KEEP_PID=' + $listener); $procs = Get-CimInstance Win32_Process | Where-Object { $_.Name -ieq 'python.exe' -and $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { if ($p.ProcessId -ne [int]$listener) { try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; Write-Output ('KILLED_PID=' + $p.ProcessId) } catch { Write-Output ('KILL_FAILED_PID=' + $p.ProcessId) } } }; $left = Get-CimInstance Win32_Process | Where-Object { $_.Name -ieq 'python.exe' -and $_.CommandLine -match 'live_demo\\.py' }; Write-Output ('LEFT_COUNT=' + (($left | Measure-Object).Count)); $left | Select-Object ProcessId | Format-Table -AutoSize"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "commit-tracked-latest-main",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".vscode/tasks.json"
+			],
+			"isBackground": false
 		}
 	]
 }
