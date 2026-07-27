@@ -21,6 +21,20 @@ This guide covers the current live demo flow on main branch.
 	- `/artifacts/artifacts/...`
 	- `/artifacts/...`
 - Direct `healing_repository.db` link exposure was removed from the frontend result panel.
+- Cross-app compatibility updates were added:
+	- app-specific locator hints and navigation presets are now controlled by env toggles,
+	- default behavior auto-enables these only for SauceLabs package profiles.
+- New `.env.example` toggles are available for quick cross-app setup:
+	- `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+	- `ENABLE_APP_SPECIFIC_NAVIGATION`
+- Generated Appium scripts now respect env-provided app targets:
+	- `APP_PACKAGE`
+	- `APP_ACTIVITY`
+- Screenshot pipeline generation is now profile-aware:
+	- reference demo profiles keep self-healing generator by default,
+	- non-reference profiles use generic generator path for safer cross-app output.
+- Stale-result cleanup behavior is now immediate:
+	- when flow is changed or a new run is submitted, old report/screenshot result sections are removed before the new run completes.
 
 ## Prerequisites
 
@@ -91,6 +105,7 @@ Notes:
 - Realtime flow preview shows live emulator frames while the run is active.
 - The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
 - Result panels are intended to show only files generated for the current run.
+- Result panels are now also cleared immediately on flow switch/new submit to prevent interim stale report or screenshot display.
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
 - Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.

@@ -2,7 +2,7 @@
 
 Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
-- Current state includes updates up to: 8b19ade
+- Current state includes updates up to: 301ce07
 
 ## 1) What We Changed Since Initial Baseline
 
@@ -171,6 +171,20 @@ Baseline used for comparison:
   - Flow switch actions now refresh to a clean page state (`/?flow_type=...`) so each run starts without stale previous-run result panels.
   - Direct `healing_repository.db` link exposure was removed from the live demo result panel to avoid non-actionable 404s.
   - Files: live_demo.py, web/templates/live_demo.html
+
+- Cross-app profile hardening + stale-result cleanup (latest):
+  - Added config-backed app profile flags:
+    - `is_reference_demo_profile`
+    - `app_specific_locator_hints_enabled`
+    - `app_specific_navigation_enabled`
+  - Added env toggles in `.env.example` for app-specific heuristics:
+    - `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+    - `ENABLE_APP_SPECIFIC_NAVIGATION`
+  - Locator and navigation logic now gates SauceLabs-style assumptions behind profile-aware config checks.
+  - Generated Appium capabilities now use env-provided `APP_PACKAGE` and `APP_ACTIVITY` instead of unconditional hardcoded values.
+  - Screenshot pipeline now disables self-healing generator for non-reference app profiles to avoid app-specific script bias.
+  - Live demo UI now removes old result sections immediately on flow change or run submit to eliminate interim stale report/screenshot visibility.
+  - Files: config/app_config.py, .env.example, agents/locator_agent.py, agents/multi_strategy_locator_agent.py, agents/navigation_agent.py, agents/appium_generator_agent.py, live_demo.py, web/templates/live_demo.html
 
 ## 2) New Things Implemented
 

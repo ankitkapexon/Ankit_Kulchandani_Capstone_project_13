@@ -8,6 +8,11 @@
 - Self-healing output visibility in live demo results can be used as a quick post-run health signal.
 - Flow selection now refreshes to a clean page state (`/?flow_type=...`) so each new run starts without stale result carry-over.
 - Report links remain accessible with both legacy and normalized artifact path styles via hardened artifact route handling.
+- Live demo now clears old result sections immediately when flow changes or a new run starts, preventing interim stale report/screenshot visibility during active execution.
+- Cross-app toggles are now available in `.env.example`:
+   - `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+   - `ENABLE_APP_SPECIFIC_NAVIGATION`
+- For non-reference app profiles, screenshot pipeline generation now avoids app-specific self-healing generator defaults.
 
 ## ✅ **Configuration Complete**
 

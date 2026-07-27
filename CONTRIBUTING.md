@@ -59,6 +59,8 @@ Additional live-demo consistency rules:
 - If flow-switch behavior is changed, preserve clean-run semantics for each user selection (`screenshot_pipeline` / `deterministic_realtime`) and update docs accordingly.
 - If artifact links are changed, maintain compatibility for existing shared URLs where practical (legacy + normalized path styles) to avoid report 404 regressions.
 - Do not expose low-level internal DB artifacts (for example `healing_repository.db`) as mandatory user-facing links in the result UI.
+- If app-specific heuristics are changed, keep `.env.example` aligned for `ENABLE_APP_SPECIFIC_LOCATOR_HINTS` and `ENABLE_APP_SPECIFIC_NAVIGATION` and document expected defaults.
+- If flow-switch/run-submit UX is changed, ensure stale previous-run result panels are not visible during new run execution and document that behavior in user-facing guides.
 
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.

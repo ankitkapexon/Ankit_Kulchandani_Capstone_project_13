@@ -18,6 +18,20 @@
 	- `/artifacts/artifacts/...`
 	- `/artifacts/...`
 - Direct frontend link exposure for `healing_repository.db` was removed from the live demo result UI.
+- Cross-app hardening added for generator and locator/navigation behavior:
+	- app-specific locator guesses and navigation presets are now config-gated,
+	- defaults auto-enable only for SauceLabs package profiles,
+	- explicit toggles available in `.env.example`:
+		- `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+		- `ENABLE_APP_SPECIFIC_NAVIGATION`
+- Appium script generation no longer hardcodes app package/activity:
+	- generated scripts now read `APP_PACKAGE` and `APP_ACTIVITY` from environment when provided.
+- Screenshot pipeline now uses profile-aware generator selection:
+	- self-healing generator is enabled by default for reference demo profiles,
+	- non-reference app profiles use generic script generation to avoid SauceLabs-specific assumptions.
+- Flow-change UX hardening:
+	- previous run report/screenshot panels are removed immediately when flow changes or a new run starts,
+	- users no longer see stale previous-run outputs while waiting for current execution.
 - Latest validation snapshot:
 	- screenshot upload flow completes end to end,
 	- deterministic realtime flow completes end to end,

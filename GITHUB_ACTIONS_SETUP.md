@@ -6,6 +6,13 @@
 - Self-healing result visibility was added in live demo UI for easier post-run verification.
 - Report-serving compatibility was hardened so both legacy and normalized artifact URL styles resolve correctly during manual demo checks.
 - Live demo flow selection now refreshes to a clean run state (`/?flow_type=...`) to prevent stale previous-run result views.
+- Live demo now clears previous result sections immediately on flow switch/new run submit, so stale report/screenshot panels are not shown while the current run is in progress.
+- Cross-app runtime toggles were added to `.env.example` for easier profile control:
+  - `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+  - `ENABLE_APP_SPECIFIC_NAVIGATION`
+- Screenshot pipeline generation is now profile-aware:
+  - reference demo profile keeps self-healing generation,
+  - non-reference profiles use generic generator defaults.
 - When validating after pull from `main`, include at least one deterministic realtime check:
 
 ```powershell

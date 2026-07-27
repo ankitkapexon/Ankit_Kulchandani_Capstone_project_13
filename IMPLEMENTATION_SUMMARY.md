@@ -5,7 +5,7 @@
 1. ✅ Added self-healing visibility to live demo result UI:
    - Self-Healing Output panel,
    - self-healing script count badge,
-   - healing repository artifact exposure.
+   - healing repository update status (without direct DB-link exposure).
 2. ✅ Added scoped environment overrides in demo pipeline execution to avoid cross-run leakage.
 3. ✅ Added deterministic realtime timeout handling for pytest subprocess execution.
 4. ✅ Added async run inactivity watchdog handling in run-state reads.
@@ -29,6 +29,25 @@
    - `PY_COMPILE_OK`
    - `TEMPLATE_OK`
    - report route checks returned HTTP 200 for both URL styles.
+
+## ✅ Latest Cross-App + Result-Reset Updates (Jul 2026)
+
+1. ✅ Added profile-aware app behavior controls in configuration:
+   - `is_reference_demo_profile`
+   - `app_specific_locator_hints_enabled`
+   - `app_specific_navigation_enabled`
+2. ✅ Added cross-app env toggles in `.env.example`:
+   - `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
+   - `ENABLE_APP_SPECIFIC_NAVIGATION`
+3. ✅ Locator/navigation inference now gates app-specific assumptions behind config checks.
+4. ✅ Generated Appium scripts now use env-provided `APP_PACKAGE`/`APP_ACTIVITY` when present.
+5. ✅ Screenshot pipeline now uses profile-aware script generation:
+   - reference demo profile: self-healing generator path,
+   - non-reference app profile: generic generator path.
+6. ✅ Live demo UI now clears previous run result sections immediately when:
+   - user switches flow, or
+   - user submits a new run.
+   This prevents stale reports/screenshots from showing while the new run is still executing.
 
 ## ✅ **All P0 & P2 Tasks Completed**
 

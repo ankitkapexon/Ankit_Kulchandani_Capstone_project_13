@@ -18,6 +18,13 @@ This guide explains how to use the enhanced mobile test automation framework wit
   - deterministic realtime subprocess execution has timeout protection,
   - user-facing errors are concise while tracebacks remain server-side.
 - Flow-selection UX now resets to a clean page state (`/?flow_type=...`) before each run.
+- Cross-app behavior controls were added:
+  - app-specific locator/navigation assumptions are now profile-aware and config-gated,
+  - `.env.example` exposes `ENABLE_APP_SPECIFIC_LOCATOR_HINTS` and `ENABLE_APP_SPECIFIC_NAVIGATION`.
+- Screenshot flow now uses profile-aware generator selection:
+  - reference demo profile keeps self-healing generator enabled by default,
+  - non-reference app profiles fall back to generic generator path to avoid app-specific script bias.
+- Live demo UI now removes old result panels immediately when flow changes or a new run starts, preventing stale screenshot/report visibility during active execution.
 
 ---
 
