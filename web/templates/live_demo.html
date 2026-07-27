@@ -679,6 +679,7 @@
         <p class="empty">Self-healing details are not available for this run.</p>
         {% endif %}
       </div>
+      {% if result.flow_type == 'deterministic_realtime' %}
       <div class="panel">
         <h3>Captured Step Screenshots</h3>
         {% if result.artifacts.captured_screenshots %}
@@ -716,6 +717,7 @@
         <p class="empty">Dynamic journey mode is disabled for this run.</p>
         {% endif %}
       </div>
+      {% endif %}
     </div>
 
     <div class="card">
