@@ -1720,6 +1720,48 @@
 				".vscode/tasks.json"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "git-commit-remaining-tasksjson",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Finalize remaining tasks.json delta"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-push-main-final-all",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-final-direct",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "final-sync-and-push-remaining-tasksjson",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"git add .vscode/tasks.json && git commit -m \"Finalize remaining pushed changes\" && git push origin main"
+			],
+			"isBackground": false
 		}
 	]
 }
