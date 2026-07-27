@@ -415,6 +415,9 @@
     .artifact-file { display: none; }
     body.show-filenames .artifact-path { display: none; }
     body.show-filenames .artifact-file { display: inline; }
+    body.run-in-progress #liveRunResultsContainer {
+      display: none !important;
+    }
     @media (max-width: 960px) {
       .run-summary {
         grid-template-columns: 1fr;
@@ -508,6 +511,7 @@
     </div>
     {% endif %}
 
+    <div id="liveRunResultsContainer">
     {% if result %}
     <div id="runResultSections">
     <div class="card">
@@ -616,6 +620,7 @@
     </div>
     </div>
     {% endif %}
+    </div>
   </div>
   <script>
     (function () {
@@ -637,20 +642,26 @@
       const uploadSection = document.getElementById("uploadSection");
       const screenshotHint = document.getElementById("screenshotHint");
       let runResultSections = document.getElementById("runResultSections");
+      const liveRunResultsContainer = document.getElementById("liveRunResultsContainer");
       let progressInterval = null;
       let emulatorInterval = null;
       let emulatorFrameInFlight = false;
       let uploadedPreviewUrl = null;
 
       const clearPreviousRunResults = () => {
+        document.body.classList.add("run-in-progress");
+
         if (!runResultSections) {
           runResultSections = document.getElementById("runResultSections");
         }
-        if (!runResultSections) {
-          return;
+        if (runResultSections) {
+          runResultSections.remove();
+          runResultSections = null;
         }
-        runResultSections.remove();
-        runResultSections = null;
+
+        if (liveRunResultsContainer) {
+          liveRunResultsContainer.innerHTML = "";
+        }
       };
 
       const currentFlowValue = () => {
@@ -732,6 +743,7 @@
       }
 
       flowButtons.forEach((btn) => {
+        btn.addEventListener("pointerdown", clearPreviousRunResults);
         btn.addEventListener("click", () => {
           if (!flowType) {
             return;
@@ -743,6 +755,11 @@
       });
 
       syncFlowUI();
+
+      if (runLiveDemoBtn) {
+        runLiveDemoBtn.addEventListener("pointerdown", clearPreviousRunResults);
+        runLiveDemoBtn.addEventListener("click", clearPreviousRunResults);
+      }
 
       if (liveDemoForm && runLiveDemoBtn && runProgress && runProgressTitle && runProgressDetail && runProgressElapsed) {
         liveDemoForm.addEventListener("submit", async (event) => {
