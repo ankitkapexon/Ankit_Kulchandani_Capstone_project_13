@@ -41,6 +41,20 @@ _run_states: dict[str, dict[str, Any]] = {}
 _RUN_STATE_TTL_SECONDS = 3600
 
 
+def _hidden_subprocess_kwargs() -> dict[str, Any]:
+    """Return Windows-specific subprocess options to avoid opening console windows."""
+    if os.name != "nt":
+        return {}
+
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = 0
+    return {
+        "creationflags": subprocess.CREATE_NO_WINDOW,
+        "startupinfo": startupinfo,
+    }
+
+
 def _prune_run_states() -> None:
     now = time.time()
     to_delete: list[str] = []
@@ -224,6 +238,7 @@ def _ensure_appium_running() -> tuple[bool, str]:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             text=True,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception as exc:
         return False, f"Failed to start Appium: {exc}"
@@ -269,6 +284,7 @@ def _stop_appium_on_port(port: int = 4723) -> int:
             capture_output=True,
             text=True,
             timeout=8,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception:
         return 0
@@ -296,6 +312,7 @@ def _stop_appium_on_port(port: int = 4723) -> int:
                 capture_output=True,
                 text=True,
                 timeout=8,
+                **_hidden_subprocess_kwargs(),
             )
             if kill_result.returncode == 0:
                 killed += 1
@@ -328,6 +345,31 @@ def _force_restart_appium() -> tuple[bool, str, int]:
     return appium_ok, appium_msg, killed_on_port
 
 
+def _ensure_adb_server_running() -> tuple[bool, str]:
+    """Start adb server when available so emulator/device checks can succeed."""
+    adb_path = shutil.which("adb")
+    if not adb_path:
+        return False, "adb CLI not found on PATH."
+
+    try:
+        completed = subprocess.run(
+            [adb_path, "start-server"],
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=15,
+            **_hidden_subprocess_kwargs(),
+        )
+    except Exception as exc:
+        return False, f"Failed to start adb server: {exc}"
+
+    if completed.returncode != 0:
+        details = (completed.stderr or completed.stdout or "Unknown adb start-server error").strip()
+        return False, f"adb start-server failed: {details}"
+
+    return True, "adb server started"
+
+
 def _adb_connected_devices() -> tuple[bool, str, list[str]]:
     """Return whether adb is available and has at least one connected device."""
     adb_path = shutil.which("adb")
@@ -341,6 +383,7 @@ def _adb_connected_devices() -> tuple[bool, str, list[str]]:
             capture_output=True,
             text=True,
             timeout=10,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception as exc:
         return False, f"Failed to query adb devices: {exc}", []
@@ -436,6 +479,7 @@ def _list_installed_system_images() -> list[str]:
             capture_output=True,
             text=True,
             timeout=20,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception:
         return []
@@ -489,6 +533,7 @@ def _ensure_default_avd_exists() -> tuple[bool, str | None]:
             text=True,
             input="no\n",
             timeout=45,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception as exc:
         return False, f"Failed to create default AVD: {exc}"
@@ -512,6 +557,7 @@ def _list_available_avds() -> list[str]:
             capture_output=True,
             text=True,
             timeout=10,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception:
         return []
@@ -586,6 +632,7 @@ def _start_emulator_if_needed() -> tuple[bool, str, dict[str, Any]]:
             cwd=str(PROJECT_ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception as exc:
         return False, f"Failed to start emulator: {exc}", {
@@ -634,6 +681,7 @@ def _capture_emulator_frame_png() -> bytes | None:
             cwd=str(PROJECT_ROOT),
             capture_output=True,
             timeout=8,
+            **_hidden_subprocess_kwargs(),
         )
     except Exception:
         return None
@@ -902,6 +950,7 @@ def _run_deterministic_flow(
         capture_output=True,
         text=True,
         env=env,
+        **_hidden_subprocess_kwargs(),
     )
 
     captured_images = _list_supported_images(capture_dir)
@@ -1008,6 +1057,7 @@ def start_required_services():
 
     current = _required_services_status(start_appium=False)
     if current.get("ok"):
+        adb_ok, adb_msg = _ensure_adb_server_running()
         cache_info = _clear_runtime_cache()
         appium_ok, appium_msg, killed_count = _force_restart_appium()
         emulator_ok, emulator_msg, emulator_details = _start_emulator_if_needed()
@@ -1019,14 +1069,17 @@ def start_required_services():
                 emulator_ok = False
                 emulator_msg = "Emulator launch was triggered but it did not become adb-ready within 120 seconds."
         refreshed = _required_services_status(start_appium=False)
-        refreshed["ok"] = bool(refreshed.get("ok")) and appium_ok and emulator_ok
+        refreshed["ok"] = bool(refreshed.get("ok")) and adb_ok and appium_ok and emulator_ok
         refreshed["fresh_restart_performed"] = True
         setup_errors = []
+        if not adb_ok:
+            setup_errors.append(adb_msg)
         if not appium_ok:
             setup_errors.append(appium_msg)
         if not emulator_ok:
             setup_errors.append(emulator_msg)
         refreshed["restart_details"] = {
+            "adb_message": adb_msg,
             "appium_restart_message": appium_msg,
             "emulator_message": emulator_msg,
             "emulator_action": emulator_details,
@@ -1049,6 +1102,7 @@ def start_required_services():
             )
         return jsonify(refreshed)
 
+    adb_ok, adb_msg = _ensure_adb_server_running()
     appium_ok, appium_msg = _ensure_appium_running()
     emulator_ok, emulator_msg, emulator_details = _start_emulator_if_needed()
     if emulator_ok and emulator_details.get("started"):
@@ -1059,14 +1113,17 @@ def start_required_services():
             emulator_ok = False
             emulator_msg = "Emulator launch was triggered but it did not become adb-ready within 120 seconds."
     status = _required_services_status(start_appium=False)
-    status["ok"] = bool(status.get("ok")) and appium_ok and emulator_ok
+    status["ok"] = bool(status.get("ok")) and adb_ok and appium_ok and emulator_ok
     status["fresh_restart_performed"] = False
     setup_errors = []
+    if not adb_ok:
+        setup_errors.append(adb_msg)
     if not appium_ok:
         setup_errors.append(appium_msg)
     if not emulator_ok:
         setup_errors.append(emulator_msg)
     status["startup_details"] = {
+        "adb_message": adb_msg,
         "appium_message": appium_msg,
         "emulator_message": emulator_msg,
         "emulator_action": emulator_details,

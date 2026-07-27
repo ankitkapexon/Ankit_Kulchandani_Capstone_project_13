@@ -3,6 +3,9 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
 $url = "http://localhost:8080/live-demo-fixed"
+$logDir = Join-Path $projectRoot "artifacts\logs"
+$stdoutLog = Join-Path $logDir "live_demo_stdout.log"
+$stderrLog = Join-Path $logDir "live_demo_stderr.log"
 
 function Test-LiveDemoUp {
     param([string]$TargetUrl)
@@ -15,8 +18,7 @@ function Test-LiveDemoUp {
 }
 
 if (Test-LiveDemoUp -TargetUrl $url) {
-    Write-Output "Live demo server already running. Opening URL..."
-    Start-Process $url
+    Write-Output "Live demo server already running at $url"
     exit 0
 }
 
@@ -27,14 +29,21 @@ if (Test-Path $venvPython) {
     $pythonExe = "python"
 }
 
+$venvPythonw = Join-Path $projectRoot ".venv\Scripts\pythonw.exe"
+if (Test-Path $venvPythonw) {
+    $pythonExe = $venvPythonw
+}
+
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
 Write-Output "Starting live demo server using $pythonExe ..."
-Start-Process -FilePath $pythonExe -ArgumentList "live_demo.py" -WorkingDirectory $projectRoot
+Start-Process -FilePath $pythonExe -ArgumentList "live_demo.py" -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
 
 $maxAttempts = 90
 for ($i = 1; $i -le $maxAttempts; $i++) {
     if (Test-LiveDemoUp -TargetUrl $url) {
-        Write-Output "Live demo is up. Opening URL..."
-        Start-Process $url
+        Write-Output "Live demo is up at $url"
+        Write-Output "Logs: $stdoutLog and $stderrLog"
         exit 0
     }
     Start-Sleep -Seconds 1
@@ -42,4 +51,5 @@ for ($i = 1; $i -le $maxAttempts; $i++) {
 
 Write-Output "Server start triggered, but URL is not reachable yet."
 Write-Output "Open manually after a few seconds: $url"
+Write-Output "Logs: $stdoutLog and $stderrLog"
 exit 0
