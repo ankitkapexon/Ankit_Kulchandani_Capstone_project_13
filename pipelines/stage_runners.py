@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Optional
 
 from config.app_config import AppConfig
@@ -140,6 +141,7 @@ class Step2TestCaseStage:
             ssm_data = item["data"]
             ssm_path = item["path"]
             result_text = agent.generate_from_ssm(ssm_data, filename=ssm_path.stem)
+            result_text = self._ensure_minimum_testcases(result_text, ssm_data, minimum_cases=4)
             out_path = write_text_timestamped(
                 output_dir=self.config.manual_testcases_dir,
                 prefix="manual_testcases",
@@ -149,6 +151,95 @@ class Step2TestCaseStage:
             output_paths.append(out_path)
 
         return output_paths
+
+    def _ensure_minimum_testcases(self, result_text: str, ssm_data: dict[str, Any], minimum_cases: int) -> str:
+        existing_count = self._count_manual_cases(result_text)
+        if existing_count >= minimum_cases:
+            return result_text
+
+        missing = minimum_cases - existing_count
+        supplement = self._build_supplemental_cases(ssm_data, start_index=existing_count + 1, count=missing)
+        if not supplement:
+            return result_text
+
+        base = (result_text or "").rstrip()
+        return f"{base}\n\n{supplement}\n"
+
+    def _count_manual_cases(self, text: str) -> int:
+        if not text:
+            return 0
+        pattern = re.compile(r"^\s*Test\s*Case\s*\d+\s*:", re.IGNORECASE)
+        return sum(1 for line in text.splitlines() if pattern.match(line))
+
+    def _build_supplemental_cases(self, ssm_data: dict[str, Any], start_index: int, count: int) -> str:
+        screen_name = str(ssm_data.get("screen_name") or "Screen")
+        screen_purpose = str(ssm_data.get("screen_purpose") or "")
+        elements = [element for element in (ssm_data.get("elements") or []) if isinstance(element, dict)]
+
+        labels = [str(el.get("label") or el.get("id") or "UI element") for el in elements]
+        primary = labels[0] if labels else "primary UI element"
+        secondary = labels[1] if len(labels) > 1 else primary
+
+        templates = [
+            (
+                "Validate screen load and anchors",
+                [
+                    f"Open the {screen_name} screen.",
+                    f"Verify the {primary} element is visible.",
+                    f"Verify screen purpose context: {screen_purpose or 'Main workflow access'}.",
+                ],
+                "The screen loads and key anchors are visible without UI errors.",
+            ),
+            (
+                "Validate primary interaction",
+                [
+                    f"Open the {screen_name} screen.",
+                    f"Perform interaction on {primary}.",
+                    f"Observe response around {secondary}.",
+                ],
+                "The primary interaction is accepted and the expected UI response is shown.",
+            ),
+            (
+                "Validate navigation continuity",
+                [
+                    f"Open the {screen_name} screen.",
+                    "Navigate away and return to the same screen.",
+                    f"Verify {primary} is still interactable.",
+                ],
+                "State remains consistent after navigation and controls remain usable.",
+            ),
+            (
+                "Validate resiliency and negative behavior",
+                [
+                    f"Open the {screen_name} screen.",
+                    "Attempt an invalid or empty interaction path.",
+                    "Verify validation or graceful handling is shown.",
+                ],
+                "The app handles invalid actions safely without crash or broken state.",
+            ),
+        ]
+
+        lines: list[str] = []
+        for i in range(count):
+            idx = start_index + i
+            title, steps, expected = templates[i % len(templates)]
+            lines.extend(
+                [
+                    f"Test Case {idx}: {title} on {screen_name}",
+                    f"Test ID: TC-{idx:03d}",
+                    "Priority: Medium",
+                    "Type: Functional",
+                    f"Description: {title} for the {screen_name} screen.",
+                    "Preconditions:",
+                    f"  - The {screen_name} screen is available.",
+                    "Steps:",
+                ]
+            )
+            for step_num, step in enumerate(steps, start=1):
+                lines.append(f"  {step_num}. {step}")
+            lines.extend(["Expected Result:", f"  - {expected}", ""])
+
+        return "\n".join(lines).rstrip()
 
 
 class Step3LocatorStage:

@@ -484,7 +484,7 @@
             <label for="screenshot">Screenshot</label>
             <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
           </div>
-          <input id="mode" name="mode" type="hidden" value="mock" />
+          <input id="mode" name="mode" type="hidden" value="{{ result.mode if result and result.mode else default_mode|default('mock') }}" />
 
           <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
           <button id="runLiveDemoBtn" type="submit">Run Live Demo</button>

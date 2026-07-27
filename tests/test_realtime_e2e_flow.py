@@ -174,14 +174,15 @@ class TestRealtimeE2EFlow:
         if not self._capture_dir:
             return
 
+        page_ready = True
         try:
             self._first_visible(expected_locators, timeout=timeout)
         except Exception:
-            # Never capture before page-ready anchors are visible.
-            return
+            # Capture anyway as a fallback when anchors are transiently unavailable.
+            page_ready = False
 
         # Small settle delay reduces transitional/blank captures.
-        time.sleep(0.4)
+        time.sleep(0.4 if page_ready else 1.0)
 
         self._step_index += 1
         safe_name = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in name.lower())

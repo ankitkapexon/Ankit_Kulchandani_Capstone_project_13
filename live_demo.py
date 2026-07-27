@@ -984,7 +984,7 @@ def _run_deterministic_flow(
 
 @app.get("/")
 def index() -> str:
-    return render_template("live_demo.html", result=None, error=None)
+    return render_template("live_demo.html", result=None, error=None, default_mode=_default_mode())
 
 
 @app.get("/live-demo-fixed")
@@ -1117,6 +1117,18 @@ def _validate_run_inputs(mode: str, flow_type: str) -> str | None:
     return None
 
 
+def _default_mode() -> str:
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if api_key and api_key != "your_openai_api_key_here":
+        return "real"
+    return "mock"
+
+
+def _resolve_requested_mode() -> str:
+    requested = request.form.get("mode", "").strip().lower()
+    return requested if requested else _default_mode()
+
+
 def _prepare_upload_for_flow(flow_type: str):
     upload = request.files.get("screenshot")
     if flow_type != "screenshot_pipeline":
@@ -1222,30 +1234,32 @@ def _execute_async_run(
 
 @app.post("/run-demo")
 def run_demo() -> str:
-    mode = request.form.get("mode", "mock").strip().lower()
+    mode = _resolve_requested_mode()
     flow_type = request.form.get("flow_type", "screenshot_pipeline").strip().lower()
     validation_error = _validate_run_inputs(mode, flow_type)
     if validation_error:
-        return render_template("live_demo.html", result=None, error=validation_error)
+        return render_template("live_demo.html", result=None, error=validation_error, default_mode=_default_mode())
 
     if not _run_lock.acquire(blocking=False):
         return render_template(
             "live_demo.html",
             result=None,
             error="A demo run is already in progress. Please wait for it to finish and try again.",
+            default_mode=_default_mode(),
         )
 
     try:
         run_dir, saved_path = _prepare_upload_for_flow(flow_type)
         result = _run_selected_flow(mode, flow_type, run_dir, saved_path)
-        return render_template("live_demo.html", result=result, error=None)
+        return render_template("live_demo.html", result=result, error=None, default_mode=_default_mode())
     except ValueError as exc:
-        return render_template("live_demo.html", result=None, error=str(exc))
+        return render_template("live_demo.html", result=None, error=str(exc), default_mode=_default_mode())
     except Exception:
         return render_template(
             "live_demo.html",
             result=None,
             error=f"Demo run failed:\n{traceback.format_exc()}",
+            default_mode=_default_mode(),
         )
     finally:
         if _run_lock.locked():
@@ -1254,7 +1268,7 @@ def run_demo() -> str:
 
 @app.post("/run-demo-async")
 def run_demo_async():
-    mode = request.form.get("mode", "mock").strip().lower()
+    mode = _resolve_requested_mode()
     flow_type = request.form.get("flow_type", "screenshot_pipeline").strip().lower()
     validation_error = _validate_run_inputs(mode, flow_type)
     if validation_error:
@@ -1315,9 +1329,14 @@ def run_result(run_id: str) -> str:
 
     status = state.get("status")
     if status == "completed":
-        return render_template("live_demo.html", result=state.get("result"), error=None)
+        return render_template("live_demo.html", result=state.get("result"), error=None, default_mode=_default_mode())
     if status == "failed":
-        return render_template("live_demo.html", result=None, error=state.get("error", "Demo run failed."))
+        return render_template(
+            "live_demo.html",
+            result=None,
+            error=state.get("error", "Demo run failed."),
+            default_mode=_default_mode(),
+        )
 
     return render_template(
         "live_demo.html",
@@ -1326,6 +1345,7 @@ def run_result(run_id: str) -> str:
             "Demo run is still in progress. "
             f"Current stage: {state.get('stage', 'Unknown')} - {state.get('message', '')}"
         ),
+        default_mode=_default_mode(),
     )
 
 

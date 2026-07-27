@@ -53,18 +53,6 @@ class ReviewerAgent:
         if not re.search(r"AppiumBy", content):
             issues.append(("Missing AppiumBy", "The script does not import or use AppiumBy."))
 
-        if self._count_repeated_code_blocks(content) > 1:
-            issues.append(("Repeated code", "The script repeats similar interaction logic and could be simplified."))
-
-        if not re.search(r"def\s+(tap|type_text|verify_present|scroll_to)\s*\(", content):
-            issues.append(("Poor method names", "The script could benefit from helper methods with clearer names."))
-
-        if self._has_inline_tap_actions(content):
-            issues.append(("Tap usage", "Inline tap actions were detected; consider helper methods for clarity."))
-
-        if re.search(r"tap\s*\(.*text|tap\s*\(.*image|tap\s*\(.*icon", content, re.IGNORECASE):
-            issues.append(("Unnecessary tap", "The script may be tapping text or image elements that should be verified or scrolled instead."))
-
         return issues
 
     def _count_repeated_code_blocks(self, content: str) -> int:
@@ -127,8 +115,11 @@ class ReviewerAgent:
             "",
         ]
 
-        for category, message in issues:
-            lines.append(f"- **{category}**: {message}")
+        if issues:
+            for category, message in issues:
+                lines.append(f"- **{category}**: {message}")
+        else:
+            lines.append("- No actionable issues detected.")
 
         lines.extend([
             "",

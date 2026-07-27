@@ -321,6 +321,8 @@ class MultiStrategyLocatorAgent(LocatorAgent):
                 test_case_text = ""
                 if test_case_files:
                     test_case_text = test_case_files[0].read_text(encoding="utf-8")
+                if not test_case_text.strip():
+                    test_case_text = self._build_fallback_test_steps(ssm_data)
                 
                 # Generate multi-strategy locators
                 locator_data = self.generate_locators(ssm_data, test_case_text)
@@ -341,3 +343,32 @@ class MultiStrategyLocatorAgent(LocatorAgent):
         
         logger.info(f"Successfully generated {len(generated_files)} locator files with multi-strategy support")
         return generated_files
+
+    def _build_fallback_test_steps(self, ssm_data: Dict[str, Any]) -> str:
+        """Create deterministic fallback manual steps when testcase artifacts are missing."""
+        elements = [el for el in (ssm_data.get("elements") or []) if isinstance(el, dict)]
+        screen_name = str(ssm_data.get("screen_name") or "Unknown Screen")
+
+        lines: List[str] = [
+            f"Test Case 1: Validate {screen_name} screen",
+            "Steps:",
+            f"  1. Open the {screen_name} screen.",
+        ]
+
+        step_index = 2
+        for element in elements:
+            label = element.get("label") or element.get("id") or "UI element"
+            actions = [str(action).lower() for action in (element.get("actions") or [])]
+            action = actions[0] if actions else "verify"
+            if action in {"enter_text", "type", "input"}:
+                lines.append(f"  {step_index}. Enter data in {label}.")
+            elif action in {"tap", "click", "press", "select"}:
+                lines.append(f"  {step_index}. Tap {label}.")
+            elif action in {"scroll", "swipe"}:
+                lines.append(f"  {step_index}. Scroll to {label}.")
+            else:
+                lines.append(f"  {step_index}. Verify {label} is visible.")
+            step_index += 1
+
+        lines.extend(["Expected Result:", "  - The screen interactions work as expected."])
+        return "\n".join(lines)
