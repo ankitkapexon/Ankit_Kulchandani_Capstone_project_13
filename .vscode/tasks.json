@@ -1042,6 +1042,15 @@
 				"-m",
 				"Include all current pending live demo and docs updates"
 			]
+		},
+		{
+			"label": "validate-jinja-live-demo-template-direct",
+			"type": "shell",
+			"command": "c:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone\\.venv\\Scripts\\python.exe",
+			"args": [
+				"-c",
+				"from jinja2 import Environment, FileSystemLoader; env=Environment(loader=FileSystemLoader('web/templates')); env.get_template('live_demo.html'); print('TEMPLATE_OK')"
+			]
 		}
 	]
 }

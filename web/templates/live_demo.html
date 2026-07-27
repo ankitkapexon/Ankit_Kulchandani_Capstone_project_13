@@ -523,7 +523,7 @@
         <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
         <p class="meta"><strong>Appium:</strong> {{ result.appium_status }}</p>
       </div>
-      <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="/artifacts/{{ result.report_path }}" target="_blank" rel="noopener">Open HTML report</a></p>
+      <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="{{ '/artifacts/' + (result.report_path[10:] if result.report_path.startswith('artifacts/') else result.report_path) }}" target="_blank" rel="noopener">Open HTML report</a></p>
     </div>
 
     <div class="artifact-toolbar">
@@ -540,7 +540,7 @@
       <ul>
         {% for item in items %}
         <li>
-          <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+          <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
             <span class="artifact-path">{{ item }}</span>
             <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
           </a>
@@ -570,7 +570,7 @@
         <ul>
           {% for item in result.artifacts.self_healing %}
           <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+            <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
               <span class="artifact-path">{{ item }}</span>
               <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
             </a>
@@ -582,7 +582,7 @@
         <ul>
           {% for item in result.self_healing.scripts_with_self_healing %}
           <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+            <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
               <span class="artifact-path">{{ item }}</span>
               <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
             </a>
@@ -600,7 +600,7 @@
         <ul class="thumb-list">
           {% for item in result.artifacts.captured_screenshots %}
           <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+            <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
               <img src="/artifacts/{{ item }}" alt="Captured step screenshot" loading="lazy" />
             </a>
             <div class="thumb-label">
