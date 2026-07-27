@@ -1042,6 +1042,38 @@
 				"-m",
 				"Include all current pending live demo and docs updates"
 			]
+		},
+		{
+			"label": "commit-and-push-current-unpushed",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"live_demo.py",
+				"web/static/live_demo_entry.html",
+				";",
+				"git",
+				"commit",
+				"-m",
+				"Stop background launcher polling to prevent window flashes",
+				";",
+				"git",
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "commit-and-push-current-unpushed-pwsh",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"git add live_demo.py web/static/live_demo_entry.html; git commit -m 'Stop background launcher polling to prevent window flashes'; git push origin main"
+			],
+			"isBackground": false
 		}
 	]
 }
