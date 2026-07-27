@@ -2,6 +2,18 @@
 
 ## Latest Updates (Jul 2026)
 
+- Completed reliability/productization improvement set (12 items):
+	- deterministic flow now emits a dynamic journey plan from captured runtime screenshots,
+	- flow-specific CI smoke jobs added (screenshot and realtime split),
+	- artifact lifecycle governance added (retention cleanup + latest-per-flow/latest-per-run indexes),
+	- structured stage telemetry added with dashboard route (`/telemetry-dashboard`) and latest telemetry API (`/telemetry/latest`),
+	- shared retry policy abstraction added and used for Appium readiness, emulator readiness, and flaky element operations,
+	- self-healing quality signals surfaced (healing success rate, fallback depth estimate, recurring failed locators, top unstable elements),
+	- profile presets supported (`generic`, `ecommerce`, `banking`, `social`) for locator/navigation bias,
+	- strict startup config validation added with friendly errors and a dedicated endpoint (`/config-validation`),
+	- preflight readiness card added in live demo UI (services + config checks before run),
+	- production readiness checklist added in `PRODUCTION_READINESS_CHECKLIST.md`.
+
 - Live demo now exposes a dedicated Self-Healing Output section in results, including:
 	- enabled status,
 	- generated script count,
@@ -226,6 +238,10 @@ Mock-provider example:
 VISION_AGENT_PROVIDER=mock
 TESTCASE_AGENT_PROVIDER=mock
 ```
+
+Production checklist:
+
+- Review `PRODUCTION_READINESS_CHECKLIST.md` before demos/handovers.
 
 ## Running the Pipeline
 

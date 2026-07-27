@@ -4,6 +4,17 @@ This guide covers the current live demo flow on main branch.
 
 ## Latest Updates (Jul 2026)
 
+- Final reliability/productization pack completed:
+	- Preflight Readiness card added in UI to validate service health + flow config before run,
+	- Config validation endpoint added: `/config-validation`,
+	- Telemetry APIs added: `/telemetry/latest` and `/telemetry-dashboard`,
+	- Artifact lifecycle governance added:
+		- expiry based on `ARTIFACT_RETENTION_DAYS`,
+		- index files: `artifacts/indexes/latest_per_flow.json` and `artifacts/indexes/latest_per_run.json`,
+	- Dynamic journey plan added for deterministic runs from captured step screenshots,
+	- Self-healing quality signals surfaced (success rate, fallback depth estimate, recurring failed locators, top unstable elements),
+	- Profile presets introduced (`generic`, `ecommerce`, `banking`, `social`) via `APP_PROFILE_PRESET`.
+
 - Live demo result page now includes a Self-Healing Output panel with:
 	- Enabled,
 	- Generated scripts,
@@ -95,6 +106,7 @@ Default UI behavior:
 - Realtime End To End Flow Of Application is selected by default.
 - Screenshot upload section is visible only when Check Flow By Uploading A Screenshot is selected.
 - Mode selector is removed from the page; current UI submits mock mode by default.
+- Preflight Readiness card is available before run and can be re-triggered manually.
 
 Notes:
 
@@ -106,6 +118,9 @@ Notes:
 - The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
 - Result panels are intended to show only files generated for the current run.
 - Result panels are now also cleared immediately on flow switch/new submit to prevent interim stale report or screenshot display.
+- Preflight checks use:
+	- `/required-services-status?quick=1`
+	- `/config-validation?mode=...&flow_type=...`
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
 - Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.

@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import io
+import json
+import html
 import os
 import shutil
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -23,8 +26,11 @@ from werkzeug.utils import secure_filename
 
 from pipelines.pipeline_composer import run_pipeline
 from pipelines.stage_runners import StageFeatureFlags
+from services.artifact_lifecycle import expire_old_artifacts, write_latest_indexes
 from services.enhanced_config import get_config, load_environment
 from services.prompt_manager import PromptManager
+from services.run_telemetry import RunTelemetry, read_latest_telemetry
+from utils.retry_policy import RetryPolicy, wait_until
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 ARTIFACTS_ROOT = PROJECT_ROOT / "artifacts"
@@ -305,11 +311,17 @@ def _ensure_appium_running() -> tuple[bool, str]:
     except Exception as exc:
         return False, f"Failed to start Appium: {exc}"
 
-    deadline = time.time() + APPIUM_START_TIMEOUT_SECONDS
-    while time.time() < deadline:
-        if _is_appium_healthy():
-            return True, "Appium started by live demo"
-        time.sleep(1)
+    appium_ready = wait_until(
+        _is_appium_healthy,
+        policy=RetryPolicy(
+            attempts=max(3, APPIUM_START_TIMEOUT_SECONDS),
+            initial_delay_seconds=1.0,
+            max_delay_seconds=1.0,
+            backoff_multiplier=1.0,
+        ),
+    )
+    if appium_ready:
+        return True, "Appium started by live demo"
 
     return False, "Appium did not become ready within timeout"
 
@@ -718,13 +730,103 @@ def _start_emulator_if_needed() -> tuple[bool, str, dict[str, Any]]:
 
 def _wait_for_adb_emulator(timeout_seconds: int = 120, poll_interval: float = 3.0) -> tuple[bool, list[str]]:
     """Wait for at least one emulator-* device to appear in adb devices."""
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
+    emulators: list[str] = []
+
+    def _probe() -> bool:
+        nonlocal emulators
         emulators = _adb_connected_emulators()
-        if emulators:
-            return True, emulators
-        time.sleep(poll_interval)
-    return False, []
+        return bool(emulators)
+
+    ready = wait_until(
+        _probe,
+        policy=RetryPolicy(
+            attempts=max(2, int(timeout_seconds / max(0.5, poll_interval))),
+            initial_delay_seconds=poll_interval,
+            max_delay_seconds=poll_interval,
+            backoff_multiplier=1.0,
+        ),
+    )
+    return ready, emulators
+
+
+def _build_dynamic_journey_from_artifacts(captured_images: list[Path]) -> dict[str, Any]:
+    """Build a compact deterministic journey plan from captured runtime screenshots."""
+    steps: list[dict[str, Any]] = []
+    for index, image_path in enumerate(captured_images, start=1):
+        token = image_path.stem.replace("_", " ").strip().title() or f"Step {index}"
+        steps.append(
+            {
+                "index": index,
+                "screen": token,
+                "anchor": image_path.name,
+            }
+        )
+
+    return {
+        "mode": "dynamic_journey",
+        "steps": steps,
+        "step_count": len(steps),
+    }
+
+
+def _read_self_healing_quality_signals(db_path: Path) -> dict[str, Any]:
+    if not db_path.exists():
+        return {
+            "healing_success_rate": 0.0,
+            "fallback_depth_estimate": 0.0,
+            "recurring_failed_locators": 0,
+            "top_unstable_elements": [],
+        }
+
+    with sqlite3.connect(str(db_path)) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*), SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) FROM healing_events")
+        total_events, successful_events = cursor.fetchone() or (0, 0)
+        total_events = int(total_events or 0)
+        successful_events = int(successful_events or 0)
+
+        cursor.execute(
+            """
+            SELECT element_name, failure_count, success_count, reliability_score
+            FROM reliability_scores
+            WHERE failure_count >= 2
+            ORDER BY failure_count DESC, reliability_score ASC
+            LIMIT 5
+            """
+        )
+        unstable_rows = cursor.fetchall()
+
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM reliability_scores
+            WHERE failure_count >= 3 AND reliability_score < 0.6
+            """
+        )
+        recurring_failed = int((cursor.fetchone() or [0])[0] or 0)
+
+    top_unstable = [
+        {
+            "element": row[0],
+            "failure_count": int(row[1] or 0),
+            "success_count": int(row[2] or 0),
+            "reliability": float(row[3] or 0.0),
+        }
+        for row in unstable_rows
+    ]
+
+    fallback_depth_estimate = 0.0
+    if top_unstable:
+        fallback_depth_estimate = round(sum(item["failure_count"] for item in top_unstable) / len(top_unstable), 2)
+
+    healing_success_rate = round((successful_events / total_events) * 100, 2) if total_events else 0.0
+    return {
+        "healing_success_rate": healing_success_rate,
+        "fallback_depth_estimate": fallback_depth_estimate,
+        "recurring_failed_locators": recurring_failed,
+        "top_unstable_elements": top_unstable,
+    }
 
 
 def _resolve_adb_command() -> str | None:
@@ -908,7 +1010,31 @@ def _collect_self_healing_details(
         "scripts_with_self_healing_count": len(scripts_with_self_healing),
         "healing_repository": "",
         "healing_repository_updated": db_updated,
+        "quality_signals": _read_self_healing_quality_signals(db_path),
     }
+
+
+def _validate_live_demo_config(mode: str, flow_type: str) -> list[str]:
+    config = get_config()
+    errors: list[str] = []
+
+    if mode == "real":
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key or api_key == "your_openai_api_key_here":
+            errors.append("OPENAI_API_KEY is required for real mode.")
+
+    if not config.appium_server_url.startswith("http"):
+        errors.append("APPIUM_SERVER_URL must start with http:// or https://")
+
+    if flow_type.startswith("deterministic"):
+        if not config.app_package:
+            errors.append("APP_PACKAGE is required for deterministic realtime flow.")
+        if not config.app_activity:
+            errors.append("APP_ACTIVITY is required for deterministic realtime flow.")
+        if not config.app_path.exists():
+            errors.append(f"APP_PATH does not exist: {config.app_path}")
+
+    return errors
 
 
 def _run_demo_pipeline(
@@ -1019,6 +1145,7 @@ def _run_deterministic_flow(
     mode: str,
     progress_cb: Callable[[str, str], None] | None = None,
 ) -> dict[str, Any]:
+    config = get_config()
     if progress_cb:
         progress_cb("Preparing", "Validating deterministic realtime prerequisites.")
 
@@ -1127,6 +1254,11 @@ def _run_deterministic_flow(
     if "tests/test_realtime_e2e_flow.py" not in artifacts["scripts"]:
         artifacts["scripts"].append("tests/test_realtime_e2e_flow.py")
 
+    dynamic_journey: dict[str, Any] = {"enabled": False, "mode": "disabled", "steps": [], "step_count": 0}
+    if config.dynamic_journey_enabled:
+        dynamic_journey = _build_dynamic_journey_from_artifacts(captured_images)
+        dynamic_journey["enabled"] = True
+
     pipeline_logs = (pipeline_result.get("logs") or "").strip()
     pipeline_stderr = (pipeline_result.get("stderr") or "").strip()
     screenshot_source = (
@@ -1158,6 +1290,7 @@ def _run_deterministic_flow(
         "self_healing": pipeline_result.get("self_healing", {}),
         "outcome": "passed" if completed.returncode == 0 else "failed",
         "seed_input_file": str(seed_input_file.relative_to(PROJECT_ROOT)).replace("\\", "/"),
+        "dynamic_journey": dynamic_journey,
         "artifacts": artifacts,
     }
 
@@ -1288,6 +1421,22 @@ def required_services_status():
     return jsonify(status)
 
 
+@app.get("/config-validation")
+def config_validation_status():
+    mode = request.args.get("mode", _default_mode()).strip().lower() or _default_mode()
+    flow_type = request.args.get("flow_type", "screenshot_pipeline").strip().lower() or "screenshot_pipeline"
+    errors = _validate_live_demo_config(mode, flow_type)
+    return jsonify(
+        {
+            "ok": not errors,
+            "mode": mode,
+            "flow_type": flow_type,
+            "errors": errors,
+            "message": "Configuration is valid." if not errors else "Configuration validation failed.",
+        }
+    )
+
+
 @app.post("/start-emulator")
 def start_emulator():
     if _run_lock.locked():
@@ -1398,8 +1547,12 @@ def _run_selected_flow(
     flow_type: str,
     run_dir: Path | None,
     saved_path: Path | None,
+    run_id: str,
     progress_cb: Callable[[str, str], None] | None = None,
 ) -> dict[str, Any]:
+    config = get_config()
+    lifecycle_info = expire_old_artifacts(ARTIFACTS_ROOT, config.artifact_retention_days)
+
     if progress_cb:
         progress_cb("Preparing", "Ensuring Appium server is ready.")
 
@@ -1424,6 +1577,19 @@ def _run_selected_flow(
     result["appium_status"] = appium_msg
     result["flow_label"] = _flow_label(flow_type)
     result["appium_state"] = _appium_state(appium_msg)
+    result["artifact_lifecycle"] = {
+        "retention_days": config.artifact_retention_days,
+        **lifecycle_info,
+    }
+    result["app_profile_preset"] = config.app_profile_preset
+    index_paths = write_latest_indexes(
+        artifacts_root=ARTIFACTS_ROOT,
+        flow_type=flow_type,
+        run_id=run_id,
+        mode=mode,
+        result=result,
+    )
+    result["artifact_indexes"] = index_paths
     if not result.get("outcome"):
         result["outcome"] = "unknown"
     return result
@@ -1447,6 +1613,11 @@ def _execute_async_run(
         return
 
     try:
+        telemetry: RunTelemetry | None = None
+        cfg = get_config()
+        if cfg.telemetry_enabled:
+            telemetry = RunTelemetry(cfg.telemetry_dir, run_id=run_id, flow_type=flow_type, mode=mode)
+
         _set_run_state(
             run_id,
             status="running",
@@ -1456,9 +1627,13 @@ def _execute_async_run(
         )
 
         def progress_cb(stage: str, message: str) -> None:
+            if telemetry is not None:
+                telemetry.mark_stage(stage, message)
             _set_run_state(run_id, status="running", stage=stage, message=message, last_progress_at=time.time())
 
-        result = _run_selected_flow(mode, flow_type, run_dir, saved_path, progress_cb=progress_cb)
+        result = _run_selected_flow(mode, flow_type, run_dir, saved_path, run_id, progress_cb=progress_cb)
+        if telemetry is not None:
+            result["telemetry"] = telemetry.finalize(status="completed")
         _set_run_state(
             run_id,
             status="completed",
@@ -1470,6 +1645,11 @@ def _execute_async_run(
         )
     except Exception:
         traceback.print_exc()
+        cfg = get_config()
+        if cfg.telemetry_enabled:
+            failed_telemetry = RunTelemetry(cfg.telemetry_dir, run_id=run_id, flow_type=flow_type, mode=mode)
+            failed_telemetry.mark_stage("Failed", "Demo run failed")
+            failed_telemetry.finalize(status="failed", error_code="demo_run_exception")
         _set_run_state(
             run_id,
             status="failed",
@@ -1492,6 +1672,14 @@ def run_demo() -> str:
     if validation_error:
         return _render_live_demo(result=None, error=validation_error, preferred_flow=flow_type)
 
+    config_errors = _validate_live_demo_config(mode, flow_type)
+    if get_config().strict_config_validation and config_errors:
+        return _render_live_demo(
+            result=None,
+            error="Configuration validation failed: " + " | ".join(config_errors),
+            preferred_flow=flow_type,
+        )
+
     if not _run_lock.acquire(blocking=False):
         return _render_live_demo(
             result=None,
@@ -1501,7 +1689,12 @@ def run_demo() -> str:
 
     try:
         run_dir, saved_path = _prepare_upload_for_flow(flow_type)
-        result = _run_selected_flow(mode, flow_type, run_dir, saved_path)
+        run_id = uuid.uuid4().hex
+        result = _run_selected_flow(mode, flow_type, run_dir, saved_path, run_id)
+        if get_config().telemetry_enabled:
+            sync_telemetry = RunTelemetry(get_config().telemetry_dir, run_id=run_id, flow_type=flow_type, mode=mode)
+            sync_telemetry.mark_stage("Completed", "Synchronous run completed")
+            result["telemetry"] = sync_telemetry.finalize(status="completed")
         return _render_live_demo(result=result, error=None, preferred_flow=flow_type)
     except ValueError as exc:
         return _render_live_demo(result=None, error=str(exc), preferred_flow=flow_type)
@@ -1520,6 +1713,10 @@ def run_demo_async():
     validation_error = _validate_run_inputs(mode, flow_type)
     if validation_error:
         return jsonify({"ok": False, "error": validation_error}), 400
+
+    config_errors = _validate_live_demo_config(mode, flow_type)
+    if get_config().strict_config_validation and config_errors:
+        return jsonify({"ok": False, "error": "Configuration validation failed", "details": config_errors}), 400
 
     if _run_lock.locked():
         return jsonify({"ok": False, "error": "A demo run is already in progress."}), 409
@@ -1567,6 +1764,36 @@ def run_status(run_id: str):
             "mode": state.get("mode", ""),
         }
     )
+
+
+@app.get("/telemetry/latest")
+def telemetry_latest():
+    latest = read_latest_telemetry(get_config().telemetry_dir)
+    if latest is None:
+        return jsonify({"ok": False, "error": "No telemetry available yet."}), 404
+    return jsonify({"ok": True, "telemetry": latest})
+
+
+@app.get("/telemetry-dashboard")
+def telemetry_dashboard() -> Response:
+    latest = read_latest_telemetry(get_config().telemetry_dir) or {}
+    rows = "".join(
+        f"<tr><td>{html.escape(str(item.get('stage', '')))}</td><td>{html.escape(str(item.get('duration_seconds', '')))}</td><td>{html.escape(str(item.get('message', '')))}</td></tr>"
+        for item in latest.get("stages", [])
+    )
+    if not rows:
+        rows = "<tr><td colspan='3'>No telemetry captured yet.</td></tr>"
+
+    body = (
+        "<!doctype html><html><head><meta charset='utf-8'><title>Run Telemetry Dashboard</title>"
+        "<style>body{font-family:Segoe UI,Arial,sans-serif;background:#f5f9fc;margin:24px;}"
+        "table{width:100%;border-collapse:collapse;background:#fff;}th,td{padding:10px;border:1px solid #d7e3ef;text-align:left;}"
+        "th{background:#eef5fc;} .meta{margin-bottom:12px;color:#1f3b52;}</style></head><body>"
+        f"<h1>Run Telemetry Dashboard</h1><p class='meta'>Run ID: {html.escape(str(latest.get('run_id', 'N/A')))} | Flow: {html.escape(str(latest.get('flow_type', 'N/A')))} | Status: {html.escape(str(latest.get('status', 'N/A')))}</p>"
+        "<table><thead><tr><th>Stage</th><th>Duration (s)</th><th>Message</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></body></html>"
+    )
+    return Response(body, mimetype="text/html")
 
 
 @app.get("/run-result/<run_id>")

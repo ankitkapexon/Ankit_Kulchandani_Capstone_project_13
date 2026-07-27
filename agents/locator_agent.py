@@ -319,6 +319,27 @@ class LocatorAgent:
         label = str(element.get("element") or element.get("label") or "").strip().lower()
         normalized_label = re.sub(r"[^a-z0-9]+", "_", label).strip("_")
 
+        preset = self.config.app_profile_preset
+
+        preset_locators: dict[str, tuple[str, str]] = {}
+        if preset == "banking":
+            preset_locators = {
+                "login": ("text", "Sign In"),
+                "username": ("resource_id", f"{app_package}:id/username"),
+                "password": ("resource_id", f"{app_package}:id/password"),
+                "accounts": ("text", "Accounts"),
+                "payments": ("text", "Payments"),
+                "transfer": ("text", "Transfer"),
+            }
+        elif preset == "social":
+            preset_locators = {
+                "login": ("text", "Log In"),
+                "feed": ("text", "Home"),
+                "profile": ("text", "Profile"),
+                "search": ("text", "Search"),
+                "messages": ("text", "Messages"),
+            }
+
         app_specific_locators = {
             "login": ("resource_id", f"{app_package}:id/loginBtn"),
             "username": ("resource_id", f"{app_package}:id/nameET"),
@@ -337,6 +358,9 @@ class LocatorAgent:
             "subtotal": ("resource_id", f"{app_package}:id/totalPriceTV"),
             "remove_item": ("resource_id", f"{app_package}:id/removeBt"),
         }
+
+        if preset_locators:
+            app_specific_locators = {**preset_locators, **app_specific_locators} if preset == "ecommerce" else preset_locators
 
         for key, locator in app_specific_locators.items():
             normalized_key = re.sub(r"[^a-z0-9]+", "_", key.lower()).strip("_")

@@ -1,5 +1,6 @@
-import os
 from typing import List, Tuple
+
+from config.app_config import get_config
 
 
 class NavigationAgent:
@@ -10,15 +11,39 @@ class NavigationAgent:
     def get_navigation_steps(self, screen_name: str) -> List[Tuple[str, str, str]]:
         screen = screen_name.lower().strip()
 
-        app_package = os.getenv("APP_PACKAGE", "").strip()
-        enabled_value = os.getenv("ENABLE_APP_SPECIFIC_NAVIGATION")
-        if enabled_value is None:
-            app_specific_navigation_enabled = "saucelabs" in app_package.lower()
-        else:
-            app_specific_navigation_enabled = enabled_value.strip().lower() in {"1", "true", "yes", "on"}
+        config = get_config()
+        app_package = config.app_package
+        app_specific_navigation_enabled = config.app_specific_navigation_enabled
 
         if not app_specific_navigation_enabled or not app_package:
             return []
+
+        preset = config.app_profile_preset
+        if preset == "banking":
+            return {
+                "login": [
+                    ("tap", "text", "Sign In"),
+                ],
+                "accounts": [
+                    ("tap", "text", "Accounts"),
+                ],
+                "payments": [
+                    ("tap", "text", "Payments"),
+                ],
+            }.get(screen, [])
+
+        if preset == "social":
+            return {
+                "login": [
+                    ("tap", "text", "Log In"),
+                ],
+                "feed": [
+                    ("tap", "text", "Home"),
+                ],
+                "profile": [
+                    ("tap", "text", "Profile"),
+                ],
+            }.get(screen, [])
 
         navigation = {
 

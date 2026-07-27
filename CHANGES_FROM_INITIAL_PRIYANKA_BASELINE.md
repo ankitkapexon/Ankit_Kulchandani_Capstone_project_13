@@ -186,6 +186,34 @@ Baseline used for comparison:
   - Live demo UI now removes old result sections immediately on flow change or run submit to eliminate interim stale report/screenshot visibility.
   - Files: config/app_config.py, .env.example, agents/locator_agent.py, agents/multi_strategy_locator_agent.py, agents/navigation_agent.py, agents/appium_generator_agent.py, live_demo.py, web/templates/live_demo.html
 
+- Reliability/productization completion pack (latest):
+  - Added profile preset model for app types (`auto/generic/ecommerce/banking/social`) and preset-aware locator/navigation bias.
+  - Added strict config validation gating for selected mode/flow and dedicated endpoint:
+    - `GET /config-validation`
+  - Added artifact governance lifecycle:
+    - age-based expiration via `ARTIFACT_RETENTION_DAYS`
+    - latest index files: `artifacts/indexes/latest_per_flow.json`, `artifacts/indexes/latest_per_run.json`
+  - Added structured run telemetry with stage durations:
+    - `GET /telemetry/latest`
+    - `GET /telemetry-dashboard`
+  - Added dynamic journey output for deterministic flow from captured step screenshots.
+  - Added self-healing quality metrics surface:
+    - healing success rate
+    - fallback depth estimate
+    - recurring failed locators
+    - top unstable elements
+  - Added reusable retry/backoff policy utility and integrated runtime usage.
+  - Added flow-specific CI smoke jobs:
+    - screenshot flow smoke
+    - realtime flow smoke
+  - Added governance and smoke tests:
+    - `tests/test_live_demo_flow_smoke_contract.py`
+    - `tests/test_live_demo_governance_contract.py`
+  - Added production readiness checklist:
+    - `PRODUCTION_READINESS_CHECKLIST.md`
+  - Added live demo preflight readiness card in UI (manual + auto check on page load).
+  - Files: .github/workflows/ci.yml, config/app_config.py, live_demo.py, web/templates/live_demo.html, agents/navigation_agent.py, agents/locator_agent.py, agents/multi_strategy_locator_agent.py, utils/retry_policy.py, services/artifact_lifecycle.py, services/run_telemetry.py, tests/test_live_demo_flow_smoke_contract.py, tests/test_live_demo_governance_contract.py, PRODUCTION_READINESS_CHECKLIST.md, README.md, LIVE_DEMO_RUN_STEPS.md
+
 ## 2) New Things Implemented
 
 - New Android-focused stable E2E login test framework in:

@@ -45,6 +45,7 @@ Contributor rule:
 Latest doc sync rule (Jul 2026):
 
 - For live-demo reliability or result-visibility changes (for example: scoped env handling, realtime timeout/watchdog, self-healing output panels, artifact filtering/macro refactors), update all 8 top-level docs in the same branch before merge:
+        - plus `PRODUCTION_READINESS_CHECKLIST.md` when operational readiness behavior changes.
         - `README.md`
         - `LIVE_DEMO_RUN_STEPS.md`
         - `CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md`
@@ -61,6 +62,12 @@ Additional live-demo consistency rules:
 - Do not expose low-level internal DB artifacts (for example `healing_repository.db`) as mandatory user-facing links in the result UI.
 - If app-specific heuristics are changed, keep `.env.example` aligned for `ENABLE_APP_SPECIFIC_LOCATOR_HINTS` and `ENABLE_APP_SPECIFIC_NAVIGATION` and document expected defaults.
 - If flow-switch/run-submit UX is changed, ensure stale previous-run result panels are not visible during new run execution and document that behavior in user-facing guides.
+- If run readiness behavior is changed, keep the UI preflight card and backend endpoints aligned:
+        - `/required-services-status`
+        - `/config-validation`
+- If stage telemetry behavior is changed, keep endpoint docs aligned:
+        - `/telemetry/latest`
+        - `/telemetry-dashboard`
 
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.

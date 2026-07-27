@@ -385,6 +385,45 @@
       border-radius: 8px;
       padding: 6px 8px;
     }
+    .preflight-card {
+      margin-top: 12px;
+      border: 1px solid #cde0f1;
+      border-radius: 10px;
+      background: #f4f9ff;
+      padding: 10px 12px;
+    }
+    .preflight-card h3 {
+      margin: 0 0 8px;
+      font-size: 0.93rem;
+    }
+    .preflight-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .preflight-btn {
+      margin-top: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: linear-gradient(105deg, #2f6d95, #3b80ad 68%, #2f7e57);
+      font-size: 0.86rem;
+    }
+    .preflight-status {
+      margin: 0;
+      font-size: 0.84rem;
+      color: #294760;
+    }
+    .preflight-status.good { color: #166534; }
+    .preflight-status.bad { color: #991b1b; }
+    .preflight-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      max-height: 140px;
+      overflow: auto;
+      font-size: 0.82rem;
+      color: #334a63;
+    }
     .emulator-live {
       display: none;
       margin-top: 12px;
@@ -525,6 +564,14 @@
           <input id="mode" name="mode" type="hidden" value="{{ result.mode if result and result.mode else default_mode|default('mock') }}" />
 
           <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
+          <div class="preflight-card" id="preflightCard" aria-live="polite" aria-atomic="true">
+            <h3>Preflight Readiness</h3>
+            <div class="preflight-actions">
+              <button id="runPreflightBtn" class="preflight-btn" type="button">Run Preflight Check</button>
+              <p id="preflightStatus" class="preflight-status">Run preflight to validate services and config for the selected flow.</p>
+            </div>
+            <ul id="preflightDetails" class="preflight-list"></ul>
+          </div>
           <button id="runLiveDemoBtn" type="submit">Run Live Demo</button>
           <div id="runProgress" class="run-progress" aria-live="polite" aria-atomic="true">
             <p id="runProgressTitle" class="run-progress-title">Starting run<span class="run-dot"></span></p>
@@ -572,8 +619,13 @@
       <div class="run-summary">
         <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
         <p class="meta"><strong>Appium:</strong> {{ result.appium_status }}</p>
+        <p class="meta"><strong>App Profile Preset:</strong> {{ result.app_profile_preset|default('generic') }}</p>
+        {% if result.artifact_lifecycle %}
+        <p class="meta"><strong>Artifact lifecycle:</strong> removed {{ result.artifact_lifecycle.removed_files|default(0) }} old files (retention {{ result.artifact_lifecycle.retention_days|default(14) }} days)</p>
+        {% endif %}
       </div>
       <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="{{ '/artifacts/' + (result.report_path[10:] if result.report_path.startswith('artifacts/') else result.report_path) }}" target="_blank" rel="noopener">Open HTML report</a></p>
+      <p class="meta" style="margin-top:6px;"><strong>Telemetry:</strong> <a href="/telemetry-dashboard" target="_blank" rel="noopener">Open timing dashboard</a></p>
     </div>
 
     <div class="artifact-toolbar">
@@ -616,6 +668,18 @@
         <p class="meta"><strong>Generated scripts:</strong> {{ result.self_healing.generated_scripts|default(0) }}</p>
         <p class="meta"><strong>Scripts with self-healing markers:</strong> {{ result.self_healing.scripts_with_self_healing_count|default(0) }}</p>
         <p class="meta"><strong>Healing repository updated:</strong> {{ 'Yes' if result.self_healing.healing_repository_updated else 'No' }}</p>
+        {% if result.self_healing.quality_signals %}
+        <p class="meta"><strong>Healing success rate:</strong> {{ result.self_healing.quality_signals.healing_success_rate|default(0) }}%</p>
+        <p class="meta"><strong>Fallback depth estimate:</strong> {{ result.self_healing.quality_signals.fallback_depth_estimate|default(0) }}</p>
+        <p class="meta"><strong>Recurring failed locators:</strong> {{ result.self_healing.quality_signals.recurring_failed_locators|default(0) }}</p>
+        {% if result.self_healing.quality_signals.top_unstable_elements %}
+        <ul>
+          {% for item in result.self_healing.quality_signals.top_unstable_elements %}
+          <li>{{ item.element }} (failures: {{ item.failure_count }}, reliability: {{ item.reliability }})</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% endif %}
         {% if result.self_healing.scripts_with_self_healing %}
         <ul>
           {% for item in result.self_healing.scripts_with_self_healing %}
@@ -650,6 +714,23 @@
         </ul>
         {% else %}
         <p class="empty">No step screenshots captured for this run.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <h3>Dynamic Journey Plan</h3>
+        {% if result.dynamic_journey and result.dynamic_journey.enabled %}
+        <p class="meta"><strong>Discovered steps:</strong> {{ result.dynamic_journey.step_count|default(0) }}</p>
+        {% if result.dynamic_journey.steps %}
+        <ul>
+          {% for step in result.dynamic_journey.steps %}
+          <li>Step {{ step.index }}: {{ step.screen }} ({{ step.anchor }})</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">No steps discovered from captured screenshots.</p>
+        {% endif %}
+        {% else %}
+        <p class="empty">Dynamic journey mode is disabled for this run.</p>
         {% endif %}
       </div>
     </div>
@@ -692,6 +773,9 @@
       const screenshot = document.getElementById("screenshot");
       const uploadSection = document.getElementById("uploadSection");
       const screenshotHint = document.getElementById("screenshotHint");
+      const runPreflightBtn = document.getElementById("runPreflightBtn");
+      const preflightStatus = document.getElementById("preflightStatus");
+      const preflightDetails = document.getElementById("preflightDetails");
       let runResultSections = document.getElementById("runResultSections");
       const liveRunResultsContainer = document.getElementById("liveRunResultsContainer");
       let progressInterval = null;
@@ -769,6 +853,67 @@
           startedAt: new Date(),
           resetMessage: "Previous results cleared for this run.",
         });
+      };
+
+      const renderPreflight = (ok, statusText, details) => {
+        if (!preflightStatus || !preflightDetails) {
+          return;
+        }
+        preflightStatus.textContent = statusText;
+        preflightStatus.classList.toggle("good", Boolean(ok));
+        preflightStatus.classList.toggle("bad", !ok);
+        preflightDetails.innerHTML = "";
+
+        (details || []).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          preflightDetails.appendChild(li);
+        });
+      };
+
+      const runPreflightCheck = async () => {
+        const flow = currentFlowValue();
+        const mode = document.getElementById("mode")?.value || "mock";
+
+        if (runPreflightBtn) {
+          runPreflightBtn.disabled = true;
+          runPreflightBtn.textContent = "Checking...";
+        }
+        renderPreflight(true, "Running preflight checks...", []);
+
+        try {
+          const [servicesRes, configRes] = await Promise.all([
+            fetch("/required-services-status?quick=1", { method: "GET" }),
+            fetch(`/config-validation?mode=${encodeURIComponent(mode)}&flow_type=${encodeURIComponent(flow)}`, { method: "GET" }),
+          ]);
+
+          const servicesPayload = await servicesRes.json().catch(() => ({}));
+          const configPayload = await configRes.json().catch(() => ({}));
+
+          const serviceLines = Array.isArray(servicesPayload.services)
+            ? servicesPayload.services.map((item) => `${item.name}: ${item.ok ? "OK" : "NOT READY"} (${item.message || "no message"})`)
+            : ["Service status unavailable"];
+
+          const configLines = Array.isArray(configPayload.errors) && configPayload.errors.length > 0
+            ? configPayload.errors.map((error) => `Config: ${error}`)
+            : ["Config: validation passed for selected flow/mode"];
+
+          const allOk = Boolean(servicesPayload.ok) && Boolean(configPayload.ok);
+          renderPreflight(
+            allOk,
+            allOk
+              ? "Preflight ready: services and config look good."
+              : "Preflight needs attention before run.",
+            [...serviceLines, ...configLines],
+          );
+        } catch (_) {
+          renderPreflight(false, "Preflight check failed due to a network error.", ["Unable to fetch readiness endpoints."]);
+        } finally {
+          if (runPreflightBtn) {
+            runPreflightBtn.disabled = false;
+            runPreflightBtn.textContent = "Run Preflight Check";
+          }
+        }
       };
 
       const currentFlowValue = () => {
@@ -864,6 +1009,12 @@
 
       syncFlowUI();
 
+      if (runPreflightBtn) {
+        runPreflightBtn.addEventListener("click", runPreflightCheck);
+      }
+
+      void runPreflightCheck();
+
       if (runLiveDemoBtn) {
         runLiveDemoBtn.addEventListener("pointerdown", clearPreviousRunResults);
         runLiveDemoBtn.addEventListener("click", clearPreviousRunResults);
@@ -899,13 +1050,13 @@
             screenshot.disabled = true;
           }
 
-          const startedAt = Date.now();
+          const startedAtEpoch = Date.now();
           runProgressElapsed.textContent = "Elapsed: 0s";
           if (progressInterval) {
             clearInterval(progressInterval);
           }
           progressInterval = setInterval(() => {
-            const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+            const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAtEpoch) / 1000));
             runProgressElapsed.textContent = `Elapsed: ${elapsedSec}s`;
           }, 1000);
 

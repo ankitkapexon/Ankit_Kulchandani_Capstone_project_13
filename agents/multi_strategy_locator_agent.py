@@ -204,7 +204,26 @@ class MultiStrategyLocatorAgent(LocatorAgent):
         if not app_package:
             return None
         
+        preset = self.config.app_profile_preset
         label_lower = label.lower() if label else ""
+
+        if preset == "banking":
+            if "username" in label_lower:
+                return f"{app_package}:id/username"
+            if "password" in label_lower:
+                return f"{app_package}:id/password"
+            if "sign in" in label_lower or ("login" in label_lower and element_type == "button"):
+                return f"{app_package}:id/signInButton"
+            return None
+
+        if preset == "social":
+            if "search" in label_lower:
+                return f"{app_package}:id/search"
+            if "profile" in label_lower:
+                return f"{app_package}:id/profile"
+            if "message" in label_lower:
+                return f"{app_package}:id/messages"
+            return None
         
         # Login screen
         if "username" in label_lower:

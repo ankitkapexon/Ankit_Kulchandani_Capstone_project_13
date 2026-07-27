@@ -27,6 +27,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from services.enhanced_config import get_config
+from utils.retry_policy import RetryPolicy, with_retry
 
 
 Locator = Tuple[str, str]
@@ -74,19 +75,16 @@ class TestRealtimeE2EFlow:
         self.wait = WebDriverWait(self.driver, max(6, int(config.explicit_wait_timeout)))
 
     def _create_driver_with_retry(self, server_url: str, options: UiAutomator2Options):
-        last_error = None
-        for attempt in range(1, 4):
-            try:
-                return webdriver.Remote(server_url, options=options)
-            except Exception as exc:  # noqa: BLE001
-                last_error = exc
-                if attempt < 3:
-                    time.sleep(5)
-                else:
-                    raise RuntimeError(
-                        "Failed to create Appium session after 3 attempts "
-                        f"against {server_url}"
-                    ) from last_error
+        try:
+            return with_retry(
+                lambda: webdriver.Remote(server_url, options=options),
+                policy=RetryPolicy(attempts=3, initial_delay_seconds=5.0, max_delay_seconds=5.0, backoff_multiplier=1.0),
+            )
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError(
+                "Failed to create Appium session after 3 attempts "
+                f"against {server_url}"
+            ) from exc
 
     def teardown_method(self) -> None:
         try:
@@ -108,28 +106,27 @@ class TestRealtimeE2EFlow:
         raise TimeoutException("No locators provided")
 
     def _tap_first(self, locators: Iterable[Locator], timeout: float = 4) -> None:
-        for _ in range(3):
+        def _tap() -> None:
             element = self._first_visible(locators, timeout=timeout)
-            try:
-                element.click()
-                return
-            except StaleElementReferenceException:
-                continue
-        element = self._first_visible(locators, timeout=timeout)
-        element.click()
+            element.click()
+
+        with_retry(
+            _tap,
+            policy=RetryPolicy(attempts=3, initial_delay_seconds=0.4, max_delay_seconds=0.6, backoff_multiplier=1.2),
+            retry_exceptions=(StaleElementReferenceException,),
+        )
 
     def _type_first(self, locators: Iterable[Locator], text: str, timeout: float = 4) -> None:
-        for _ in range(3):
+        def _type() -> None:
             element = self._first_visible(locators, timeout=timeout)
-            try:
-                element.clear()
-                element.send_keys(text)
-                return
-            except StaleElementReferenceException:
-                continue
-        element = self._first_visible(locators, timeout=timeout)
-        element.clear()
-        element.send_keys(text)
+            element.clear()
+            element.send_keys(text)
+
+        with_retry(
+            _type,
+            policy=RetryPolicy(attempts=3, initial_delay_seconds=0.4, max_delay_seconds=0.6, backoff_multiplier=1.2),
+            retry_exceptions=(StaleElementReferenceException,),
+        )
 
     def _dismiss_popup_if_any(self) -> None:
         # Handles emulator compatibility popup when it appears.

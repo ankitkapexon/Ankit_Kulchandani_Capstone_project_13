@@ -33,6 +33,14 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _env_str(name: str, default: str) -> str:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    cleaned = value.strip()
+    return cleaned if cleaned else default
+
+
 class AppConfig:
     """Centralized configuration with path resolution and validation."""
 
@@ -100,23 +108,56 @@ class AppConfig:
         return os.getenv("APP_ACTIVITY", "com.saucelabs.mydemoapp.android.view.activities.SplashActivity")
 
     @property
-    def is_reference_demo_profile(self) -> bool:
+    def app_profile_preset(self) -> str:
+        configured = _env_str("APP_PROFILE_PRESET", "auto").lower()
+        allowed = {"auto", "generic", "ecommerce", "banking", "social"}
+        if configured not in allowed:
+            configured = "auto"
+        if configured != "auto":
+            return configured
+
         package = (self.app_package or "").strip().lower()
-        return "saucelabs" in package
+        if "saucelabs" in package:
+            return "ecommerce"
+        return "generic"
+
+    @property
+    def is_reference_demo_profile(self) -> bool:
+        return self.app_profile_preset == "ecommerce"
 
     @property
     def app_specific_locator_hints_enabled(self) -> bool:
         value = os.getenv("ENABLE_APP_SPECIFIC_LOCATOR_HINTS")
         if value is None:
-            return self.is_reference_demo_profile
+            return self.app_profile_preset in {"ecommerce", "banking"}
         return value.strip().lower() in {"1", "true", "yes", "on"}
 
     @property
     def app_specific_navigation_enabled(self) -> bool:
         value = os.getenv("ENABLE_APP_SPECIFIC_NAVIGATION")
         if value is None:
-            return self.is_reference_demo_profile
+            return self.app_profile_preset in {"ecommerce", "social"}
         return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    @property
+    def strict_config_validation(self) -> bool:
+        return _env_bool("STRICT_CONFIG_VALIDATION", True)
+
+    @property
+    def dynamic_journey_enabled(self) -> bool:
+        return _env_bool("ENABLE_DYNAMIC_JOURNEY_MODE", True)
+
+    @property
+    def artifact_retention_days(self) -> int:
+        return max(1, _env_int("ARTIFACT_RETENTION_DAYS", 14))
+
+    @property
+    def telemetry_enabled(self) -> bool:
+        return _env_bool("ENABLE_STAGE_TELEMETRY", True)
+
+    @property
+    def telemetry_dir(self) -> Path:
+        return self.project_root / os.getenv("TELEMETRY_DIR", "artifacts/telemetry")
 
     @property
     def platform_name(self) -> str:

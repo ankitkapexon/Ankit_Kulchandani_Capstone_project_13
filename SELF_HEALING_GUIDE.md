@@ -6,6 +6,16 @@ This guide explains how to use the enhanced mobile test automation framework wit
 
 ## ✅ Live Demo Integration Updates (Jul 2026)
 
+- Final reliability additions:
+  - Self-healing quality signals now surfaced in live demo results:
+    - healing success rate,
+    - fallback depth estimate,
+    - recurring failed locators,
+    - top unstable elements.
+  - App profile presets now available (`generic`, `ecommerce`, `banking`, `social`) to tune locator/navigation bias per app domain.
+  - Preflight Readiness card now validates required services and config before execution.
+  - Telemetry dashboard endpoint available for stage timing visibility.
+
 - Live demo result UI now surfaces self-healing status directly after a run:
   - Enabled state,
   - generated scripts count,

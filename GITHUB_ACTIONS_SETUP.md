@@ -2,6 +2,16 @@
 
 ## Latest Notes (Jul 2026)
 
+- CI now includes dedicated flow smoke checks:
+  - `screenshot-flow-smoke`
+  - `realtime-flow-smoke`
+  These run independently so regressions are isolated by flow.
+- Recommended manual pre-merge checks now include:
+  - `tests/test_live_demo_flow_smoke_contract.py`
+  - `tests/test_live_demo_governance_contract.py`
+- Production handover checklist added:
+  - `PRODUCTION_READINESS_CHECKLIST.md`
+
 - Runtime hardening updates were delivered in live demo/backend logic (env scoping, realtime timeout, async stale-run watchdog, concise user-facing failures).
 - Self-healing result visibility was added in live demo UI for easier post-run verification.
 - Report-serving compatibility was hardened so both legacy and normalized artifact URL styles resolve correctly during manual demo checks.

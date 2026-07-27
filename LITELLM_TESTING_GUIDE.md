@@ -2,6 +2,13 @@
 
 ## Latest Validation Context (Jul 2026)
 
+- Live demo now includes a Preflight Readiness card to validate services and flow configuration before execution.
+- Config validation endpoint available for mode/flow checks:
+   - `/config-validation?mode=...&flow_type=...`
+- Stage timing telemetry endpoints available for observability during gateway-backed runs:
+   - `/telemetry/latest`
+   - `/telemetry-dashboard`
+
 - Live demo backend now scopes provider env overrides per run, which prevents cross-run mode leakage during repeated LiteLLM/mock switching.
 - Deterministic realtime execution path has explicit timeout handling and stale async-run watchdog logic.
 - User-facing live-demo errors are now concise; detailed tracebacks are logged server-side for debugging.
