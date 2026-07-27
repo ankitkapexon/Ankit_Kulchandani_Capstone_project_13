@@ -515,6 +515,9 @@
         <span class="badge">Flow: {{ result.flow_label }}</span>
         <span class="badge {% if result.appium_state in ['running', 'started'] %}good{% else %}warn{% endif %}">Appium: {{ result.appium_state }}</span>
         <span class="badge {% if result.outcome == 'passed' %}good{% elif result.outcome == 'failed' %}bad{% else %}warn{% endif %}">Test outcome: {{ result.outcome }}</span>
+        <span class="badge {% if result.self_healing and result.self_healing.scripts_with_self_healing_count|default(0) > 0 %}good{% else %}warn{% endif %}">
+          Self-healing scripts: {{ result.self_healing.scripts_with_self_healing_count|default(0) }}
+        </span>
       </div>
       <div class="run-summary">
         <p class="meta"><strong>Input:</strong> {{ result.input_file }}</p>
@@ -614,6 +617,41 @@
         </ul>
         {% else %}
         <p class="empty">No review reports found for this run.</p>
+        {% endif %}
+      </div>
+      <div class="panel">
+        <h3>Self-Healing Output</h3>
+        {% if result.self_healing %}
+        <p class="meta"><strong>Enabled:</strong> {{ 'Yes' if result.self_healing.enabled else 'No' }}</p>
+        <p class="meta"><strong>Generated scripts:</strong> {{ result.self_healing.generated_scripts|default(0) }}</p>
+        <p class="meta"><strong>Scripts with self-healing markers:</strong> {{ result.self_healing.scripts_with_self_healing_count|default(0) }}</p>
+        <p class="meta"><strong>Healing repository updated:</strong> {{ 'Yes' if result.self_healing.healing_repository_updated else 'No' }}</p>
+        {% if result.artifacts.self_healing %}
+        <ul>
+          {% for item in result.artifacts.self_healing %}
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% if result.self_healing.scripts_with_self_healing %}
+        <ul>
+          {% for item in result.self_healing.scripts_with_self_healing %}
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+        {% else %}
+        <p class="empty">Self-healing details are not available for this run.</p>
         {% endif %}
       </div>
       <div class="panel">

@@ -823,6 +823,52 @@ def _required_services_status(start_appium: bool = False, probe_devices: bool = 
     }
 
 
+def _script_uses_self_healing(script_path: Path) -> bool:
+    try:
+        content = script_path.read_text(encoding="utf-8")
+    except Exception:
+        return False
+
+    markers = (
+        "SelfHealingDriver",
+        "LocatorStrategy",
+        "fallback_strategies",
+        "healing_repository",
+    )
+    return any(marker in content for marker in markers)
+
+
+def _collect_self_healing_details(
+    script_artifacts: list[str],
+    db_path: Path,
+    db_mtime_before: float | None,
+) -> dict[str, Any]:
+    scripts_with_self_healing: list[str] = []
+    for rel_path in script_artifacts:
+        candidate = PROJECT_ROOT / rel_path
+        if candidate.exists() and _script_uses_self_healing(candidate):
+            scripts_with_self_healing.append(rel_path)
+
+    db_updated = False
+    db_artifact = ""
+    if db_path.exists():
+        try:
+            current_mtime = db_path.stat().st_mtime
+            db_updated = db_mtime_before is None or current_mtime > db_mtime_before + 1e-6
+            db_artifact = str(db_path.relative_to(PROJECT_ROOT)).replace("\\", "/")
+        except Exception:
+            db_updated = True
+
+    return {
+        "enabled": True,
+        "generated_scripts": len(script_artifacts),
+        "scripts_with_self_healing": scripts_with_self_healing,
+        "scripts_with_self_healing_count": len(scripts_with_self_healing),
+        "healing_repository": db_artifact,
+        "healing_repository_updated": db_updated,
+    }
+
+
 def _run_demo_pipeline(
     input_dir: Path,
     mode: str,
@@ -835,12 +881,14 @@ def _run_demo_pipeline(
     locator_dir = ARTIFACTS_ROOT / "locator_output"
     scripts_dir = ARTIFACTS_ROOT / "generated_appium_scripts"
     reviews_dir = ARTIFACTS_ROOT / "review_reports"
+    healing_db = ARTIFACTS_ROOT / "healing_repository.db"
 
     ssm_before = _folder_snapshot(ssm_dir)
     manual_before = _folder_snapshot(manual_dir)
     locator_before = _folder_snapshot(locator_dir)
     scripts_before = _folder_snapshot(scripts_dir)
     reviews_before = _folder_snapshot(reviews_dir)
+    healing_db_mtime_before = healing_db.stat().st_mtime if healing_db.exists() else None
 
     if progress_cb:
         progress_cb("Preparing", "Configuring pipeline mode and environment.")
@@ -899,6 +947,11 @@ def _run_demo_pipeline(
     locator_artifacts = _artifact_listing_delta(locator_dir, locator_before)
     script_artifacts = _artifact_listing_delta(scripts_dir, scripts_before)
     review_artifacts = _artifact_listing_delta(reviews_dir, reviews_before)
+    self_healing = _collect_self_healing_details(script_artifacts, healing_db, healing_db_mtime_before)
+
+    self_healing_artifacts: list[str] = []
+    if self_healing.get("healing_repository"):
+        self_healing_artifacts.append(str(self_healing["healing_repository"]))
 
     return {
         "ok": True,
@@ -906,12 +959,14 @@ def _run_demo_pipeline(
         "report_path": str(report_path.relative_to(PROJECT_ROOT)).replace("\\", "/") if report_path else "",
         "logs": output_logs,
         "stderr": error_logs,
+        "self_healing": self_healing,
         "artifacts": {
             "ssm": ssm_artifacts,
             "manual_testcases": manual_testcases,
             "locators": locator_artifacts,
             "scripts": script_artifacts,
             "reviews": review_artifacts,
+            "self_healing": self_healing_artifacts,
         },
     }
 
@@ -1009,6 +1064,7 @@ def _run_deterministic_flow(
         "locators": pipeline_result["artifacts"].get("locators", []),
         "scripts": pipeline_result["artifacts"].get("scripts", []),
         "reviews": pipeline_result["artifacts"].get("reviews", []),
+        "self_healing": pipeline_result["artifacts"].get("self_healing", []),
         "captured_screenshots": [
             str(path.relative_to(PROJECT_ROOT)).replace("\\", "/")
             for path in captured_images
@@ -1046,6 +1102,7 @@ def _run_deterministic_flow(
         "report_path": str(report_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
         "logs": combined_logs,
         "stderr": combined_stderr,
+        "self_healing": pipeline_result.get("self_healing", {}),
         "outcome": "passed" if completed.returncode == 0 else "failed",
         "seed_input_file": str(seed_input_file.relative_to(PROJECT_ROOT)).replace("\\", "/"),
         "artifacts": artifacts,
