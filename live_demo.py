@@ -881,7 +881,12 @@ def _run_deterministic_flow(
         "-m",
         "pytest",
         "tests/test_realtime_e2e_flow.py",
-        "-q",
+        "-v",
+        "-s",
+        "--tb=short",
+        "--log-cli-level=INFO",
+        "--log-cli-format=%(asctime)s [%(levelname)s] %(message)s",
+        "--capture=tee-sys",
         f"--html={report_path}",
         "--self-contained-html",
     ]
@@ -912,12 +917,20 @@ def _run_deterministic_flow(
         if progress_cb:
             progress_cb(stage, f"Artifact pass: {message}")
 
-    pipeline_result = _run_demo_pipeline(
-        seed_input_dir,
-        mode,
-        report_scope="deterministic_realtime/artifact_pipeline",
-        progress_cb=_artifact_progress,
-    )
+    previous_skip_flag = os.environ.get("REPORTER_SKIP_TEST_EXECUTION")
+    os.environ["REPORTER_SKIP_TEST_EXECUTION"] = "1"
+    try:
+        pipeline_result = _run_demo_pipeline(
+            seed_input_dir,
+            mode,
+            report_scope="deterministic_realtime/artifact_pipeline",
+            progress_cb=_artifact_progress,
+        )
+    finally:
+        if previous_skip_flag is None:
+            os.environ.pop("REPORTER_SKIP_TEST_EXECUTION", None)
+        else:
+            os.environ["REPORTER_SKIP_TEST_EXECUTION"] = previous_skip_flag
 
     if progress_cb:
         progress_cb("Finalizing", "Publishing deterministic run report.")
@@ -955,10 +968,12 @@ def _run_deterministic_flow(
         f"Captured realtime screenshots: {len(captured_images)}\n"
         f"{pipeline_logs}"
     ).strip()
-    combined_stderr = (
-        f"[Artifact pipeline pass]\n{pipeline_stderr}\n\n"
-        f"[Deterministic realtime test]\n{stderr}"
-    ).strip()
+    stderr_sections: list[str] = []
+    if pipeline_stderr:
+        stderr_sections.append(f"[Artifact pipeline pass]\n{pipeline_stderr}")
+    if stderr:
+        stderr_sections.append(f"[Deterministic realtime test]\n{stderr}")
+    combined_stderr = "\n\n".join(stderr_sections).strip()
 
     return {
         "ok": completed.returncode == 0,

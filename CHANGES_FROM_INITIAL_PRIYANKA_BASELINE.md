@@ -107,6 +107,40 @@ Baseline used for comparison:
   - Committed in main as: e908739.
   - File: artifacts/generated_appium_scripts/test_login_screen.py
 
+- Realtime deterministic flow made truly single-run (latest):
+  - Deterministic live demo run now executes Appium/pytest once per user trigger.
+  - Artifact pipeline report generation no longer launches a second mobile test execution.
+  - Implemented with scoped reporter skip flag in live demo deterministic artifact pass.
+  - Files: live_demo.py, agents/reporter_agent.py
+
+- Realtime screenshot policy narrowed to business pages only (latest):
+  - Deterministic flow now captures screenshots only for:
+    - Product Listing page
+    - Product Details page
+    - Cart page
+    - Menu page
+    - Login page
+  - Removed pre-launch, transitional, and close-app screenshot points.
+  - Added page-anchor validation before capture to avoid blank/black screenshots.
+  - Files: tests/test_realtime_e2e_flow.py
+
+- Live demo diagnostics and logging clarity improved (latest):
+  - UI now labels stderr as diagnostics stream and clarifies it may include warnings/tool messages.
+  - Deterministic run no longer shows a synthetic stderr section when there is no real stderr output.
+  - Deterministic pytest invocation upgraded to verbose + CLI logging capture for richer HTML report context.
+  - Files: web/templates/live_demo.html, live_demo.py
+
+- Self-healing generated script quality hardened (latest):
+  - Removed hardcoded retry sleep for stale-element taps in generator template.
+  - Replaced with explicit wait re-resolution before re-tap.
+  - Enabled INFO logger level in generated scripts for visible runtime logs.
+  - Files: agents/self_healing_appium_generator.py, artifacts/generated_appium_scripts/*.py
+
+- Reviewer output updated after fixes (latest):
+  - Re-ran reviewer agent after generated-script stabilization update.
+  - Prior hardcoded sleep finding for cart screen review now resolved (issues detected: 0).
+  - File: artifacts/review_reports/test_05_step_5_cart_opened_screen_review.md
+
 ## 2) New Things Implemented
 
 - New Android-focused stable E2E login test framework in:
@@ -150,6 +184,11 @@ Baseline used for comparison:
     open/relaunch app -> popup handling -> product listing -> product detail/add to cart -> cart -> menu -> login -> close app.
   - File: tests/test_realtime_e2e_flow.py
   - Latest local result: `1 passed`.
+
+- Deterministic realtime logging and diagnostics refinements (latest):
+  - Test logs now include explicit INFO milestones for each captured business page.
+  - HTML report content for deterministic runs is now richer and easier to troubleshoot.
+  - Files: tests/test_realtime_e2e_flow.py, live_demo.py
 
 ## 3) How These Changes Help Us
 

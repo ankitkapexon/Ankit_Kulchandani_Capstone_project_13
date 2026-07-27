@@ -72,17 +72,28 @@ class ReporterAgent:
         print(f"[ReporterAgent] Running tests from: {source}")
         print(f"[ReporterAgent] Saving report to:   {report_html}")
 
-        preflight_issue = self._preflight_issue()
-        if preflight_issue:
-            self._write_preflight_report(report_html, preflight_issue)
+        skip_execution = os.getenv("REPORTER_SKIP_TEST_EXECUTION", "").strip() == "1"
+        if skip_execution:
+            self._write_preflight_report(
+                report_html,
+                "Test execution intentionally skipped for this pass. Artifacts were generated from existing screenshots.",
+            )
             exit_code = 0
-            status = "SKIPPED (PRECHECK)"
-            logger.warning("[ReporterAgent] Preflight issue: %s", preflight_issue)
-            print(f"[ReporterAgent] Preflight issue: {preflight_issue}")
-            print("[ReporterAgent] Test execution skipped. A diagnostic HTML report was generated.")
+            status = "SKIPPED (CONFIGURED)"
+            logger.info("[ReporterAgent] Test execution skipped due to REPORTER_SKIP_TEST_EXECUTION=1")
+            print("[ReporterAgent] Test execution skipped due to REPORTER_SKIP_TEST_EXECUTION=1")
         else:
-            exit_code = self._run_pytest(source, report_html)
-            status = "PASSED" if exit_code == 0 else "FAILED/ERRORS"
+            preflight_issue = self._preflight_issue()
+            if preflight_issue:
+                self._write_preflight_report(report_html, preflight_issue)
+                exit_code = 0
+                status = "SKIPPED (PRECHECK)"
+                logger.warning("[ReporterAgent] Preflight issue: %s", preflight_issue)
+                print(f"[ReporterAgent] Preflight issue: {preflight_issue}")
+                print("[ReporterAgent] Test execution skipped. A diagnostic HTML report was generated.")
+            else:
+                exit_code = self._run_pytest(source, report_html)
+                status = "PASSED" if exit_code == 0 else "FAILED/ERRORS"
 
         logger.info("[ReporterAgent] Test run complete — %s (exit code %d)", status, exit_code)
         print(f"[ReporterAgent] Test run complete — {status} (exit code {exit_code})")

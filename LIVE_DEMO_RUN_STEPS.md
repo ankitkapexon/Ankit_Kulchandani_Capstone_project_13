@@ -65,21 +65,31 @@ Default UI behavior:
 Notes:
 
 - Uploaded files are stored under artifacts/input_screenshots/live_demo_uploads/<timestamp>/.
-- UI run output includes pipeline logs and stderr block for quick troubleshooting.
+- UI run output includes pipeline logs and diagnostics stream (stderr) for quick troubleshooting.
+- Diagnostics (stderr) can contain warnings/tool-level messages and is not always a test failure.
 - The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
 - Result panels are intended to show only files generated for the current run.
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
 - Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
 - Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend.
+- Deterministic realtime flow executes Appium/pytest once per user-triggered run.
+- Deterministic artifact pipeline report generation does not trigger a second realtime Appium run.
 - Reports are flow-scoped:
 	- Screenshot flow: `artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html`
 	- Realtime final: `artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html`
 	- Realtime artifact pass: `artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html`
 - Deterministic flow captures step screenshots under:
 	- `artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/`
+- Deterministic screenshot capture is restricted to business pages only:
+	- Product Listing
+	- Product Details
+	- Cart
+	- Menu
+	- Login
 - Captured step screenshots are surfaced in the result UI under:
 	- Captured Step Screenshots
+- Screenshot capture is page-anchor gated to avoid black/blank pre-launch or transitional frames.
 - If deterministic run has no prior seed screenshot available, backend auto-captures one via adb screencap.
 
 ### Path A.1: One-click localhost launcher (new)
@@ -131,8 +141,10 @@ After completion, share these outputs:
 ## 5) Validation Checklist
 
 - Generated login script does not use hardcoded sleep for screen transitions.
+- Generated self-healing scripts use explicit wait re-resolution on stale element retry instead of fixed sleep.
 - Login navigation flow uses actionable elements and avoids unnecessary taps on static UI.
 - Report HTML exists in the latest timestamped execution folder.
+- Deterministic run report contains verbose runtime logs (pytest CLI logs enabled).
 - Deterministic realtime E2E flow passes with one test run:
 
 ```powershell
@@ -161,7 +173,7 @@ Flow covered in order:
 
 Additional realtime evidence:
 
-- Step screenshots are captured during runtime and should be visible in UI results.
+- Step screenshots are captured during runtime for five business pages only and should be visible in UI results.
 - Generated artifact set (SSM/manual/locator/script/review/report) is built from this run only.
 
 ## 6) Troubleshooting

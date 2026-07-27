@@ -248,6 +248,7 @@ Current live demo behavior:
 - computes artifact lists using pre-run folder snapshots plus post-run deltas, so scripts/reviews/locators shown in UI are only from the current uploaded screenshot run,
 - hides non-user artifacts such as .gitkeep, hidden files, .pyc, and __pycache__ from result panels,
 - displays pipeline logs and stderr in the UI,
+- labels stderr as diagnostics stream (warnings/tool output may appear even when tests pass),
 - uses a cleaner header layout (removed non-functional stats section),
 - supports compact filename display in result sections.
 
@@ -271,6 +272,11 @@ Report output is flow-scoped:
 - Realtime final report: artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html
 - Realtime artifact pipeline report: artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html
 
+Deterministic run execution contract:
+
+- One live-demo trigger performs one realtime Appium/pytest run.
+- Realtime artifact pipeline reporting does not start a second mobile test execution.
+
 ## Deterministic Realtime E2E Flow (Latest)
 
 To support a strict single-pass emulator journey (without repeated login typing and with explicit ordered actions), a dedicated deterministic test was added:
@@ -290,10 +296,17 @@ Implemented sequence:
 
 Latest deterministic screenshot behavior:
 
-- Realtime flow captures step screenshots during execution and stores them under:
+- Realtime flow captures step screenshots during execution (business pages only) and stores them under:
 	- artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/
+- Captured pages are restricted to:
+	- Product Listing
+	- Product Details
+	- Cart
+	- Menu
+	- Login
 - These captured step screenshots are shown in the live demo result page under:
 	- Captured Step Screenshots
+- Capture attempts are page-anchor validated to avoid blank/black pre-launch or transitional frames.
 - If no pre-existing input screenshot is available for deterministic artifact generation,
 	the backend now falls back to adb frame capture and creates a seed PNG automatically.
 
@@ -348,6 +361,8 @@ Report output format:
 - The old decorative "Input Type / Pipeline / Output Scope" section was removed from the page.
 - Artifact panels now use strict per-run delta filtering, so old generated scripts and review reports are not shown for new uploads.
 - Self-healing script startup stabilization removed hardcoded sleep in generator output and relies on explicit wait logic.
+- Stale-element retry in generated self-healing scripts now re-waits on target locators instead of fixed sleep.
+- Deterministic realtime report logging now includes verbose pytest CLI output and explicit INFO milestones.
 
 ## Supported Image Formats
 

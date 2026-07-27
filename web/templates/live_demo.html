@@ -647,7 +647,8 @@
       <h3 class="section-title">Pipeline Logs</h3>
       <pre>{{ result.logs }}</pre>
       {% if result.stderr %}
-      <h3 class="section-title">Stderr</h3>
+      <h3 class="section-title">Diagnostics (stderr stream)</h3>
+      <p class="hint">This section shows process diagnostic output. It can include warnings and tool-level messages, not only failures.</p>
       <pre>{{ result.stderr }}</pre>
       {% endif %}
     </div>

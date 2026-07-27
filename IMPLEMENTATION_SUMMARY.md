@@ -193,6 +193,28 @@ cat artifacts/token_usage.log
    - Launcher target URL on any local machine:
      - `http://localhost:8080/live-demo-fixed`
 
+9. Enforced deterministic single-run execution contract:
+    - One live-demo realtime trigger now maps to one Appium/pytest execution.
+    - Artifact-pipeline reporting pass no longer performs a second realtime test run.
+    - Files: `live_demo.py`, `agents/reporter_agent.py`
+
+10. Restricted deterministic screenshots to required business pages only:
+      - Product Listing, Product Details, Cart, Menu, Login.
+      - Removed pre-launch/transitional/close-app capture points.
+      - Added page-anchor checks before screenshot capture to avoid black/blank frames.
+      - File: `tests/test_realtime_e2e_flow.py`
+
+11. Improved live-demo report observability and diagnostics semantics:
+      - Deterministic pytest command now uses verbose CLI logging capture flags.
+      - UI stderr section clarified as diagnostics stream (warnings/tool output, not always failure).
+      - Backend now renders diagnostics section only when actual stderr output exists.
+      - Files: `live_demo.py`, `web/templates/live_demo.html`
+
+12. Cleared hardcoded sleep findings from self-healing generated scripts:
+      - Replaced stale-click retry sleep with explicit wait re-resolution in generator template.
+      - Applied to generated scripts and reran reviewer; prior cart-screen sleep finding resolved.
+      - Files: `agents/self_healing_appium_generator.py`, `artifacts/generated_appium_scripts/*.py`, `artifacts/review_reports/*.md`
+
 ### **1. Locator Reliability**
 
 **Before:**

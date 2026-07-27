@@ -24,6 +24,7 @@ from services.enhanced_config import get_config
 
 # Configure logging
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class TestLogin:
@@ -191,7 +192,7 @@ class TestLogin:
             self.healing_driver.tap_element(strategies, screen_name=screen_name)
         except StaleElementReferenceException:
             # UI transitions can invalidate a located element right before click.
-            time.sleep(0.3)
+            self._wait_for_element(strategies, screen_name=screen_name)
             self.healing_driver.tap_element(strategies, screen_name=screen_name)
 
     def type_text(self, strategies: List[LocatorStrategy], text: str, screen_name: str) -> None:

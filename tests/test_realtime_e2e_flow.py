@@ -13,6 +13,7 @@ Flow:
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 from pathlib import Path
@@ -29,6 +30,8 @@ from services.enhanced_config import get_config
 
 
 Locator = Tuple[str, str]
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class TestRealtimeE2EFlow:
@@ -151,9 +154,34 @@ class TestRealtimeE2EFlow:
         except Exception:
             pass
 
-    def _capture_step_screenshot(self, name: str) -> None:
+        # Ensure app is foregrounded before continuing flow actions.
+        launched = False
+        for _ in range(2):
+            try:
+                self.driver.activate_app(self.app_package)
+                launched = True
+                break
+            except Exception:
+                time.sleep(1)
+
+        if not launched:
+            try:
+                self.driver.start_activity(self.app_package, self.app_activity)
+            except Exception:
+                pass
+
+    def _capture_step_screenshot(self, name: str, expected_locators: Iterable[Locator], timeout: float = 6) -> None:
         if not self._capture_dir:
             return
+
+        try:
+            self._first_visible(expected_locators, timeout=timeout)
+        except Exception:
+            # Never capture before page-ready anchors are visible.
+            return
+
+        # Small settle delay reduces transitional/blank captures.
+        time.sleep(0.4)
 
         self._step_index += 1
         safe_name = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in name.lower())
@@ -164,20 +192,15 @@ class TestRealtimeE2EFlow:
         except Exception:
             # Screenshot capture is best-effort and must not fail the run.
             return
-        try:
-            self.driver.activate_app(self.app_package)
-            self.driver.start_activity(self.app_package, self.app_activity)
-        except Exception:
-            pass
 
     def test_realtime_e2e_flow(self) -> None:
+        logger.info("Starting deterministic realtime E2E flow")
+
         # Step 1: Open app and relaunch if already open.
         self._relaunch_app()
-        self._capture_step_screenshot("step_1_relaunch_app")
 
         # Step 2: Close popup if any.
         self._dismiss_popup_if_any()
-        self._capture_step_screenshot("step_2_after_popup_dismiss")
 
         # Step 3: Open product listing page (base page).
         self._first_visible(
@@ -187,7 +210,15 @@ class TestRealtimeE2EFlow:
             ],
             timeout=6,
         )
-        self._capture_step_screenshot("step_3_product_listing_ready")
+        self._capture_step_screenshot(
+            "product_listing_page",
+            [
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/menuIV"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/cartIV"),
+            ],
+            timeout=6,
+        )
+        logger.info("Captured page screenshot: Product Listing")
 
         # Step 4: Open product details page and add product to cart.
         self._tap_first(
@@ -198,7 +229,16 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
-        self._capture_step_screenshot("step_4_product_details_opened")
+        self._capture_step_screenshot(
+            "product_details_page",
+            [
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/addToCartBtn"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/cartBt"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/removeBt"),
+            ],
+            timeout=5,
+        )
+        logger.info("Captured page screenshot: Product Details")
 
         try:
             self._tap_first(
@@ -214,7 +254,6 @@ class TestRealtimeE2EFlow:
                 [(AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/removeBt")],
                 timeout=4,
             )
-            self._capture_step_screenshot("step_4_after_add_to_cart")
 
         # Step 5: Open cart.
         self._tap_first(
@@ -224,7 +263,15 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
-        self._capture_step_screenshot("step_5_cart_opened")
+        self._capture_step_screenshot(
+            "cart_page",
+            [
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/cartRL"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/noTV"),
+            ],
+            timeout=5,
+        )
+        logger.info("Captured page screenshot: Cart")
 
         # Step 6: Open menu.
         self._tap_first(
@@ -234,7 +281,17 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
-        self._capture_step_screenshot("step_6_menu_opened")
+        self._capture_step_screenshot(
+            "menu_page",
+            [
+                (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("Log In")'),
+                (AppiumBy.XPATH, '//*[@text="Log In"]'),
+                (AppiumBy.ANDROID_UIAUTOMATOR, 'new UiSelector().text("Catalog")'),
+                (AppiumBy.XPATH, '//*[@text="Catalog"]'),
+            ],
+            timeout=5,
+        )
+        logger.info("Captured page screenshot: Menu")
 
         # Step 7: Click login; if already logged in, logout first then login.
         try:
@@ -262,7 +319,16 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
-        self._capture_step_screenshot("step_7_login_opened")
+        self._capture_step_screenshot(
+            "login_page",
+            [
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/nameET"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/passwordET"),
+                (AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/loginBtn"),
+            ],
+            timeout=5,
+        )
+        logger.info("Captured page screenshot: Login")
 
         self._type_first(
             [
@@ -287,7 +353,6 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
-        self._capture_step_screenshot("step_7_after_login_submit")
 
         # Verify login landed on interactive page.
         self._first_visible(
@@ -297,8 +362,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=6,
         )
-        self._capture_step_screenshot("step_7_login_verified")
 
         # Step 8: Close the application.
-        self._capture_step_screenshot("step_8_before_close_app")
         self.driver.terminate_app(self.app_package)
+        logger.info("Deterministic realtime E2E flow completed")
