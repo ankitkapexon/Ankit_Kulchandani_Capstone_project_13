@@ -214,6 +214,7 @@
     (function () {
       const startBtn = document.getElementById("startServicesBtn");
       const statusBox = document.getElementById("statusBox");
+      let statusRefreshTimer = null;
 
       const statusClass = (ok) => ok ? "ok" : "bad";
 
@@ -284,11 +285,22 @@
         }
       };
 
+      const startStatusAutoRefresh = () => {
+        if (statusRefreshTimer) {
+          clearInterval(statusRefreshTimer);
+        }
+        // Keep service and run-lock state current while launcher stays open.
+        statusRefreshTimer = setInterval(() => {
+          requestStatus(false);
+        }, 3000);
+      };
+
       startBtn.addEventListener("click", () => {
         requestStatus(true);
       });
 
       requestStatus(false);
+      startStatusAutoRefresh();
     })();
   </script>
 </body>
