@@ -256,6 +256,37 @@
       line-height: 1.35;
       overflow-wrap: anywhere;
     }
+    .thumb-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      max-height: none;
+      overflow: visible;
+    }
+    .thumb-list li {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 6px;
+    }
+    .thumb-list img {
+      width: 100%;
+      height: 110px;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+      background: #0f172a;
+    }
+    .thumb-label {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
     ul {
       margin: 0;
       padding-left: 20px;
@@ -291,6 +322,72 @@
       color: var(--muted);
       font-style: italic;
       margin: 6px 0;
+    }
+    .run-progress {
+      display: none;
+      margin-top: 12px;
+      border: 1px dashed #9ac1dc;
+      background: linear-gradient(140deg, #f3f9ff 0%, #eef9f3 100%);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #13425f;
+    }
+    .run-progress.active {
+      display: block;
+    }
+    .run-progress-title {
+      font-weight: 700;
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+    }
+    .run-progress-detail {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #35516b;
+    }
+    .run-progress-elapsed {
+      margin-top: 8px;
+      font-size: 0.84rem;
+      color: #4a6077;
+    }
+    .emulator-live {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #cfe0ef;
+      border-radius: 10px;
+      background: #f6fbff;
+      padding: 10px;
+    }
+    .emulator-live.active {
+      display: block;
+    }
+    .emulator-live h3 {
+      margin: 0 0 8px;
+      font-size: 0.94rem;
+    }
+    .emulator-live img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border: 1px solid #b7ccdf;
+      border-radius: 8px;
+      background: #0f172a;
+    }
+    .emulator-live p {
+      margin: 8px 0 0;
+      font-size: 0.82rem;
+      color: #4e6074;
+    }
+    .run-dot::after {
+      content: "";
+      animation: dots 1.25s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0% { content: ""; }
+      25% { content: "."; }
+      50% { content: ".."; }
+      75% { content: "..."; }
+      100% { content: ""; }
     }
     .artifact-toolbar {
       display: flex;
@@ -356,7 +453,7 @@
       <div class="card tone-card">
         <h1>Live Demo: Screenshot to Test Automation</h1>
         <p class="subtitle">Choose a flow: upload-based pipeline (single screenshot) or deterministic realtime E2E flow. The selected option runs end-to-end and shows run-specific outputs.</p>
-        <form method="post" action="/run-demo" enctype="multipart/form-data">
+        <form id="liveDemoForm" method="post" action="/run-demo" enctype="multipart/form-data">
           <label>Flow Type</label>
           <input id="flow_type" name="flow_type" type="hidden" value="{{ selected_flow }}" />
           <div id="flowChoice" class="flow-choice" role="group" aria-label="Flow Type">
@@ -395,7 +492,17 @@
           </select>
 
           <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
-          <button type="submit">Run Live Demo</button>
+          <button id="runLiveDemoBtn" type="submit">Run Live Demo</button>
+          <div id="runProgress" class="run-progress" aria-live="polite" aria-atomic="true">
+            <p id="runProgressTitle" class="run-progress-title">Starting run<span class="run-dot"></span></p>
+            <p id="runProgressDetail" class="run-progress-detail">Checking prerequisites and preparing execution.</p>
+            <p id="runProgressElapsed" class="run-progress-elapsed">Elapsed: 0s</p>
+          </div>
+          <div id="emulatorLivePanel" class="emulator-live">
+            <h3>Live Emulator View</h3>
+            <img id="emulatorLiveImage" alt="Live emulator frame" src="/emulator-frame" />
+            <p>Frames refresh every second while the run is active.</p>
+          </div>
         </form>
       </div>
     </div>
@@ -514,6 +621,26 @@
         <p class="empty">No review reports found for this run.</p>
         {% endif %}
       </div>
+      <div class="panel">
+        <h3>Captured Step Screenshots</h3>
+        {% if result.artifacts.captured_screenshots %}
+        <ul class="thumb-list">
+          {% for item in result.artifacts.captured_screenshots %}
+          <li>
+            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+              <img src="/artifacts/{{ item }}" alt="Captured step screenshot" loading="lazy" />
+            </a>
+            <div class="thumb-label">
+              <span class="artifact-path">{{ item }}</span>
+              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="empty">No step screenshots captured for this run.</p>
+        {% endif %}
+      </div>
     </div>
 
     <div class="card">
@@ -530,11 +657,22 @@
     (function () {
       const toggle = document.getElementById("filenameToggle");
       const flowType = document.getElementById("flow_type");
+      const liveDemoForm = document.getElementById("liveDemoForm");
+      const runLiveDemoBtn = document.getElementById("runLiveDemoBtn");
+      const runProgress = document.getElementById("runProgress");
+      const runProgressTitle = document.getElementById("runProgressTitle");
+      const runProgressDetail = document.getElementById("runProgressDetail");
+      const runProgressElapsed = document.getElementById("runProgressElapsed");
+      const emulatorLivePanel = document.getElementById("emulatorLivePanel");
+      const emulatorLiveImage = document.getElementById("emulatorLiveImage");
       const flowButtons = Array.from(document.querySelectorAll(".flow-btn[data-flow-value]"));
       const flowIndicator = document.getElementById("flowIndicator");
       const screenshot = document.getElementById("screenshot");
       const uploadSection = document.getElementById("uploadSection");
       const screenshotHint = document.getElementById("screenshotHint");
+      let progressInterval = null;
+      let emulatorInterval = null;
+      let emulatorFrameInFlight = false;
 
       const currentFlowValue = () => {
         if (!flowType || !flowType.value) {
@@ -594,6 +732,184 @@
       });
 
       syncFlowUI();
+
+      if (liveDemoForm && runLiveDemoBtn && runProgress && runProgressTitle && runProgressDetail && runProgressElapsed) {
+        liveDemoForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const selected = currentFlowValue();
+          const detail = selected === "deterministic_realtime"
+            ? "Starting Appium-backed deterministic E2E flow. This may take 1-3 minutes on emulator."
+            : "Running screenshot pipeline stages and collecting artifacts.";
+          runProgress.classList.add("active");
+          runProgressTitle.innerHTML = "Run in progress<span class=\"run-dot\"></span>";
+          runProgressDetail.textContent = detail;
+
+          runLiveDemoBtn.disabled = true;
+          runLiveDemoBtn.textContent = "Running...";
+          flowButtons.forEach((btn) => {
+            btn.disabled = true;
+          });
+          const modeSelect = document.getElementById("mode");
+          if (modeSelect) {
+            modeSelect.disabled = true;
+          }
+          if (screenshot) {
+            screenshot.disabled = true;
+          }
+
+          const startedAt = Date.now();
+          runProgressElapsed.textContent = "Elapsed: 0s";
+          if (progressInterval) {
+            clearInterval(progressInterval);
+          }
+          progressInterval = setInterval(() => {
+            const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+            runProgressElapsed.textContent = `Elapsed: ${elapsedSec}s`;
+          }, 1000);
+
+          if (emulatorLivePanel && emulatorLiveImage) {
+            emulatorLivePanel.classList.add("active");
+            const refreshEmulatorFrame = () => {
+              if (emulatorFrameInFlight) {
+                return;
+              }
+              emulatorFrameInFlight = true;
+              emulatorLiveImage.onload = () => {
+                emulatorFrameInFlight = false;
+              };
+              emulatorLiveImage.onerror = () => {
+                emulatorFrameInFlight = false;
+              };
+              emulatorLiveImage.src = `/emulator-frame?ts=${Date.now()}`;
+            };
+            refreshEmulatorFrame();
+            if (emulatorInterval) {
+              clearInterval(emulatorInterval);
+            }
+            emulatorInterval = setInterval(refreshEmulatorFrame, 1000);
+          }
+
+          const setRequestFailedState = (message) => {
+            runProgressTitle.textContent = "Run failed to start";
+            runProgressDetail.textContent = message;
+            runLiveDemoBtn.disabled = false;
+            runLiveDemoBtn.textContent = "Run Live Demo";
+            flowButtons.forEach((btn) => {
+              btn.disabled = false;
+            });
+            const modeSelect = document.getElementById("mode");
+            if (modeSelect) {
+              modeSelect.disabled = false;
+            }
+            if (screenshot) {
+              screenshot.disabled = false;
+            }
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
+            if (emulatorInterval) {
+              clearInterval(emulatorInterval);
+            }
+            emulatorFrameInFlight = false;
+          };
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          const waitForEmulatorReady = async (maxAttempts = 30, intervalMs = 4000) => {
+            for (let i = 0; i < maxAttempts; i += 1) {
+              try {
+                const response = await fetch("/required-services-status", { method: "GET" });
+                const payload = await response.json().catch(() => ({}));
+                if (Array.isArray(payload.services)) {
+                  const adb = payload.services.find((s) => s.name === "Android emulator/device");
+                  const devices = Array.isArray(adb?.devices) ? adb.devices : [];
+                  const hasEmulator = devices.some((d) => typeof d === "string" && d.startsWith("emulator-"));
+                  if (hasEmulator) {
+                    return true;
+                  }
+                }
+              } catch (_) {
+                // Ignore transient status failures while emulator is booting.
+              }
+
+              await sleep(intervalMs);
+            }
+            return false;
+          };
+
+          try {
+            if (selected === "deterministic_realtime") {
+              runProgressDetail.textContent = "Preparing emulator for realtime E2E run...";
+              const startEmulatorResponse = await fetch("/start-emulator", { method: "POST" });
+              const startEmulatorPayload = await startEmulatorResponse.json().catch(() => ({}));
+              if (!startEmulatorResponse.ok) {
+                const serverMessage = startEmulatorPayload.message || startEmulatorPayload.error || "Unable to start emulator.";
+                setRequestFailedState(serverMessage);
+                return;
+              }
+
+              runProgressDetail.textContent = startEmulatorPayload.message || "Waiting for emulator boot...";
+              const ready = await waitForEmulatorReady(30, 4000);
+              if (!ready) {
+                setRequestFailedState("Emulator did not become ready in time. Please verify Android SDK/emulator setup.");
+                return;
+              }
+              runProgressDetail.textContent = "Emulator ready. Starting deterministic E2E flow...";
+            }
+
+            const formData = new FormData(liveDemoForm);
+            const startResponse = await fetch("/run-demo-async", {
+              method: "POST",
+              body: formData,
+            });
+
+            const startPayload = await startResponse.json().catch(() => ({}));
+            if (!startResponse.ok || !startPayload.run_id) {
+              const serverMessage = startPayload.error || "Unable to start demo run.";
+              setRequestFailedState(serverMessage);
+              return;
+            }
+
+            const runId = startPayload.run_id;
+            let statusInterval = null;
+
+            const pollStatus = async () => {
+              try {
+                const statusResponse = await fetch(`/run-status/${runId}`);
+                const statusPayload = await statusResponse.json().catch(() => ({}));
+                if (!statusResponse.ok) {
+                  return;
+                }
+
+                const stage = statusPayload.stage || "Running";
+                const message = statusPayload.message || "Processing...";
+                runProgressDetail.textContent = `${stage}: ${message}`;
+
+                if (statusPayload.status === "completed" || statusPayload.status === "failed") {
+                  if (statusInterval) {
+                    clearInterval(statusInterval);
+                  }
+                  if (progressInterval) {
+                    clearInterval(progressInterval);
+                  }
+                  if (emulatorInterval) {
+                    clearInterval(emulatorInterval);
+                  }
+                  emulatorFrameInFlight = false;
+                  window.location.href = `/run-result/${runId}`;
+                }
+              } catch (_) {
+                // Keep polling; temporary network errors should not kill the run.
+              }
+            };
+
+            await pollStatus();
+            statusInterval = setInterval(pollStatus, 1000);
+          } catch (_) {
+            setRequestFailedState("Network error while starting demo run.");
+          }
+        });
+      }
 
       if (!toggle) {
         return;

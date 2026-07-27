@@ -45,6 +45,7 @@ class ReporterAgent:
         self,
         scripts_dir: Optional[Path | str] = None,
         open_browser: bool = True,
+        report_scope: Optional[str] = None,
     ) -> Path:
         """Run pytest over the generated Appium scripts, save an HTML report, and
         optionally open it in the browser.
@@ -60,9 +61,9 @@ class ReporterAgent:
         if not source.exists():
             raise FileNotFoundError(f"Scripts directory not found: {source}")
 
-        # Timestamped output folder
+        # Timestamped output folder (optionally scoped per flow)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        run_dir = self.reports_base / timestamp
+        run_dir = self.reports_base / self._safe_scope_path(report_scope) / timestamp
         run_dir.mkdir(parents=True, exist_ok=True)
         report_html = run_dir / "report.html"
 
@@ -91,6 +92,22 @@ class ReporterAgent:
             webbrowser.open(report_html.as_uri())
 
         return report_html
+
+    def _safe_scope_path(self, report_scope: Optional[str]) -> Path:
+        """Return a sanitized relative scope path for report output."""
+        if not report_scope:
+            return Path()
+
+        cleaned_segments: list[str] = []
+        for raw in report_scope.replace("\\", "/").split("/"):
+            segment = raw.strip()
+            if not segment:
+                continue
+            safe = "".join(ch if ch.isalnum() or ch in {"-", "_", "."} else "_" for ch in segment)
+            if safe:
+                cleaned_segments.append(safe)
+
+        return Path(*cleaned_segments) if cleaned_segments else Path()
 
     # ------------------------------------------------------------------
     # Internal helpers

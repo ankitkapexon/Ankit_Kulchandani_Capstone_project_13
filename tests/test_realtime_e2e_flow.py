@@ -13,6 +13,9 @@ Flow:
 
 from __future__ import annotations
 
+import os
+import time
+from pathlib import Path
 from typing import Iterable, Tuple
 
 from appium import webdriver
@@ -35,6 +38,14 @@ class TestRealtimeE2EFlow:
         config = get_config()
         self.app_package = config.app_package
         self.app_activity = config.app_activity
+        self._step_index = 0
+        self._capture_dir: Path | None = None
+
+        capture_dir_raw = os.getenv("REALTIME_STEP_SCREENSHOT_DIR", "").strip()
+        if capture_dir_raw:
+            capture_dir = Path(capture_dir_raw)
+            capture_dir.mkdir(parents=True, exist_ok=True)
+            self._capture_dir = capture_dir
 
         desired_caps = {
             "platformName": config.platform_name,
@@ -44,14 +55,35 @@ class TestRealtimeE2EFlow:
             "appPackage": config.app_package,
             "appActivity": config.app_activity,
             "newCommandTimeout": 120,
-            "uiautomator2ServerLaunchTimeout": 60000,
+            "uiautomator2ServerLaunchTimeout": 120000,
+            "uiautomator2ServerInstallTimeout": 120000,
+            "adbExecTimeout": 120000,
+            "androidInstallTimeout": 120000,
+            "appWaitActivity": "*",
+            "appWaitDuration": 120000,
+            "autoGrantPermissions": True,
             "noReset": True,
             "dontStopAppOnReset": True,
         }
 
         options = UiAutomator2Options().load_capabilities(desired_caps)
-        self.driver = webdriver.Remote(config.appium_server_url, options=options)
+        self.driver = self._create_driver_with_retry(config.appium_server_url, options)
         self.wait = WebDriverWait(self.driver, max(6, int(config.explicit_wait_timeout)))
+
+    def _create_driver_with_retry(self, server_url: str, options: UiAutomator2Options):
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                return webdriver.Remote(server_url, options=options)
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt < 3:
+                    time.sleep(5)
+                else:
+                    raise RuntimeError(
+                        "Failed to create Appium session after 3 attempts "
+                        f"against {server_url}"
+                    ) from last_error
 
     def teardown_method(self) -> None:
         try:
@@ -118,6 +150,20 @@ class TestRealtimeE2EFlow:
             self.driver.terminate_app(self.app_package)
         except Exception:
             pass
+
+    def _capture_step_screenshot(self, name: str) -> None:
+        if not self._capture_dir:
+            return
+
+        self._step_index += 1
+        safe_name = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "_" for ch in name.lower())
+        filename = f"{self._step_index:02d}_{safe_name}.png"
+        target = self._capture_dir / filename
+        try:
+            self.driver.save_screenshot(str(target))
+        except Exception:
+            # Screenshot capture is best-effort and must not fail the run.
+            return
         try:
             self.driver.activate_app(self.app_package)
             self.driver.start_activity(self.app_package, self.app_activity)
@@ -127,9 +173,11 @@ class TestRealtimeE2EFlow:
     def test_realtime_e2e_flow(self) -> None:
         # Step 1: Open app and relaunch if already open.
         self._relaunch_app()
+        self._capture_step_screenshot("step_1_relaunch_app")
 
         # Step 2: Close popup if any.
         self._dismiss_popup_if_any()
+        self._capture_step_screenshot("step_2_after_popup_dismiss")
 
         # Step 3: Open product listing page (base page).
         self._first_visible(
@@ -139,6 +187,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=6,
         )
+        self._capture_step_screenshot("step_3_product_listing_ready")
 
         # Step 4: Open product details page and add product to cart.
         self._tap_first(
@@ -149,6 +198,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
+        self._capture_step_screenshot("step_4_product_details_opened")
 
         try:
             self._tap_first(
@@ -164,6 +214,7 @@ class TestRealtimeE2EFlow:
                 [(AppiumBy.ID, "com.saucelabs.mydemoapp.android:id/removeBt")],
                 timeout=4,
             )
+            self._capture_step_screenshot("step_4_after_add_to_cart")
 
         # Step 5: Open cart.
         self._tap_first(
@@ -173,6 +224,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
+        self._capture_step_screenshot("step_5_cart_opened")
 
         # Step 6: Open menu.
         self._tap_first(
@@ -182,6 +234,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
+        self._capture_step_screenshot("step_6_menu_opened")
 
         # Step 7: Click login; if already logged in, logout first then login.
         try:
@@ -209,6 +262,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
+        self._capture_step_screenshot("step_7_login_opened")
 
         self._type_first(
             [
@@ -233,6 +287,7 @@ class TestRealtimeE2EFlow:
             ],
             timeout=5,
         )
+        self._capture_step_screenshot("step_7_after_login_submit")
 
         # Verify login landed on interactive page.
         self._first_visible(
@@ -242,6 +297,8 @@ class TestRealtimeE2EFlow:
             ],
             timeout=6,
         )
+        self._capture_step_screenshot("step_7_login_verified")
 
         # Step 8: Close the application.
+        self._capture_step_screenshot("step_8_before_close_app")
         self.driver.terminate_app(self.app_package)

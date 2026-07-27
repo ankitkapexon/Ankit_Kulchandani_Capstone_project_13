@@ -26,6 +26,7 @@ def run_pipeline(
     screenshots_dir: str,
     open_browser: bool,
     feature_flags: StageFeatureFlags,
+    report_scope: str | None = None,
 ) -> Path:
     """Run the full 6-stage pipeline and return report path."""
 
@@ -61,4 +62,4 @@ def run_pipeline(
     step5.run()
 
     step6 = Step6ReportStage(project_root=project_root)
-    return step6.run(open_browser=open_browser)
+    return step6.run(open_browser=open_browser, report_scope=report_scope)

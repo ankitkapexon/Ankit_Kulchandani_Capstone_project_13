@@ -224,7 +224,7 @@ Run the local demo UI:
 python live_demo.py
 ```
 
-Open http://127.0.0.1:8080 and:
+Open http://127.0.0.1:8080 or the fixed launcher URL http://127.0.0.1:8080/live-demo-fixed and:
 
 1. Select flow type:
 	- Check Flow By Uploading A Screenshot, or
@@ -251,10 +251,25 @@ Current live demo behavior:
 - uses a cleaner header layout (removed non-functional stats section),
 - supports compact filename display in result sections.
 
+Localhost launcher scripts (new):
+
+- PowerShell one-click launcher: scripts/start_live_demo_localhost.ps1
+- CMD wrapper: scripts/start_live_demo_localhost.cmd
+
+These scripts start the Flask demo server (if needed) and open:
+
+- http://localhost:8080/live-demo-fixed
+
 Live demo now supports both execution paths in one UI:
 
 - `screenshot_pipeline`: Check Flow By Uploading A Screenshot (upload one screenshot and run the full six-stage pipeline).
 - `deterministic_realtime`: run strict emulator flow (`tests/test_realtime_e2e_flow.py`) and publish an HTML report from that run.
+
+Report output is flow-scoped:
+
+- Screenshot flow report: artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html
+- Realtime final report: artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html
+- Realtime artifact pipeline report: artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html
 
 ## Deterministic Realtime E2E Flow (Latest)
 
@@ -272,6 +287,15 @@ Implemented sequence:
 6. Open menu.
 7. Open login, enter username/password, submit login.
 8. Close application.
+
+Latest deterministic screenshot behavior:
+
+- Realtime flow captures step screenshots during execution and stores them under:
+	- artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/
+- These captured step screenshots are shown in the live demo result page under:
+	- Captured Step Screenshots
+- If no pre-existing input screenshot is available for deterministic artifact generation,
+	the backend now falls back to adb frame capture and creates a seed PNG automatically.
 
 Run command:
 
@@ -318,6 +342,9 @@ Report output format:
 
 - Live demo run scoping and UI readability were improved in `live_demo.py`, `pipelines/pipeline_composer.py`, and `web/templates/live_demo.html`.
 - The live demo no longer reuses historical manual testcase files during a new run.
+- Reporter output now supports report scopes so screenshot and realtime report folders stay separated.
+- Deterministic realtime flow now generates artifact pipeline inputs from captured step screenshots.
+- A fixed launcher page is available at `/live-demo-fixed` and includes startup prerequisite/status visibility.
 - The old decorative "Input Type / Pipeline / Output Scope" section was removed from the page.
 - Artifact panels now use strict per-run delta filtering, so old generated scripts and review reports are not shown for new uploads.
 - Self-healing script startup stabilization removed hardcoded sleep in generator output and relies on explicit wait logic.

@@ -172,6 +172,27 @@ cat artifacts/token_usage.log
    - Command: `python -m pytest tests/test_realtime_e2e_flow.py -q`
    - Result: `1 passed`
 
+5. Added flow-scoped execution report outputs:
+   - Screenshot flow reports: `artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html`
+   - Deterministic realtime final reports: `artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html`
+   - Deterministic realtime artifact pass reports: `artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html`
+
+6. Added deterministic realtime step screenshot capture:
+   - Test now records step-wise screenshots to:
+     - `artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/`
+   - Captured screenshots are rendered in live demo result page under Captured Step Screenshots.
+
+7. Added deterministic no-screenshot fallback:
+   - If no seed screenshot exists, backend captures a PNG via adb (`exec-out screencap -p`) and proceeds.
+
+8. Added fixed launcher and one-click localhost run scripts:
+   - Fixed page URL: `/live-demo-fixed`
+   - Startup scripts:
+     - `scripts/start_live_demo_localhost.ps1`
+     - `scripts/start_live_demo_localhost.cmd`
+   - Launcher target URL on any local machine:
+     - `http://localhost:8080/live-demo-fixed`
+
 ### **1. Locator Reliability**
 
 **Before:**

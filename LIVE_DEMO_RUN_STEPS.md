@@ -47,7 +47,7 @@ TESTCASE_AGENT_PROVIDER=mock
 python live_demo.py
 ```
 
-Open http://127.0.0.1:8080 and then:
+Open http://127.0.0.1:8080/live-demo-fixed and then:
 
 1. Select flow type:
 	- Check Flow By Uploading A Screenshot, or
@@ -71,7 +71,34 @@ Notes:
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
 - Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
 - The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
-- Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend and publishes an HTML report under `artifacts/test_execution_reports/<timestamp>/report.html`.
+- Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend.
+- Reports are flow-scoped:
+	- Screenshot flow: `artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html`
+	- Realtime final: `artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html`
+	- Realtime artifact pass: `artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html`
+- Deterministic flow captures step screenshots under:
+	- `artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/`
+- Captured step screenshots are surfaced in the result UI under:
+	- Captured Step Screenshots
+- If deterministic run has no prior seed screenshot available, backend auto-captures one via adb screencap.
+
+### Path A.1: One-click localhost launcher (new)
+
+Windows CMD:
+
+```cmd
+scripts\start_live_demo_localhost.cmd
+```
+
+Windows PowerShell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_live_demo_localhost.ps1
+```
+
+Both launchers start live_demo if needed and open:
+
+- `http://localhost:8080/live-demo-fixed`
 
 ### Path B: Enhanced CLI flow
 
@@ -96,7 +123,10 @@ After completion, share these outputs:
 - artifacts/locator_output/
 - artifacts/generated_appium_scripts/
 - artifacts/review_reports/
-- artifacts/test_execution_reports/<timestamp>/report.html
+- artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html
+- artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html
+- artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html
+- artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/
 
 ## 5) Validation Checklist
 
@@ -128,6 +158,11 @@ Flow covered in order:
 6. Open menu.
 7. Open login, enter credentials, submit login.
 8. Close app.
+
+Additional realtime evidence:
+
+- Step screenshots are captured during runtime and should be visible in UI results.
+- Generated artifact set (SSM/manual/locator/script/review/report) is built from this run only.
 
 ## 6) Troubleshooting
 ## 7) Troubleshooting

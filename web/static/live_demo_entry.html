@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live Demo Launcher</title>
+  <style>
+    :root {
+      --bg: #f5f8fc;
+      --surface: #ffffff;
+      --line: #d7e2ee;
+      --text: #1f2d3d;
+      --muted: #5b6b7b;
+      --primary: #0b6bbf;
+      --primary-dark: #085596;
+      --good: #12633a;
+      --bad: #8f1d1d;
+      --warn: #935400;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 15% 0%, #e7f2ff, transparent 32%), var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+    }
+
+    .title-wrap {
+      min-width: 0;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: 0;
+      border-radius: 9px;
+      padding: 9px 12px;
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    .status {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: #f9fcff;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+    }
+
+    .prereq {
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: #f7fbff;
+      padding: 12px 16px;
+    }
+
+    .prereq h2 {
+      margin: 0 0 8px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #0f3558;
+    }
+
+    .prereq p {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .prereq ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #1f2d3d;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .prereq li {
+      margin: 3px 0;
+    }
+
+    .status-line {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .status-line strong {
+      color: var(--text);
+    }
+
+    .ok {
+      color: var(--good);
+    }
+
+    .bad {
+      color: var(--bad);
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .frame-wrap {
+      width: 100%;
+      height: calc(100vh - 114px);
+      background: #dfe9f5;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .frame-wrap {
+        height: calc(100vh - 150px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="title-wrap">
+      <h1 class="title">Live Demo Launcher (Fixed URL)</h1>
+      <p class="subtitle">Start required services before demo runs. If all are already running, this does a fresh restart.</p>
+    </div>
+    <div class="actions">
+      <button id="startServicesBtn" type="button">Start / Fresh Restart Services</button>
+    </div>
+  </div>
+
+  <section class="prereq" aria-label="Live demo prerequisites">
+    <h2>Prerequisites Required For This Demo</h2>
+    <p>Use Start / Fresh Restart Services first. The backend checks and reports missing setup items in the status panel below.</p>
+    <ul>
+      <li>Python virtual environment with project dependencies installed.</li>
+      <li>Appium CLI available on PATH and startable on port 4723.</li>
+      <li>Android Platform Tools installed with adb available on PATH.</li>
+      <li>Android Emulator CLI available on PATH (or standard Android SDK location).</li>
+      <li>At least one Android AVD and system image available (backend can auto-create an AVD when tools/images exist).</li>
+      <li>For Real mode runs: OPENAI_API_KEY (or configured LiteLLM provider) must be set.</li>
+    </ul>
+  </section>
+
+  <div class="status" id="statusBox">
+    <p class="status-line"><strong>Startup:</strong> Checking current service readiness...</p>
+  </div>
+
+  <div class="frame-wrap">
+    <iframe id="demoFrame" src="/" title="Live Demo"></iframe>
+  </div>
+
+  <script>
+    (function () {
+      const startBtn = document.getElementById("startServicesBtn");
+      const statusBox = document.getElementById("statusBox");
+
+      const statusClass = (ok) => ok ? "ok" : "bad";
+
+      const renderStatus = (payload) => {
+        if (!payload || !Array.isArray(payload.services)) {
+          statusBox.innerHTML = '<p class="status-line bad"><strong>Status:</strong> Unable to read service status.</p>';
+          return;
+        }
+
+        const lines = payload.services.map((service) => {
+          const cls = statusClass(Boolean(service.ok));
+          const details = Array.isArray(service.devices) && service.devices.length
+            ? ` | devices: ${service.devices.join(", ")}`
+            : "";
+          return `<p class="status-line ${cls}"><strong>${service.name}:</strong> ${service.message}${details}</p>`;
+        });
+
+        const overallClass = payload.ok ? "ok" : "warn";
+          const restartNote = payload.fresh_restart_performed
+            ? " (fresh restart applied)"
+            : "";
+          const summary = `<p class="status-line ${overallClass}"><strong>Summary:</strong> ${(payload.message || "Status checked.") + restartNote}</p>`;
+
+        const detailLines = [];
+        const startupDetails = payload.startup_details || payload.restart_details;
+        if (startupDetails && startupDetails.appium_message) {
+          detailLines.push(`<p class="status-line"><strong>Appium setup:</strong> ${startupDetails.appium_message}</p>`);
+        }
+        if (startupDetails && startupDetails.emulator_message) {
+          detailLines.push(`<p class="status-line"><strong>Emulator setup:</strong> ${startupDetails.emulator_message}</p>`);
+        }
+        if (startupDetails && Array.isArray(startupDetails.setup_errors) && startupDetails.setup_errors.length) {
+          startupDetails.setup_errors.forEach((err) => {
+            detailLines.push(`<p class="status-line bad"><strong>Setup error:</strong> ${err}</p>`);
+          });
+        }
+
+        statusBox.innerHTML = summary + detailLines.join("") + lines.join("");
+      };
+
+      const requestStatus = async (startServices) => {
+        const endpoint = startServices ? "/start-required-services" : "/required-services-status";
+        const method = startServices ? "POST" : "GET";
+
+        if (startServices) {
+          startBtn.disabled = true;
+          startBtn.textContent = "Starting...";
+        }
+
+        try {
+          const response = await fetch(endpoint, { method });
+          const payload = await response.json().catch(() => ({}));
+          renderStatus(payload);
+
+            if (startServices) {
+              const frame = document.getElementById("demoFrame");
+              if (frame) {
+                frame.src = `/?fresh=${Date.now()}`;
+              }
+            }
+        } catch (error) {
+          statusBox.innerHTML = `<p class="status-line bad"><strong>Error:</strong> ${String(error)}</p>`;
+        } finally {
+          if (startServices) {
+            startBtn.disabled = false;
+              startBtn.textContent = "Start / Fresh Restart Services";
+          }
+        }
+      };
+
+      startBtn.addEventListener("click", () => {
+        requestStatus(true);
+      });
+
+      requestStatus(false);
+    })();
+  </script>
+</body>
+</html>
