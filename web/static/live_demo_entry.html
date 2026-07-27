@@ -214,7 +214,6 @@
     (function () {
       const startBtn = document.getElementById("startServicesBtn");
       const statusBox = document.getElementById("statusBox");
-      let statusRefreshTimer = null;
 
       const statusClass = (ok) => ok ? "ok" : "bad";
 
@@ -262,7 +261,7 @@
       };
 
       const requestStatus = async (startServices) => {
-        const endpoint = startServices ? "/start-required-services" : "/required-services-status";
+        const endpoint = startServices ? "/start-required-services" : "/required-services-status?quick=1";
         const method = startServices ? "POST" : "GET";
 
         if (startServices) {
@@ -291,22 +290,12 @@
         }
       };
 
-      const startStatusAutoRefresh = () => {
-        if (statusRefreshTimer) {
-          clearInterval(statusRefreshTimer);
-        }
-        // Keep service and run-lock state current while launcher stays open.
-        statusRefreshTimer = setInterval(() => {
-          requestStatus(false);
-        }, 3000);
-      };
-
       startBtn.addEventListener("click", () => {
         requestStatus(true);
       });
 
+      // Initial one-time status read only. No background polling to avoid repeated process checks.
       requestStatus(false);
-      startStatusAutoRefresh();
     })();
   </script>
 </body>

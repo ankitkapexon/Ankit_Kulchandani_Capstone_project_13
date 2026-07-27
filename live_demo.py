@@ -39,6 +39,10 @@ _appium_process: subprocess.Popen[str] | None = None
 _run_states_lock = threading.Lock()
 _run_states: dict[str, dict[str, Any]] = {}
 _RUN_STATE_TTL_SECONDS = 3600
+_service_cache_lock = threading.Lock()
+_cached_adb_ok = False
+_cached_adb_msg = "ADB status not checked yet. Click Start / Restart Services."
+_cached_adb_devices: list[str] = []
 
 
 def _hidden_subprocess_kwargs() -> dict[str, Any]:
@@ -53,6 +57,19 @@ def _hidden_subprocess_kwargs() -> dict[str, Any]:
         "creationflags": subprocess.CREATE_NO_WINDOW,
         "startupinfo": startupinfo,
     }
+
+
+def _set_cached_adb_status(ok: bool, msg: str, devices: list[str]) -> None:
+    global _cached_adb_ok, _cached_adb_msg, _cached_adb_devices
+    with _service_cache_lock:
+        _cached_adb_ok = bool(ok)
+        _cached_adb_msg = str(msg)
+        _cached_adb_devices = list(devices)
+
+
+def _get_cached_adb_status() -> tuple[bool, str, list[str]]:
+    with _service_cache_lock:
+        return _cached_adb_ok, _cached_adb_msg, list(_cached_adb_devices)
 
 
 def _prune_run_states() -> None:
@@ -758,7 +775,7 @@ def _prepare_realtime_step_capture_dir() -> Path:
     return capture_dir
 
 
-def _required_services_status(start_appium: bool = False) -> dict[str, Any]:
+def _required_services_status(start_appium: bool = False, probe_devices: bool = True) -> dict[str, Any]:
     """Compute runtime readiness for the live demo launcher page."""
     appium_ok = _is_appium_healthy()
     appium_msg = "Appium already running" if appium_ok else "Appium not running"
@@ -766,7 +783,11 @@ def _required_services_status(start_appium: bool = False) -> dict[str, Any]:
     if start_appium and not appium_ok:
         appium_ok, appium_msg = _ensure_appium_running()
 
-    adb_ok, adb_msg, adb_devices = _adb_connected_devices()
+    if probe_devices:
+        adb_ok, adb_msg, adb_devices = _adb_connected_devices()
+        _set_cached_adb_status(adb_ok, adb_msg, adb_devices)
+    else:
+        adb_ok, adb_msg, adb_devices = _get_cached_adb_status()
     emulator_devices = [serial for serial in adb_devices if serial.startswith("emulator-")]
     pipeline_idle = not _run_lock.locked()
 
@@ -1143,7 +1164,8 @@ def start_required_services():
 
 @app.get("/required-services-status")
 def required_services_status():
-    status = _required_services_status(start_appium=False)
+    quick = request.args.get("quick", "0").strip().lower() in {"1", "true", "yes", "on"}
+    status = _required_services_status(start_appium=False, probe_devices=not quick)
     return jsonify(status)
 
 
