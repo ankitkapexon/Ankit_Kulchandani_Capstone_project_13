@@ -13,7 +13,7 @@ import traceback
 import urllib.error
 import urllib.request
 import uuid
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -32,6 +32,8 @@ UPLOADS_ROOT = ARTIFACTS_ROOT / "input_screenshots" / "live_demo_uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "bmp"}
 APPIUM_STATUS_URL = os.getenv("APPIUM_SERVER_URL", "http://127.0.0.1:4723").rstrip("/") + "/status"
 APPIUM_START_TIMEOUT_SECONDS = 45
+DETERMINISTIC_PYTEST_TIMEOUT_SECONDS = int(os.getenv("DETERMINISTIC_PYTEST_TIMEOUT_SECONDS", "420"))
+RUN_INACTIVITY_TIMEOUT_SECONDS = int(os.getenv("RUN_INACTIVITY_TIMEOUT_SECONDS", "900"))
 
 app = Flask(__name__, template_folder="web/templates", static_folder="web/static")
 _run_lock = threading.Lock()
@@ -93,12 +95,55 @@ def _set_run_state(run_id: str, **updates: Any) -> None:
         _prune_run_states()
 
 
+def _mark_run_failed_if_stale(state: dict[str, Any], now: float) -> None:
+    status = str(state.get("status", "")).lower()
+    if status not in {"queued", "running"}:
+        return
+
+    last_progress = state.get("last_progress_at") or state.get("started_at")
+    if not last_progress:
+        return
+
+    if (now - float(last_progress)) <= RUN_INACTIVITY_TIMEOUT_SECONDS:
+        return
+
+    state.update(
+        {
+            "status": "failed",
+            "stage": "Failed",
+            "message": "Run timed out due to inactivity.",
+            "error": "Demo run timed out. Check server logs for details and retry.",
+            "finished_at": now,
+        }
+    )
+
+
 def _get_run_state(run_id: str) -> dict[str, Any] | None:
     with _run_states_lock:
+        _prune_run_states()
         state = _run_states.get(run_id)
         if state is None:
             return None
+        _mark_run_failed_if_stale(state, time.time())
         return dict(state)
+
+
+@contextmanager
+def _temporary_env(overrides: dict[str, str]):
+    previous: dict[str, str | None] = {key: os.environ.get(key) for key in overrides}
+    os.environ.update(overrides)
+    try:
+        yield
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _user_facing_run_error() -> str:
+    return "Demo run failed. Check server logs for details and retry."
 
 
 def _allowed_file(filename: str) -> bool:
@@ -829,13 +874,12 @@ def _script_uses_self_healing(script_path: Path) -> bool:
     except Exception:
         return False
 
-    markers = (
-        "SelfHealingDriver",
-        "LocatorStrategy",
-        "fallback_strategies",
-        "healing_repository",
-    )
-    return any(marker in content for marker in markers)
+    has_driver = "SelfHealingDriver" in content
+    has_driver_import = "from utils.self_healing import" in content or "import utils.self_healing" in content
+    has_locator_strategy = "LocatorStrategy" in content
+    has_fallback_usage = "fallback_strategies" in content or "healing_repository" in content
+
+    return (has_driver and has_driver_import and has_fallback_usage) or (has_locator_strategy and has_fallback_usage)
 
 
 def _collect_self_healing_details(
@@ -893,9 +937,12 @@ def _run_demo_pipeline(
     if progress_cb:
         progress_cb("Preparing", "Configuring pipeline mode and environment.")
 
+    env_overrides: dict[str, str] = {}
     if mode == "mock":
-        os.environ["VISION_AGENT_PROVIDER"] = "mock"
-        os.environ["TESTCASE_AGENT_PROVIDER"] = "mock"
+        env_overrides = {
+            "VISION_AGENT_PROVIDER": "mock",
+            "TESTCASE_AGENT_PROVIDER": "mock",
+        }
     else:
         # Keep user-provided real-provider settings from .env/environment.
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
@@ -905,38 +952,39 @@ def _run_demo_pipeline(
     # Reload config to pick up any mode/env changes before running.
     if progress_cb:
         progress_cb("Preparing", "Loading config and prompts.")
-    load_environment()
-    config = get_config()
-    prompt_manager = PromptManager(PROJECT_ROOT)
+    with _temporary_env(env_overrides):
+        load_environment()
+        config = get_config()
+        prompt_manager = PromptManager(PROJECT_ROOT)
 
-    feature_flags = StageFeatureFlags(
-        use_langchain_vision=True,
-        use_multi_strategy_locator=True,
-        use_self_healing_generator=True,
-        enforce_non_empty_elements=True,
-    )
-
-    std_buffer = io.StringIO()
-    err_buffer = io.StringIO()
-    report_path: Path | None = None
-
-    if progress_cb:
-        progress_cb("Executing", "Running screenshot pipeline stages.")
-
-    with redirect_stdout(std_buffer), redirect_stderr(err_buffer):
-        report_path = run_pipeline(
-            project_root=PROJECT_ROOT,
-            config=config,
-            prompt_manager=prompt_manager,
-            screenshots_dir=str(input_dir),
-            open_browser=False,
-            feature_flags=feature_flags,
-            report_scope=report_scope,
-            execute_report_tests=execute_report_tests,
+        feature_flags = StageFeatureFlags(
+            use_langchain_vision=True,
+            use_multi_strategy_locator=True,
+            use_self_healing_generator=True,
+            enforce_non_empty_elements=True,
         )
 
-    output_logs = _normalize_pipeline_logs(std_buffer.getvalue())
-    error_logs = err_buffer.getvalue()
+        std_buffer = io.StringIO()
+        err_buffer = io.StringIO()
+        report_path: Path | None = None
+
+        if progress_cb:
+            progress_cb("Executing", "Running screenshot pipeline stages.")
+
+        with redirect_stdout(std_buffer), redirect_stderr(err_buffer):
+            report_path = run_pipeline(
+                project_root=PROJECT_ROOT,
+                config=config,
+                prompt_manager=prompt_manager,
+                screenshots_dir=str(input_dir),
+                open_browser=False,
+                feature_flags=feature_flags,
+                report_scope=report_scope,
+                execute_report_tests=execute_report_tests,
+            )
+
+        output_logs = _normalize_pipeline_logs(std_buffer.getvalue())
+        error_logs = err_buffer.getvalue()
 
     if progress_cb:
         progress_cb("Finalizing", "Collecting run-scoped artifacts.")
@@ -1020,14 +1068,23 @@ def _run_deterministic_flow(
     if progress_cb:
         progress_cb("Executing", "Running deterministic realtime emulator flow.")
 
-    completed = subprocess.run(
-        command,
-        cwd=str(PROJECT_ROOT),
-        capture_output=True,
-        text=True,
-        env=env,
-        **_hidden_subprocess_kwargs(),
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=str(PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=DETERMINISTIC_PYTEST_TIMEOUT_SECONDS,
+            **_hidden_subprocess_kwargs(),
+        )
+    except subprocess.TimeoutExpired as exc:
+        completed = subprocess.CompletedProcess(
+            args=command,
+            returncode=124,
+            stdout=exc.stdout or "",
+            stderr=(exc.stderr or "") + "\nDeterministic realtime pytest timed out.",
+        )
 
     captured_images = _list_supported_images(capture_dir)
 
@@ -1340,10 +1397,16 @@ def _execute_async_run(
         return
 
     try:
-        _set_run_state(run_id, status="running", stage="Preparing", message="Starting demo run.")
+        _set_run_state(
+            run_id,
+            status="running",
+            stage="Preparing",
+            message="Starting demo run.",
+            last_progress_at=time.time(),
+        )
 
         def progress_cb(stage: str, message: str) -> None:
-            _set_run_state(run_id, status="running", stage=stage, message=message)
+            _set_run_state(run_id, status="running", stage=stage, message=message, last_progress_at=time.time())
 
         result = _run_selected_flow(mode, flow_type, run_dir, saved_path, progress_cb=progress_cb)
         _set_run_state(
@@ -1352,15 +1415,18 @@ def _execute_async_run(
             stage="Completed",
             message="Demo run finished successfully.",
             result=result,
+            last_progress_at=time.time(),
             finished_at=time.time(),
         )
     except Exception:
+        traceback.print_exc()
         _set_run_state(
             run_id,
             status="failed",
             stage="Failed",
             message="Demo run failed.",
-            error=f"Demo run failed:\n{traceback.format_exc()}",
+            error=_user_facing_run_error(),
+            last_progress_at=time.time(),
             finished_at=time.time(),
         )
     finally:
@@ -1391,10 +1457,11 @@ def run_demo() -> str:
     except ValueError as exc:
         return render_template("live_demo.html", result=None, error=str(exc), default_mode=_default_mode())
     except Exception:
+        traceback.print_exc()
         return render_template(
             "live_demo.html",
             result=None,
-            error=f"Demo run failed:\n{traceback.format_exc()}",
+            error=_user_facing_run_error(),
             default_mode=_default_mode(),
         )
     finally:
@@ -1427,6 +1494,7 @@ def run_demo_async():
         mode=mode,
         flow_type=flow_type,
         started_at=time.time(),
+        last_progress_at=time.time(),
     )
 
     thread = threading.Thread(

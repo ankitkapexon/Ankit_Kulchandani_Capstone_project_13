@@ -533,92 +533,32 @@
       </label>
     </div>
 
+    {% macro artifact_panel(title, items, empty_text) -%}
+    <div class="panel">
+      <h3>{{ title }}</h3>
+      {% if items %}
+      <ul>
+        {% for item in items %}
+        <li>
+          <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
+            <span class="artifact-path">{{ item }}</span>
+            <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty">{{ empty_text }}</p>
+      {% endif %}
+    </div>
+    {%- endmacro %}
+
     <div class="card grid">
-      <div class="panel">
-        <h3>SSM Output</h3>
-        {% if result.artifacts.ssm %}
-        <ul>
-          {% for item in result.artifacts.ssm %}
-          <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No files found for this run.</p>
-        {% endif %}
-      </div>
-      <div class="panel">
-        <h3>Manual Testcases</h3>
-        {% if result.artifacts.manual_testcases %}
-        <ul>
-          {% for item in result.artifacts.manual_testcases %}
-          <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No testcase files found for this run.</p>
-        {% endif %}
-      </div>
-      <div class="panel">
-        <h3>Locator Output</h3>
-        {% if result.artifacts.locators %}
-        <ul>
-          {% for item in result.artifacts.locators %}
-          <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No locator files found for this run.</p>
-        {% endif %}
-      </div>
-      <div class="panel">
-        <h3>Generated Scripts</h3>
-        {% if result.artifacts.scripts %}
-        <ul>
-          {% for item in result.artifacts.scripts %}
-          <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No scripts found for this run.</p>
-        {% endif %}
-      </div>
-      <div class="panel">
-        <h3>Review Reports</h3>
-        {% if result.artifacts.reviews %}
-        <ul>
-          {% for item in result.artifacts.reviews %}
-          <li>
-            <a href="/artifacts/{{ item }}" target="_blank" rel="noopener">
-              <span class="artifact-path">{{ item }}</span>
-              <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="empty">No review reports found for this run.</p>
-        {% endif %}
-      </div>
+      {{ artifact_panel('SSM Output', result.artifacts.ssm, 'No files found for this run.') }}
+      {{ artifact_panel('Manual Testcases', result.artifacts.manual_testcases, 'No testcase files found for this run.') }}
+      {{ artifact_panel('Locator Output', result.artifacts.locators, 'No locator files found for this run.') }}
+      {{ artifact_panel('Generated Scripts', result.artifacts.scripts, 'No scripts found for this run.') }}
+      {{ artifact_panel('Review Reports', result.artifacts.reviews, 'No review reports found for this run.') }}
       <div class="panel">
         <h3>Self-Healing Output</h3>
         {% if result.self_healing %}
