@@ -4,6 +4,23 @@ This guide explains how to use the enhanced mobile test automation framework wit
 
 ---
 
+## ✅ Live Demo Integration Updates (Jul 2026)
+
+- Live demo result UI now surfaces self-healing status directly after a run:
+  - Enabled state,
+  - generated scripts count,
+  - scripts containing self-healing markers,
+  - healing repository update state.
+- The healing repository database is exposed via artifact link when present:
+  - `artifacts/healing_repository.db`
+- Runtime hardening around self-healing execution path:
+  - mode/provider env overrides are scoped to each run,
+  - async run watchdog marks stale runs failed,
+  - deterministic realtime subprocess execution has timeout protection,
+  - user-facing errors are concise while tracebacks remain server-side.
+
+---
+
 ## 📋 **What's New**
 
 ### ✅ **Latest Runtime Updates (Jul 2026)**

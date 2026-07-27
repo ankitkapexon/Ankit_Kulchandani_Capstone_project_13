@@ -1,5 +1,12 @@
 # 🚀 LiteLLM Gateway - Local Testing Guide
 
+## Latest Validation Context (Jul 2026)
+
+- Live demo backend now scopes provider env overrides per run, which prevents cross-run mode leakage during repeated LiteLLM/mock switching.
+- Deterministic realtime execution path has explicit timeout handling and stale async-run watchdog logic.
+- User-facing live-demo errors are now concise; detailed tracebacks are logged server-side for debugging.
+- Self-healing output visibility in live demo results can be used as a quick post-run health signal.
+
 ## ✅ **Configuration Complete**
 
 Your project is now configured to use the **LiteLLM Gateway** at `http://107.22.98.31:10501`

@@ -1,5 +1,15 @@
 # 🚀 GitHub Actions Setup Guide
 
+## Latest Notes (Jul 2026)
+
+- Runtime hardening updates were delivered in live demo/backend logic (env scoping, realtime timeout, async stale-run watchdog, concise user-facing failures).
+- Self-healing result visibility was added in live demo UI for easier post-run verification.
+- When validating after pull from `main`, include at least one deterministic realtime check:
+
+```powershell
+python -m pytest tests/test_realtime_e2e_flow.py -q
+```
+
 ## ✅ **Prerequisites Verified**
 
 - ✅ LiteLLM Gateway connection working locally

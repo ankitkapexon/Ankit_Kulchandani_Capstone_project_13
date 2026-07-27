@@ -42,6 +42,18 @@ Contributor rule:
 
 - If you change flow behavior in `live_demo.py`, update `README.md` and `LIVE_DEMO_RUN_STEPS.md` in the same PR so user-facing behavior and docs remain aligned.
 
+Latest doc sync rule (Jul 2026):
+
+- For live-demo reliability or result-visibility changes (for example: scoped env handling, realtime timeout/watchdog, self-healing output panels, artifact filtering/macro refactors), update all 8 top-level docs in the same branch before merge:
+        - `README.md`
+        - `LIVE_DEMO_RUN_STEPS.md`
+        - `CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md`
+        - `IMPLEMENTATION_SUMMARY.md`
+        - `SELF_HEALING_GUIDE.md`
+        - `LITELLM_TESTING_GUIDE.md`
+        - `GITHUB_ACTIONS_SETUP.md`
+        - `CONTRIBUTING.md`
+
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.
 3. **SSM JSON → Locator JSON:** LocatorAgent extracts UI element locators (resource IDs, accessibility IDs).

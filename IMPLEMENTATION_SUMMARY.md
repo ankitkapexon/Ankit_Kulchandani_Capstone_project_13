@@ -1,5 +1,21 @@
 # 🎉 Implementation Complete: LangChain + Self-Healing
 
+## ✅ Latest Live Demo Hardening (Jul 2026)
+
+1. ✅ Added self-healing visibility to live demo result UI:
+   - Self-Healing Output panel,
+   - self-healing script count badge,
+   - healing repository artifact exposure.
+2. ✅ Added scoped environment overrides in demo pipeline execution to avoid cross-run leakage.
+3. ✅ Added deterministic realtime timeout handling for pytest subprocess execution.
+4. ✅ Added async run inactivity watchdog handling in run-state reads.
+5. ✅ Replaced user-facing traceback responses with concise failure messages (traceback retained in server logs).
+6. ✅ Refactored repeated artifact panel template blocks into Jinja macro for maintainability.
+7. ✅ Validation completed:
+   - live demo screenshot flow completion,
+   - live demo deterministic realtime flow completion,
+   - deterministic realtime test pass (`1 passed`).
+
 ## ✅ **All P0 & P2 Tasks Completed**
 
 ### **P0 Priority (DONE ✓)**
