@@ -484,12 +484,7 @@
             <label for="screenshot">Screenshot</label>
             <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
           </div>
-
-          <label for="mode">Mode</label>
-          <select id="mode" name="mode">
-            <option value="mock" selected>Mock mode (no external LLM dependency)</option>
-            <option value="real">Real mode (uses current OpenAI or LiteLLM settings)</option>
-          </select>
+          <input id="mode" name="mode" type="hidden" value="mock" />
 
           <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
           <button id="runLiveDemoBtn" type="submit">Run Live Demo</button>
@@ -498,10 +493,10 @@
             <p id="runProgressDetail" class="run-progress-detail">Checking prerequisites and preparing execution.</p>
             <p id="runProgressElapsed" class="run-progress-elapsed">Elapsed: 0s</p>
           </div>
-          <div id="emulatorLivePanel" class="emulator-live">
-            <h3>Live Emulator View</h3>
-            <img id="emulatorLiveImage" alt="Live emulator frame" src="/emulator-frame" />
-            <p>Frames refresh every second while the run is active.</p>
+          <div id="runPreviewPanel" class="emulator-live">
+            <h3 id="runPreviewTitle">Run Preview</h3>
+            <img id="runPreviewImage" alt="Run preview" src="" />
+            <p id="runPreviewNote">Preview appears when a flow starts.</p>
           </div>
         </form>
       </div>
@@ -515,7 +510,7 @@
 
     {% if result %}
     <div class="card">
-      <div class="ok">Demo run completed in {{ result.mode }} mode using {{ result.flow_type }}.</div>
+      <div class="ok">Demo run completed using {{ result.flow_type }}.</div>
       <div class="status-badges">
         <span class="badge">Flow: {{ result.flow_label }}</span>
         <span class="badge {% if result.appium_state in ['running', 'started'] %}good{% else %}warn{% endif %}">Appium: {{ result.appium_state }}</span>
@@ -664,8 +659,10 @@
       const runProgressTitle = document.getElementById("runProgressTitle");
       const runProgressDetail = document.getElementById("runProgressDetail");
       const runProgressElapsed = document.getElementById("runProgressElapsed");
-      const emulatorLivePanel = document.getElementById("emulatorLivePanel");
-      const emulatorLiveImage = document.getElementById("emulatorLiveImage");
+      const runPreviewPanel = document.getElementById("runPreviewPanel");
+      const runPreviewTitle = document.getElementById("runPreviewTitle");
+      const runPreviewImage = document.getElementById("runPreviewImage");
+      const runPreviewNote = document.getElementById("runPreviewNote");
       const flowButtons = Array.from(document.querySelectorAll(".flow-btn[data-flow-value]"));
       const flowIndicator = document.getElementById("flowIndicator");
       const screenshot = document.getElementById("screenshot");
@@ -674,6 +671,7 @@
       let progressInterval = null;
       let emulatorInterval = null;
       let emulatorFrameInFlight = false;
+      let uploadedPreviewUrl = null;
 
       const currentFlowValue = () => {
         if (!flowType || !flowType.value) {
@@ -719,8 +717,39 @@
             ? "Tip: upload a focused screen image for cleaner locator and testcase generation."
             : "Deterministic flow ignores screenshot upload and runs the strict end-to-end emulator sequence.";
         }
+
+        // For screenshot flow, never show live emulator stream; show uploaded preview when available.
+        if (uploadMode) {
+          if (emulatorInterval) {
+            clearInterval(emulatorInterval);
+            emulatorInterval = null;
+          }
+          emulatorFrameInFlight = false;
+          if (runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            if (screenshot.files && screenshot.files.length > 0) {
+              if (uploadedPreviewUrl) {
+                URL.revokeObjectURL(uploadedPreviewUrl);
+              }
+              uploadedPreviewUrl = URL.createObjectURL(screenshot.files[0]);
+              runPreviewTitle.textContent = "Uploaded Screenshot Preview";
+              runPreviewImage.src = uploadedPreviewUrl;
+              runPreviewImage.alt = "Uploaded screenshot preview";
+              runPreviewNote.textContent = "This preview is used for screenshot upload flow. Emulator stream is hidden for this flow.";
+              runPreviewPanel.classList.add("active");
+            } else {
+              runPreviewPanel.classList.remove("active");
+            }
+          }
+        } else if (runPreviewPanel) {
+          runPreviewPanel.classList.remove("active");
+        }
+
         syncActiveFlowButton();
       };
+
+      if (screenshot) {
+        screenshot.addEventListener("change", syncFlowUI);
+      }
 
       flowButtons.forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -751,10 +780,6 @@
           flowButtons.forEach((btn) => {
             btn.disabled = true;
           });
-          const modeSelect = document.getElementById("mode");
-          if (modeSelect) {
-            modeSelect.disabled = true;
-          }
           if (screenshot) {
             screenshot.disabled = true;
           }
@@ -769,26 +794,37 @@
             runProgressElapsed.textContent = `Elapsed: ${elapsedSec}s`;
           }, 1000);
 
-          if (emulatorLivePanel && emulatorLiveImage) {
-            emulatorLivePanel.classList.add("active");
+          if (selected === "deterministic_realtime" && runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            runPreviewPanel.classList.add("active");
+            runPreviewTitle.textContent = "Live Emulator View";
+            runPreviewImage.alt = "Live emulator frame";
+            runPreviewNote.textContent = "Frames refresh every second while the run is active.";
             const refreshEmulatorFrame = () => {
               if (emulatorFrameInFlight) {
                 return;
               }
               emulatorFrameInFlight = true;
-              emulatorLiveImage.onload = () => {
+              runPreviewImage.onload = () => {
                 emulatorFrameInFlight = false;
               };
-              emulatorLiveImage.onerror = () => {
+              runPreviewImage.onerror = () => {
                 emulatorFrameInFlight = false;
               };
-              emulatorLiveImage.src = `/emulator-frame?ts=${Date.now()}`;
+              runPreviewImage.src = `/emulator-frame?ts=${Date.now()}`;
             };
             refreshEmulatorFrame();
             if (emulatorInterval) {
               clearInterval(emulatorInterval);
             }
             emulatorInterval = setInterval(refreshEmulatorFrame, 1000);
+          } else if (selected === "screenshot_pipeline" && runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            if (uploadedPreviewUrl) {
+              runPreviewImage.src = uploadedPreviewUrl;
+            }
+            runPreviewPanel.classList.add("active");
+            runPreviewTitle.textContent = "Uploaded Screenshot Preview";
+            runPreviewImage.alt = "Uploaded screenshot preview";
+            runPreviewNote.textContent = "This preview is used for screenshot upload flow. Emulator stream is hidden for this flow.";
           }
 
           const setRequestFailedState = (message) => {
@@ -799,10 +835,6 @@
             flowButtons.forEach((btn) => {
               btn.disabled = false;
             });
-            const modeSelect = document.getElementById("mode");
-            if (modeSelect) {
-              modeSelect.disabled = false;
-            }
             if (screenshot) {
               screenshot.disabled = false;
             }

@@ -130,6 +130,12 @@ Baseline used for comparison:
   - Deterministic pytest invocation upgraded to verbose + CLI logging capture for richer HTML report context.
   - Files: web/templates/live_demo.html, live_demo.py
 
+- Live demo mode/preview UX simplified (latest):
+  - Removed Mode selector from page UI and standardized form submission behavior.
+  - Screenshot flow now shows uploaded screenshot preview and does not show live emulator stream.
+  - Deterministic realtime flow now shows live emulator stream while run is active.
+  - Files: web/templates/live_demo.html
+
 - Self-healing generated script quality hardened (latest):
   - Removed hardcoded retry sleep for stale-element taps in generator template.
   - Replaced with explicit wait re-resolution before re-tap.

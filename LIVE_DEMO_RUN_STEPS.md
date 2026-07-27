@@ -20,9 +20,9 @@ Set-Location C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone
 .\.venv\Scripts\Activate.ps1
 ```
 
-## 2) Configure Demo Mode
+## 2) Configure Provider Environment (Optional)
 
-Option A: Real provider mode
+Option A: Real provider environment
 
 ```dotenv
 VISION_AGENT_PROVIDER=openai
@@ -32,7 +32,7 @@ OPENAI_MODEL=gpt-4o-mini
 OPENAI_API_BASE=https://api.openai.com/v1
 ```
 
-Option B: Mock provider mode
+Option B: Mock provider environment
 
 ```dotenv
 VISION_AGENT_PROVIDER=mock
@@ -53,20 +53,22 @@ Open http://127.0.0.1:8080/live-demo-fixed and then:
 	- Check Flow By Uploading A Screenshot, or
 	- Realtime End To End Flow Of Application.
 2. If upload flow is selected, upload one screenshot.
-3. Select mock or real mode.
-4. Click Run Live Demo.
-5. Open generated artifact links and the HTML execution report from the same page.
+3. Click Run Live Demo.
+4. Open generated artifact links and the HTML execution report from the same page.
 
 Default UI behavior:
 
 - Realtime End To End Flow Of Application is selected by default.
 - Screenshot upload section is visible only when Check Flow By Uploading A Screenshot is selected.
+- Mode selector is removed from the page; current UI submits mock mode by default.
 
 Notes:
 
 - Uploaded files are stored under artifacts/input_screenshots/live_demo_uploads/<timestamp>/.
 - UI run output includes pipeline logs and diagnostics stream (stderr) for quick troubleshooting.
 - Diagnostics (stderr) can contain warnings/tool-level messages and is not always a test failure.
+- Upload flow preview shows the uploaded screenshot and hides emulator live stream.
+- Realtime flow preview shows live emulator frames while the run is active.
 - The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
 - Result panels are intended to show only files generated for the current run.
 - Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
@@ -174,7 +176,7 @@ Additional realtime evidence:
 ## 7) Troubleshooting
 
 - If imports or commands fail, reactivate venv and run pip install -r requirements.txt.
-- If real mode fails, switch to mock mode or verify OPENAI_API_KEY and API base values.
+- If provider-backed runs fail, verify OPENAI_API_KEY and API base values used by your environment.
 - If Appium is not reachable, start it manually and rerun:
 
 ```powershell

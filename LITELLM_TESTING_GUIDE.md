@@ -232,8 +232,9 @@ UI defaults:
 
 Mode behavior in live demo:
 
-- `mock` mode: provider env vars are forced to mock where applicable.
-- `real` mode: requires valid `OPENAI_API_KEY` and configured gateway/base URL.
+- Mode selector is no longer shown in the UI form.
+- Current UI submits `mock` mode by default for live demo runs.
+- For provider-backed runs, use CLI/pipeline entry points with configured environment values.
 
 Tip: use deterministic flow when you want stable emulator validation independent of screenshot-to-SSM generation.
 

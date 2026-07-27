@@ -214,6 +214,12 @@ cat artifacts/token_usage.log
       - Applied to generated scripts and reran reviewer; prior cart-screen sleep finding resolved.
       - Files: `agents/self_healing_appium_generator.py`, `artifacts/generated_appium_scripts/*.py`, `artifacts/review_reports/*.md`
 
+13. Simplified live-demo UI control surface and preview behavior:
+   - Removed user-facing Mode selector from the page and retained flow-driven execution controls.
+   - Screenshot upload flow now renders uploaded image preview instead of emulator stream.
+   - Realtime deterministic flow now renders live emulator frames only for that flow.
+   - File: `web/templates/live_demo.html`
+
 ### **1. Locator Reliability**
 
 **Before:**

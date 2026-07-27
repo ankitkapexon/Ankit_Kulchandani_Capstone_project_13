@@ -229,9 +229,8 @@ Open http://127.0.0.1:8080 or the fixed launcher URL http://127.0.0.1:8080/live-
 1. Select flow type:
 	- Check Flow By Uploading A Screenshot, or
 	- Realtime End To End Flow Of Application (strict sequence, no upload required).
-2. Select mock or real mode.
-3. Run the demo.
-4. Review generated artifacts and open report links from the page.
+2. Run the demo.
+3. Review generated artifacts and open report links from the page.
 
 Live UI defaults:
 
@@ -249,6 +248,9 @@ Current live demo behavior:
 - hides non-user artifacts such as .gitkeep, hidden files, .pyc, and __pycache__ from result panels,
 - displays pipeline logs and stderr in the UI,
 - labels stderr as diagnostics stream (warnings/tool output may appear even when tests pass),
+- removes Mode selection from the page and submits mock mode by default from UI,
+- shows uploaded screenshot preview for screenshot flow (no emulator stream for this flow),
+- shows live emulator stream only during deterministic realtime flow,
 - uses a cleaner header layout (removed non-functional stats section),
 - supports compact filename display in result sections.
 
