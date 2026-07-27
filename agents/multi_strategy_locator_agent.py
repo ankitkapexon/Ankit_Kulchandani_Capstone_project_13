@@ -197,8 +197,12 @@ class MultiStrategyLocatorAgent(LocatorAgent):
         Returns:
             Inferred resource ID or None
         """
-        # Common patterns for SauceLabs demo app
-        app_package = "com.saucelabs.mydemoapp.android"
+        if not self.config.app_specific_locator_hints_enabled:
+            return None
+
+        app_package = (self.config.app_package or "").strip()
+        if not app_package:
+            return None
         
         label_lower = label.lower() if label else ""
         

@@ -958,7 +958,7 @@ def _run_demo_pipeline(
         feature_flags = StageFeatureFlags(
             use_langchain_vision=True,
             use_multi_strategy_locator=True,
-            use_self_healing_generator=True,
+            use_self_healing_generator=config.is_reference_demo_profile,
             enforce_non_empty_elements=True,
         )
 

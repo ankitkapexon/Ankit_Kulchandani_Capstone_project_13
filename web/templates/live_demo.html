@@ -509,6 +509,7 @@
     {% endif %}
 
     {% if result %}
+    <div id="runResultSections">
     <div class="card">
       <div class="ok">Demo run completed using {{ result.flow_type }}.</div>
       <div class="status-badges">
@@ -613,6 +614,7 @@
       <pre>{{ result.stderr }}</pre>
       {% endif %}
     </div>
+    </div>
     {% endif %}
   </div>
   <script>
@@ -634,10 +636,22 @@
       const screenshot = document.getElementById("screenshot");
       const uploadSection = document.getElementById("uploadSection");
       const screenshotHint = document.getElementById("screenshotHint");
+      let runResultSections = document.getElementById("runResultSections");
       let progressInterval = null;
       let emulatorInterval = null;
       let emulatorFrameInFlight = false;
       let uploadedPreviewUrl = null;
+
+      const clearPreviousRunResults = () => {
+        if (!runResultSections) {
+          runResultSections = document.getElementById("runResultSections");
+        }
+        if (!runResultSections) {
+          return;
+        }
+        runResultSections.remove();
+        runResultSections = null;
+      };
 
       const currentFlowValue = () => {
         if (!flowType || !flowType.value) {
@@ -723,6 +737,7 @@
             return;
           }
           const nextFlow = btn.dataset.flowValue || "screenshot_pipeline";
+          clearPreviousRunResults();
           window.location.href = `/?flow_type=${encodeURIComponent(nextFlow)}`;
         });
       });
@@ -732,6 +747,7 @@
       if (liveDemoForm && runLiveDemoBtn && runProgress && runProgressTitle && runProgressDetail && runProgressElapsed) {
         liveDemoForm.addEventListener("submit", async (event) => {
           event.preventDefault();
+          clearPreviousRunResults();
           const selected = currentFlowValue();
           const formData = new FormData(liveDemoForm);
           const detail = selected === "deterministic_realtime"

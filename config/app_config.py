@@ -100,6 +100,25 @@ class AppConfig:
         return os.getenv("APP_ACTIVITY", "com.saucelabs.mydemoapp.android.view.activities.SplashActivity")
 
     @property
+    def is_reference_demo_profile(self) -> bool:
+        package = (self.app_package or "").strip().lower()
+        return "saucelabs" in package
+
+    @property
+    def app_specific_locator_hints_enabled(self) -> bool:
+        value = os.getenv("ENABLE_APP_SPECIFIC_LOCATOR_HINTS")
+        if value is None:
+            return self.is_reference_demo_profile
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    @property
+    def app_specific_navigation_enabled(self) -> bool:
+        value = os.getenv("ENABLE_APP_SPECIFIC_NAVIGATION")
+        if value is None:
+            return self.is_reference_demo_profile
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+
+    @property
     def platform_name(self) -> str:
         return os.getenv("PLATFORM_NAME", "Android")
 

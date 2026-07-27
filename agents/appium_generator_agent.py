@@ -29,6 +29,9 @@ class AppiumGeneratorAgent:
         self.output_dir = self.config.generated_scripts_dir
         self.navigation_agent = NavigationAgent()
 
+    def _use_reference_demo_login_shortcuts(self) -> bool:
+        return self.config.app_specific_navigation_enabled and self.config.is_reference_demo_profile
+
     def generate_script_for_locator(self, locator_payload: Dict[str, Any]) -> str:
         screen_name = self._screen_name_from_payload(locator_payload)
         class_name = self._to_class_name(screen_name)
@@ -74,8 +77,12 @@ class {class_name}:
         else:
             desired_caps["automationName"] = "UiAutomator2"
             desired_caps["platformVersion"] = platform_version
-            desired_caps["appPackage"] = "com.saucelabs.mydemoapp.android"
-            desired_caps["appActivity"] = "com.saucelabs.mydemoapp.android.view.activities.SplashActivity"
+            app_package = os.getenv("APP_PACKAGE", "").strip()
+            app_activity = os.getenv("APP_ACTIVITY", "").strip()
+            if app_package:
+                desired_caps["appPackage"] = app_package
+            if app_activity:
+                desired_caps["appActivity"] = app_activity
 
         self.driver = get_or_create_driver(lambda: self._create_driver(desired_caps, appium_server))
         self.wait = WebDriverWait(self.driver, 10) if WebDriverWait is not None else None
@@ -182,6 +189,7 @@ class {class_name}:
 
     def _build_step_lines(self, screen_name: str, elements: List[Dict[str, Any]]) -> str:
         lines: List[str] = []
+        use_reference_shortcuts = self._use_reference_demo_login_shortcuts()
 
         navigation_steps = self.navigation_agent.get_navigation_steps(screen_name)
         for nav_action, strategy, value in navigation_steps:
@@ -199,7 +207,7 @@ class {class_name}:
             locator_strategy = str(element.get("locator_strategy") or "text")
             locator_value = str(element.get("locator_value") or label)
 
-            if screen_name.lower() == "login" and action == "tap" and label.lower() == "login":
+            if use_reference_shortcuts and screen_name.lower() == "login" and action == "tap" and label.lower() == "login":
                 continue
 
             lines.append(f"        # Step {index}: {action.replace('_', ' ')} the {label} element.")
@@ -218,9 +226,9 @@ class {class_name}:
 
             lines.append("")
 
-        if screen_name.lower() == "login":
+        if use_reference_shortcuts and screen_name.lower() == "login":
             lines.append("        # Submit login")
-            lines.append("        self.tap('resource_id', 'com.saucelabs.mydemoapp.android:id/loginBtn')")
+            lines.append(f"        self.tap('resource_id', '{self.config.app_package}:id/loginBtn')")
             lines.append("")
 
         if not lines:

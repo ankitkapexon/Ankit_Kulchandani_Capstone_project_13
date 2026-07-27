@@ -256,10 +256,6 @@ class LocatorAgent:
         return existing_action or new_action
 
     def _select_locator_strategy(self, element: Dict[str, Any]) -> tuple[str, str]:
-        override = self._guess_saucelabs_locator(element)
-        if override:
-            return override
-
         value = self._extract_locator_value(
             element,
             ("accessibility_id", "content_desc", "content-desc", "contentDescription", "accessibilityId"),
@@ -282,6 +278,10 @@ class LocatorAgent:
         value = element.get("android_uiautomator") or element.get("uiautomator")
         if value:
             return "android_uiautomator", str(value)
+
+        override = self._guess_app_specific_locator(element)
+        if override:
+            return override
 
         label = str(element.get("label") or element.get("element") or "").lower()
         if "username" in label:
@@ -308,27 +308,34 @@ class LocatorAgent:
 
         return None
 
-    def _guess_saucelabs_locator(self, element: Dict[str, Any]) -> Optional[tuple[str, str]]:
+    def _guess_app_specific_locator(self, element: Dict[str, Any]) -> Optional[tuple[str, str]]:
+        if not self.config.app_specific_locator_hints_enabled:
+            return None
+
+        app_package = (self.config.app_package or "").strip()
+        if not app_package:
+            return None
+
         label = str(element.get("element") or element.get("label") or "").strip().lower()
         normalized_label = re.sub(r"[^a-z0-9]+", "_", label).strip("_")
 
         app_specific_locators = {
-            "login": ("resource_id", "com.saucelabs.mydemoapp.android:id/loginBtn"),
-            "username": ("resource_id", "com.saucelabs.mydemoapp.android:id/nameET"),
-            "password": ("resource_id", "com.saucelabs.mydemoapp.android:id/passwordET"),
-            "menu": ("resource_id", "com.saucelabs.mydemoapp.android:id/menuIV"),
-            "product_image": ("resource_id", "com.saucelabs.mydemoapp.android:id/productIV"),
-            "product": ("resource_id", "com.saucelabs.mydemoapp.android:id/productIV"),
-            "product_title": ("resource_id", "com.saucelabs.mydemoapp.android:id/productTV"),
-            "title": ("resource_id", "com.saucelabs.mydemoapp.android:id/productTV"),
-            "price": ("resource_id", "com.saucelabs.mydemoapp.android:id/priceTV"),
-            "add_to_cart": ("resource_id", "com.saucelabs.mydemoapp.android:id/cartBt"),
-            "cart": ("resource_id", "com.saucelabs.mydemoapp.android:id/cartIV"),
-            "cart_title": ("resource_id", "com.saucelabs.mydemoapp.android:id/titleTV"),
-            "checkout": ("resource_id", "com.saucelabs.mydemoapp.android:id/cartBt"),
-            "quantity_controls": ("resource_id", "com.saucelabs.mydemoapp.android:id/plusIV"),
-            "subtotal": ("resource_id", "com.saucelabs.mydemoapp.android:id/totalPriceTV"),
-            "remove_item": ("resource_id", "com.saucelabs.mydemoapp.android:id/removeBt"),
+            "login": ("resource_id", f"{app_package}:id/loginBtn"),
+            "username": ("resource_id", f"{app_package}:id/nameET"),
+            "password": ("resource_id", f"{app_package}:id/passwordET"),
+            "menu": ("resource_id", f"{app_package}:id/menuIV"),
+            "product_image": ("resource_id", f"{app_package}:id/productIV"),
+            "product": ("resource_id", f"{app_package}:id/productIV"),
+            "product_title": ("resource_id", f"{app_package}:id/productTV"),
+            "title": ("resource_id", f"{app_package}:id/productTV"),
+            "price": ("resource_id", f"{app_package}:id/priceTV"),
+            "add_to_cart": ("resource_id", f"{app_package}:id/cartBt"),
+            "cart": ("resource_id", f"{app_package}:id/cartIV"),
+            "cart_title": ("resource_id", f"{app_package}:id/titleTV"),
+            "checkout": ("resource_id", f"{app_package}:id/cartBt"),
+            "quantity_controls": ("resource_id", f"{app_package}:id/plusIV"),
+            "subtotal": ("resource_id", f"{app_package}:id/totalPriceTV"),
+            "remove_item": ("resource_id", f"{app_package}:id/removeBt"),
         }
 
         for key, locator in app_specific_locators.items():
