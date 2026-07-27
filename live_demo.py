@@ -1167,13 +1167,7 @@ def index() -> str:
     preferred_flow = request.args.get("flow_type", "").strip().lower()
     if preferred_flow not in {"screenshot_pipeline", "deterministic_realtime"}:
         preferred_flow = "deterministic_realtime"
-    return render_template(
-        "live_demo.html",
-        result=None,
-        error=None,
-        default_mode=_default_mode(),
-        preferred_flow=preferred_flow,
-    )
+    return _render_live_demo(result=None, error=None, preferred_flow=preferred_flow)
 
 
 @app.get("/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator")
@@ -1313,6 +1307,30 @@ def start_emulator():
     return jsonify(status), (200 if ok else 500)
 
 
+@app.post("/reset-ui-state")
+def reset_ui_state():
+    """Clear stale completed run states so a new run starts from a clean UI context."""
+    if _run_lock.locked():
+        return jsonify(
+            {
+                "ok": False,
+                "message": "Cannot reset UI state while a demo run is in progress.",
+            }
+        ), 409
+
+    with _run_states_lock:
+        cleared_runs = len(_run_states)
+        _run_states.clear()
+
+    return jsonify(
+        {
+            "ok": True,
+            "message": "UI run state reset.",
+            "cleared_runs": cleared_runs,
+        }
+    )
+
+
 def _validate_run_inputs(mode: str, flow_type: str) -> str | None:
     if mode not in {"mock", "real"}:
         return "Invalid mode. Use mock or real."
@@ -1326,6 +1344,27 @@ def _default_mode() -> str:
     if api_key and api_key != "your_openai_api_key_here":
         return "real"
     return "mock"
+
+
+def _render_live_demo(
+    *,
+    result: dict[str, Any] | None,
+    error: str | None,
+    preferred_flow: str | None = None,
+) -> str:
+    config = get_config()
+    flow_hint = (preferred_flow or "").strip().lower()
+    if flow_hint not in {"screenshot_pipeline", "deterministic_realtime"}:
+        flow_hint = ""
+
+    return render_template(
+        "live_demo.html",
+        result=result,
+        error=error,
+        default_mode=_default_mode(),
+        preferred_flow=flow_hint,
+        app_package=config.app_package,
+    )
 
 
 def _resolve_requested_mode() -> str:
@@ -1451,30 +1490,24 @@ def run_demo() -> str:
     flow_type = request.form.get("flow_type", "screenshot_pipeline").strip().lower()
     validation_error = _validate_run_inputs(mode, flow_type)
     if validation_error:
-        return render_template("live_demo.html", result=None, error=validation_error, default_mode=_default_mode())
+        return _render_live_demo(result=None, error=validation_error, preferred_flow=flow_type)
 
     if not _run_lock.acquire(blocking=False):
-        return render_template(
-            "live_demo.html",
+        return _render_live_demo(
             result=None,
             error="A demo run is already in progress. Please wait for it to finish and try again.",
-            default_mode=_default_mode(),
+            preferred_flow=flow_type,
         )
 
     try:
         run_dir, saved_path = _prepare_upload_for_flow(flow_type)
         result = _run_selected_flow(mode, flow_type, run_dir, saved_path)
-        return render_template("live_demo.html", result=result, error=None, default_mode=_default_mode())
+        return _render_live_demo(result=result, error=None, preferred_flow=flow_type)
     except ValueError as exc:
-        return render_template("live_demo.html", result=None, error=str(exc), default_mode=_default_mode())
+        return _render_live_demo(result=None, error=str(exc), preferred_flow=flow_type)
     except Exception:
         traceback.print_exc()
-        return render_template(
-            "live_demo.html",
-            result=None,
-            error=_user_facing_run_error(),
-            default_mode=_default_mode(),
-        )
+        return _render_live_demo(result=None, error=_user_facing_run_error(), preferred_flow=flow_type)
     finally:
         if _run_lock.locked():
             _run_lock.release()
@@ -1544,23 +1577,24 @@ def run_result(run_id: str) -> str:
 
     status = state.get("status")
     if status == "completed":
-        return render_template("live_demo.html", result=state.get("result"), error=None, default_mode=_default_mode())
+        flow_type = str((state.get("result") or {}).get("flow_type") or "").strip().lower()
+        return _render_live_demo(result=state.get("result"), error=None, preferred_flow=flow_type)
     if status == "failed":
-        return render_template(
-            "live_demo.html",
+        flow_type = str(state.get("flow_type") or "").strip().lower()
+        return _render_live_demo(
             result=None,
             error=state.get("error", "Demo run failed."),
-            default_mode=_default_mode(),
+            preferred_flow=flow_type,
         )
 
-    return render_template(
-        "live_demo.html",
+    flow_type = str(state.get("flow_type") or "").strip().lower()
+    return _render_live_demo(
         result=None,
         error=(
             "Demo run is still in progress. "
             f"Current stage: {state.get('stage', 'Unknown')} - {state.get('message', '')}"
         ),
-        default_mode=_default_mode(),
+        preferred_flow=flow_type,
     )
 
 

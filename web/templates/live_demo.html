@@ -350,6 +350,41 @@
       font-size: 0.84rem;
       color: #4a6077;
     }
+    .run-context {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid #c7dbec;
+      background: #f5fbff;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .run-context.active {
+      display: block;
+    }
+    .run-context h3 {
+      margin: 0 0 8px;
+      font-size: 0.93rem;
+    }
+    .run-context-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .run-context-item {
+      margin: 0;
+      font-size: 0.84rem;
+      color: #274660;
+      overflow-wrap: anywhere;
+    }
+    .run-context-note {
+      margin: 8px 0 0;
+      font-size: 0.82rem;
+      color: #0f5132;
+      background: #e7f8ef;
+      border: 1px solid #b7ebcf;
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
     .emulator-live {
       display: none;
       margin-top: 12px;
@@ -449,7 +484,7 @@
     }
   </style>
 </head>
-<body class="show-filenames">
+<body class="show-filenames" data-app-package="{{ app_package|default('') }}">
   <div class="wrap">
     {% set selected_flow = result.flow_type if result and result.flow_type else (preferred_flow if preferred_flow in ['screenshot_pipeline', 'deterministic_realtime'] else 'deterministic_realtime') %}
     <div class="hero">
@@ -495,6 +530,16 @@
             <p id="runProgressTitle" class="run-progress-title">Starting run<span class="run-dot"></span></p>
             <p id="runProgressDetail" class="run-progress-detail">Checking prerequisites and preparing execution.</p>
             <p id="runProgressElapsed" class="run-progress-elapsed">Elapsed: 0s</p>
+          </div>
+          <div id="runContext" class="run-context" aria-live="polite" aria-atomic="true">
+            <h3>Run Context</h3>
+            <div class="run-context-grid">
+              <p class="run-context-item"><strong>Flow:</strong> <span id="ctxFlow">N/A</span></p>
+              <p class="run-context-item"><strong>Run ID:</strong> <span id="ctxRunId">pending</span></p>
+              <p class="run-context-item"><strong>Started:</strong> <span id="ctxStartedAt">N/A</span></p>
+              <p class="run-context-item"><strong>App Package:</strong> <span id="ctxAppPackage">N/A</span></p>
+            </div>
+            <p id="ctxResetNote" class="run-context-note">Previous results cleared for this run.</p>
           </div>
           <div id="runPreviewPanel" class="emulator-live">
             <h3 id="runPreviewTitle">Run Preview</h3>
@@ -632,6 +677,12 @@
       const runProgressTitle = document.getElementById("runProgressTitle");
       const runProgressDetail = document.getElementById("runProgressDetail");
       const runProgressElapsed = document.getElementById("runProgressElapsed");
+      const runContext = document.getElementById("runContext");
+      const ctxFlow = document.getElementById("ctxFlow");
+      const ctxRunId = document.getElementById("ctxRunId");
+      const ctxStartedAt = document.getElementById("ctxStartedAt");
+      const ctxAppPackage = document.getElementById("ctxAppPackage");
+      const ctxResetNote = document.getElementById("ctxResetNote");
       const runPreviewPanel = document.getElementById("runPreviewPanel");
       const runPreviewTitle = document.getElementById("runPreviewTitle");
       const runPreviewImage = document.getElementById("runPreviewImage");
@@ -648,6 +699,55 @@
       let emulatorFrameInFlight = false;
       let uploadedPreviewUrl = null;
 
+      const flowLabel = (flowValue) => {
+        if (flowValue === "deterministic_realtime") {
+          return "Realtime End To End Flow Of Application";
+        }
+        return "Check Flow By Uploading A Screenshot";
+      };
+
+      const updateRunContext = ({ flow, runId, startedAt, resetMessage } = {}) => {
+        if (!runContext) {
+          return;
+        }
+        runContext.classList.add("active");
+        if (ctxFlow) {
+          ctxFlow.textContent = flowLabel(flow || currentFlowValue());
+        }
+        if (ctxRunId && typeof runId === "string") {
+          ctxRunId.textContent = runId;
+        }
+        if (ctxStartedAt && startedAt instanceof Date) {
+          ctxStartedAt.textContent = startedAt.toLocaleString();
+        }
+        if (ctxAppPackage) {
+          const packageHint = document.body?.dataset?.appPackage || "N/A";
+          ctxAppPackage.textContent = packageHint || "N/A";
+        }
+        if (ctxResetNote && typeof resetMessage === "string") {
+          ctxResetNote.textContent = resetMessage;
+        }
+      };
+
+      const resetUiStateOnServer = async () => {
+        try {
+          const response = await fetch("/reset-ui-state", {
+            method: "POST",
+            keepalive: true,
+          });
+          const payload = await response.json().catch(() => ({}));
+          return {
+            ok: response.ok && Boolean(payload.ok),
+            message: payload.message || "Previous results cleared for this run.",
+          };
+        } catch (_) {
+          return {
+            ok: false,
+            message: "Previous results cleared for this run.",
+          };
+        }
+      };
+
       const clearPreviousRunResults = () => {
         document.body.classList.add("run-in-progress");
 
@@ -662,6 +762,13 @@
         if (liveRunResultsContainer) {
           liveRunResultsContainer.innerHTML = "";
         }
+
+        updateRunContext({
+          flow: currentFlowValue(),
+          runId: "pending",
+          startedAt: new Date(),
+          resetMessage: "Previous results cleared for this run.",
+        });
       };
 
       const currentFlowValue = () => {
@@ -750,6 +857,7 @@
           }
           const nextFlow = btn.dataset.flowValue || "screenshot_pipeline";
           clearPreviousRunResults();
+          void resetUiStateOnServer();
           window.location.href = `/?flow_type=${encodeURIComponent(nextFlow)}`;
         });
       });
@@ -766,6 +874,14 @@
           event.preventDefault();
           clearPreviousRunResults();
           const selected = currentFlowValue();
+          const startedAt = new Date();
+          const resetStateResult = await resetUiStateOnServer();
+          updateRunContext({
+            flow: selected,
+            runId: "pending",
+            startedAt,
+            resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+          });
           const formData = new FormData(liveDemoForm);
           const detail = selected === "deterministic_realtime"
             ? "Starting Appium-backed deterministic E2E flow. This may take 1-3 minutes on emulator."
@@ -903,6 +1019,12 @@
             }
 
             const runId = startPayload.run_id;
+            updateRunContext({
+              flow: selected,
+              runId,
+              startedAt,
+              resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+            });
             let statusInterval = null;
 
             const pollStatus = async () => {
