@@ -2,7 +2,7 @@
 
 Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
-- Current state includes updates up to: aa32fe1
+- Current state includes updates up to: 6bed2d7
 
 ## 1) What We Changed Since Initial Baseline
 
@@ -124,6 +124,22 @@ Baseline used for comparison:
   - Removed pre-launch, transitional, and close-app screenshot points.
   - Added page-anchor validation before capture to avoid blank/black screenshots.
   - Files: tests/test_realtime_e2e_flow.py
+
+- Live demo self-healing visibility + reliability hardening (latest):
+  - Added run-result Self-Healing Output panel and badges in UI.
+  - Added stricter self-healing script detection heuristics in backend.
+  - Added scoped env override handling to prevent cross-run provider leakage.
+  - Added deterministic realtime pytest timeout handling.
+  - Added async run inactivity watchdog behavior in run-state access.
+  - Replaced user-facing traceback dumps with concise failure messages while keeping server-side traceback logging.
+  - Refactored duplicated artifact panel template blocks into a Jinja macro (no behavior change).
+  - Files: live_demo.py, web/templates/live_demo.html
+
+- Validation and branch sync (latest):
+  - `py_compile` and template parse checks passed after hardening.
+  - Screenshot upload and deterministic realtime demo flows completed through live demo UI.
+  - Realtime deterministic test passed via `pytest tests/test_realtime_e2e_flow.py -q -s`.
+  - Latest doc + hardening updates pushed to `main`.
 
 - Live demo diagnostics and logging clarity improved (latest):
   - UI now labels stderr as diagnostics stream and clarifies it may include warnings/tool messages.

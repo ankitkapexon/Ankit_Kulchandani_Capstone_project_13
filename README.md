@@ -1,5 +1,23 @@
 # Mobile Test Generator - Capstone Project
 
+## Latest Updates (Jul 2026)
+
+- Live demo now exposes a dedicated Self-Healing Output section in results, including:
+	- enabled status,
+	- generated script count,
+	- scripts-with-self-healing count, and
+	- healing repository update status/link.
+- Runtime hardening added in live demo backend:
+	- temporary environment scoping for mode-specific provider vars,
+	- deterministic realtime pytest timeout guard,
+	- async run inactivity watchdog,
+	- safer user-facing failure messages (tracebacks remain server-side).
+- Live demo artifact panels were refactored with a Jinja macro to reduce duplication while preserving UI behavior.
+- Latest validation snapshot:
+	- screenshot upload flow completes end to end,
+	- deterministic realtime flow completes end to end,
+	- dedicated deterministic realtime test passes (`tests/test_realtime_e2e_flow.py`).
+
 An end-to-end automation pipeline that converts mobile app screenshots into:
 
 - structured SSM JSON,

@@ -2,6 +2,21 @@
 
 This guide covers the current live demo flow on main branch.
 
+## Latest Updates (Jul 2026)
+
+- Live demo result page now includes a Self-Healing Output panel with:
+	- Enabled,
+	- Generated scripts,
+	- Scripts with self-healing markers,
+	- Healing repository updated,
+	- Artifact links (`healing_repository.db` and matching scripts when present).
+- Backend reliability hardening was added without changing core flow behavior:
+	- mode-specific env overrides are scoped to each run,
+	- deterministic realtime execution has an explicit pytest timeout,
+	- async run state has inactivity timeout protection,
+	- UI now shows concise failure text while detailed tracebacks remain in server logs.
+- Artifact panel markup was consolidated using a Jinja macro for maintainability (same rendered behavior).
+
 ## Prerequisites
 
 - Python virtual environment exists and is activated.
