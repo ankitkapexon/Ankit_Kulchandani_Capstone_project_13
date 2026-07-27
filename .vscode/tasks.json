@@ -1030,6 +1030,18 @@
 				"add",
 				"-A"
 			]
+		},
+		{
+			"label": "commit-all-pending-now-message",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"-c",
+				"core.pager=cat",
+				"commit",
+				"-m",
+				"Include all current pending live demo and docs updates"
+			]
 		}
 	]
 }
