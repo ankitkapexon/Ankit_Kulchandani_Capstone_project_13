@@ -1,0 +1,57 @@
+{
+  "run_id": "e0bbe2a339a34ed3b4919c6ce3cfb377",
+  "flow_type": "deterministic_realtime",
+  "mode": "real",
+  "status": "completed",
+  "error_code": "",
+  "started_at_epoch": 1785181535.2817798,
+  "finished_at_epoch": 1785181820.1847317,
+  "total_duration_seconds": 284.903,
+  "stages": [
+    {
+      "stage": "Preparing",
+      "duration_seconds": 0.005,
+      "message": "Validating deterministic realtime prerequisites."
+    },
+    {
+      "stage": "Preparing",
+      "duration_seconds": 0.008,
+      "message": "Running deterministic realtime emulator flow."
+    },
+    {
+      "stage": "Executing",
+      "duration_seconds": 160.273,
+      "message": "Generating full pipeline artifacts for this deterministic session."
+    },
+    {
+      "stage": "Preparing",
+      "duration_seconds": 0.008,
+      "message": "Artifact pass: Configuring pipeline mode and environment."
+    },
+    {
+      "stage": "Preparing",
+      "duration_seconds": 0.0,
+      "message": "Artifact pass: Loading config and prompts."
+    },
+    {
+      "stage": "Preparing",
+      "duration_seconds": 0.031,
+      "message": "Artifact pass: Running screenshot pipeline stages."
+    },
+    {
+      "stage": "Executing",
+      "duration_seconds": 123.565,
+      "message": "Artifact pass: Collecting run-scoped artifacts."
+    },
+    {
+      "stage": "Finalizing",
+      "duration_seconds": 0.033,
+      "message": "Publishing deterministic run report."
+    },
+    {
+      "stage": "Finalizing",
+      "duration_seconds": 0.013,
+      "message": "completed"
+    }
+  ]
+}

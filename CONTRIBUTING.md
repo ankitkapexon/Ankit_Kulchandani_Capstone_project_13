@@ -1,337 +1,37 @@
-# Mobile Test Generator — Capstone Project — Team Steering Document
+# Contributing
 
-## Purpose
+## Goal
 
-This project is a fully automated six-step pipeline that converts mobile app screenshots into executed Appium test scripts with an HTML test execution report.
+Keep code, tests, and documentation aligned with current project behavior.
 
-## Naming Convention Standard
+## Setup
 
-Use these naming rules across code and generated outputs to keep the project consistent and user-friendly:
-
-1. Python modules and scripts: `snake_case.py`
-2. Python classes: `PascalCase`
-3. Functions, variables, and methods: `snake_case`
-4. Constants and environment variable names: `UPPER_SNAKE_CASE`
-5. Generated artifact file tokens: lowercase `snake_case` only (no spaces, no special characters)
-
-Examples:
-- `manual_testcases_login_1784918044.txt`
-- `locator_product_listing.json`
-- `ssm_product_details_1784913925.json`
-
-## Live Demo Flow Modes
-
-The live demo UI supports two execution modes in one form:
-
-1. `screenshot_pipeline`
-	- Display label: `Check Flow By Uploading A Screenshot`
-        - Requires one uploaded screenshot.
-        - Runs full six-stage artifact pipeline.
-
-2. `deterministic_realtime`
-	- Display label: `Realtime End To End Flow Of Application`
-        - No screenshot upload required.
-        - Runs strict emulator sequence from `tests/test_realtime_e2e_flow.py`.
-
-Current UI defaults:
-
-- `deterministic_realtime` is selected by default.
-- Screenshot upload section is displayed only when `screenshot_pipeline` is selected.
-
-Contributor rule:
-
-- If you change flow behavior in `live_demo.py`, update `README.md` and `LIVE_DEMO_RUN_STEPS.md` in the same PR so user-facing behavior and docs remain aligned.
-
-Latest doc sync rule (Jul 2026):
-
-- For live-demo reliability or result-visibility changes (for example: scoped env handling, realtime timeout/watchdog, self-healing output panels, artifact filtering/macro refactors), update all 8 top-level docs in the same branch before merge:
-        - plus `PRODUCTION_READINESS_CHECKLIST.md` when operational readiness behavior changes.
-        - `README.md`
-        - `LIVE_DEMO_RUN_STEPS.md`
-        - `CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md`
-        - `IMPLEMENTATION_SUMMARY.md`
-        - `SELF_HEALING_GUIDE.md`
-        - `LITELLM_TESTING_GUIDE.md`
-        - `GITHUB_ACTIONS_SETUP.md`
-        - `CONTRIBUTING.md`
-
-Additional latest sync constraints (Jul 2026):
-
-- If task automation behavior changes, keep `.vscode/tasks.json` and `scripts/task_runner.py` in sync and prefer Python label-dispatch over PowerShell-specific task logic.
-- If Run Context tokens in live demo change, update `tests/test_live_demo_ui_state_contract.py` in the same change.
-- If any result summary fields are removed from UI (for example telemetry/profile/lifecycle/quality rows), update:
-          - `README.md`
-          - `LIVE_DEMO_RUN_STEPS.md`
-          - `PRODUCTION_READINESS_CHECKLIST.md`
-  so operator expectations remain accurate.
-
-Additional live-demo consistency rules:
-
-- If flow-switch behavior is changed, preserve clean-run semantics for each user selection (`screenshot_pipeline` / `deterministic_realtime`) and update docs accordingly.
-- If artifact links are changed, maintain compatibility for existing shared URLs where practical (legacy + normalized path styles) to avoid report 404 regressions.
-- Do not expose low-level internal DB artifacts (for example `healing_repository.db`) as mandatory user-facing links in the result UI.
-- If app-specific heuristics are changed, keep `.env.example` aligned for `ENABLE_APP_SPECIFIC_LOCATOR_HINTS` and `ENABLE_APP_SPECIFIC_NAVIGATION` and document expected defaults.
-- If flow-switch/run-submit UX is changed, ensure stale previous-run result panels are not visible during new run execution and document that behavior in user-facing guides.
-- If run readiness behavior is changed, keep the UI preflight card and backend endpoints aligned:
-        - `/required-services-status`
-        - `/config-validation`
-- If stage telemetry behavior is changed, keep endpoint docs aligned:
-        - `/telemetry/latest`
-        - `/telemetry-dashboard`
-
-1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
-2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.
-3. **SSM JSON → Locator JSON:** LocatorAgent extracts UI element locators (resource IDs, accessibility IDs).
-4. **Locator JSON → Appium Scripts:** AppiumGeneratorAgent produces pytest-style Appium test scripts.
-5. **Appium Scripts → Review Reports:** ReviewerAgent statically analyses scripts for best-practice issues.
-6. **Run Scripts → HTML Report:** ReporterAgent executes the scripts via pytest, saves a timestamped HTML report, and opens it in the browser.
-
----
-
-## Architecture at a Glance
-
-```
-artifacts/input_screenshots/
-        │
-        ▼  Step 1 — ssm_generator.py (Vision LLM)
-artifacts/ssm_json_output/              ← SSM JSON per screen
-        │
-        ▼  Step 2 — testcase_generator.py (Language LLM)
-artifacts/manual_testcases/             ← plain-text test cases per screen
-        │
-        ▼  Step 3 — locator_agent.py
-artifacts/locator_output/               ← locator JSON per screen
-        │
-        ▼  Step 4 — appium_generator_agent.py
-artifacts/generated_appium_scripts/     ← pytest Appium .py per screen
-        │
-        ▼  Step 5 — reviewer_agent.py
-artifacts/review_reports/               ← Markdown review per script
-        │
-        ▼  Step 6 — reporter_agent.py
-artifacts/test_execution_reports/
-    └── YYYY-MM-DD_HH-MM-SS/
-        └── report.html             ← HTML test execution report (auto-opened)
-```
-
-All steps are **loosely coupled** — each reads from and writes to `artifacts/` subdirectories and can be re-run independently.
-
----
-
-## Folder Structure
-
-```
-Project13_CapstoneMobileTestGenerator/
-├── agents/
-│   ├── core/
-│   │   ├── vision_agent.py           # Abstract base: VisionAgent
-│   │   └── testcase_agent.py         # Abstract base: TestCaseAgent
-│   ├── vision_agent.py               # Concrete: OpenAIVisionAgent, MockVisionAgent, factory
-│   ├── locator_agent.py              # Step 3: extracts locators from SSM JSON
-│   ├── appium_generator_agent.py     # Step 4: generates Appium pytest scripts
-│   ├── reviewer_agent.py             # Step 5: static analysis of generated scripts
-│   ├── reporter_agent.py             # Step 6: runs tests, saves timestamped HTML report
-│   ├── navigation_agent.py           # Provides navigation steps per screen
-│   └── __init__.py
-├── models/
-│   └── ssm.py                        # Single Pydantic schema for ScreenSemanticModel
-├── services/
-│   ├── config.py                     # Loads .env into the environment
-│   └── testcase_agent.py             # Concrete: OpenAITestCaseAgent, MockTestCaseAgent
-├── pipelines/
-│   ├── ssm_generator.py              # Step 1 entry point
-│   ├── testcase_generator.py         # Step 2 entry point
-│   ├── reporter.py                   # Step 6 standalone entry point
-│   └── run_all.py                    # End-to-end runner (all 6 steps)
-├── prompts/
-│   ├── vision_analysis.txt           # LLM prompt for Step 1
-│   ├── test_generation.txt           # LLM prompt for Step 2
-│   ├── locator_prompt.txt            # Prompt for Step 3
-│   └── review_prompt.txt             # Prompt for Step 5
-├── artifacts/
-│   ├── input_screenshots/            # DROP SCREENSHOTS HERE
-│   ├── ssm_json_output/              # Step 1 writes here
-│   ├── manual_testcases/             # Step 2 writes here
-│   ├── locator_output/               # Step 3 writes here
-│   ├── generated_appium_scripts/     # Step 4 writes here
-│   ├── review_reports/               # Step 5 writes here
-│   └── test_execution_reports/       # Step 6 writes here (timestamped per run)
-├── demo_mobile_apps/
-│   └── <app>.apk                     # Android APK for emulator testing
-├── tests/                            # Unit tests
-├── scripts/
-│   ├── setup_env.ps1                 # Windows setup
-│   └── setup_env.sh                  # macOS/Linux setup
-├── .env                              # API keys — NEVER commit
-├── requirements.txt
-└── README.md
-```
-├── artifacts/
-│   ├── input_screenshots/          # DROP SCREENSHOTS HERE before running Step 1
-│   ├── ssm_json_output/            # Step 1 writes here (auto-created)
-│   └── manual_testcases/           # Step 2 writes here (auto-created)
-├── tests/
-│   └── test_ssm_model.py           # Unit tests — run before committing changes
-├── scripts/
-│   ├── setup_env.ps1               # Windows: creates .venv and installs deps
-│   └── setup_env.sh                # macOS/Linux: creates .venv and installs deps
-├── .venv/                          # Active virtual environment (Python 3.11)
-├── .env                            # API keys — NEVER commit this file
-├── requirements.txt                # Runtime dependencies
-└── README.md                       # Quick-start guide
-```
-
----
-
-## How to Run
-
-### Prerequisites
-- Python 3.11 or 3.12 (3.14+ not recommended — see `requirements.txt`)
-- An OpenAI-compatible API key OR use `mock` mode for offline testing
-
-### 1 — Set up the environment (first time only)
-
-**Windows:**
-```powershell
-.\scripts\setup_env.ps1 -PythonExe python
-```
-**macOS / Linux:**
 ```bash
-bash scripts/setup_env.sh
+pip install -r requirements.txt
+python -m pytest
 ```
 
-### 2 — Configure `.env`
+## Live Demo Contract Rules
 
-Copy `.env.example` (or create `.env`) with:
-```dotenv
-VISION_AGENT_PROVIDER=openai
-TESTCASE_AGENT_PROVIDER=openai
-OPENAI_API_KEY=your_key_here
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_API_BASE=https://api.openai.com/v1   # override for internal gateways
-```
+When changing live demo behavior, update docs and tests in the same change.
 
-For offline / no-key testing:
-```dotenv
-VISION_AGENT_PROVIDER=mock
-TESTCASE_AGENT_PROVIDER=mock
-```
+Current contract highlights:
+- Run context includes screenshot name for screenshot flow.
+- Run context does not display Run ID.
+- Both flows remain supported: screenshot pipeline and deterministic realtime.
 
-### 3 — Place screenshots
+## Task Automation Rules
 
-Drop your `.png` / `.jpg` / `.jpeg` / `.webp` / `.bmp` screenshots into:
-```
-artifacts/input_screenshots/
-```
+- Keep `.vscode/tasks.json` and `scripts/task_runner.py` aligned.
+- Prefer Python task dispatch over shell-specific task logic.
 
-### 4 — Run Step 1 (screenshots → SSM JSON)
+## Artifact Hygiene
 
-```powershell
-python pipelines/ssm_generator.py artifacts/input_screenshots artifacts/ssm_json_output --clean
-```
+- Do not commit runtime-generated outputs unless explicitly required.
+- Review `artifacts/` changes before staging.
 
-### 5 — Run Step 2 (SSM JSON → manual test cases)
+## Pull Request Expectations
 
-```powershell
-python pipelines/testcase_generator.py artifacts/ssm_json_output artifacts/manual_testcases --clean
-```
-
-### Full end-to-end (single command)
-
-```powershell
-python pipelines/ssm_generator.py artifacts/input_screenshots artifacts/ssm_json_output --clean ; python pipelines/testcase_generator.py artifacts/ssm_json_output artifacts/manual_testcases --clean
-```
-
----
-
-## How to Change the LLM Behaviour
-
-All LLM instructions are externalised as plain text files. **No code changes needed.**
-
-| File | Controls |
-|---|---|
-| `prompts/vision_analysis.txt` | How the vision model describes screens and elements |
-| `prompts/test_generation.txt` | How the language model formats and writes test cases |
-
-Edit either file, re-run the corresponding step, and compare outputs.
-
----
-
-## How to Switch Providers
-
-Set the environment variables before running:
-
-| Variable | Values |
-|---|---|
-| `VISION_AGENT_PROVIDER` | `openai` \| `mock` |
-| `TESTCASE_AGENT_PROVIDER` | `openai` \| `mock` |
-| `OPENAI_MODEL` | Any chat-completion model name (e.g. `gpt-4o`, `gpt-4o-mini`) |
-| `OPENAI_API_BASE` | Override the base URL for internal API gateways |
-
-Adding a new provider (e.g. Azure, Anthropic) requires only:
-1. Create a new class that extends `agents/vision_agent.py::VisionAgent` or `agents/testcase_agent.py::TestCaseAgent`
-2. Register it in the `create_vision_agent()` / `create_testcase_agent()` factory function
-
----
-
-## Data Model
-
-The **Screen Semantic Model (SSM)** is the shared contract between Step 1 and Step 2.  
-Schema is defined in `models/ssm.py`.
-
-```json
-{
-  "screen_name": "Login",
-  "screen_purpose": "Authenticate the user",
-  "elements": [
-    { "label": "Username", "type": "textfield", "actions": ["enter_text"] },
-    { "label": "Password", "type": "textfield", "actions": ["enter_text"] },
-    { "label": "Login",    "type": "button",    "actions": ["tap"] }
-  ]
-}
-```
-
----
-
-## Running Tests
-
-```powershell
-python -m unittest tests.test_ssm_model
-```
-
-Run this before merging any changes that touch `models/ssm.py` or `agents/vision_agent.py`.
-
----
-
-## What is Implemented vs Pending
-
-| Capability | Status |
-|---|---|
-| SSM generation (Step 1) | ✅ Done |
-| Manual test case generation (Step 2) | ✅ Done |
-| Locator agent (Step 3) | ✅ Done |
-| Appium script generation (Step 4) | ✅ Done |
-| Reviewer agent (Step 5) | ✅ Done |
-| Reporter agent — HTML execution report (Step 6) | ✅ Done |
-| End-to-end runner (`run_all.py`) | ✅ Done |
-| CI/CD integration | ❌ Not started |
-| Multi-app / multi-platform support | ❌ Not started |
-
----
-
-## Key Design Decisions
-
-| Decision | Reason |
-|---|---|
-| Single `models/ssm.py` schema | Eliminated 4 duplicate model files; one source of truth |
-| Abstract base classes in `agents/` | Allows new LLM providers without changing pipeline code |
-| Prompts as `.txt` files | QA / non-developer team members can tune output without touching Python |
-| `--clean` flag on runners | Explicitly clears output before a run; safe for reruns |
-| `mock` provider mode | Full pipeline runs offline for demos or CI without an API key |
-| `.venv` (Python 3.11) as active env | Stable; all dependencies install cleanly; tested end to end |
-
----
-
-## Contact / Ownership
-
-Update this section with team contacts, Jira board links, and repo details before sharing.
+- Describe what changed and why.
+- Include verification steps and test results.
+- Keep documentation consistent with final behavior.

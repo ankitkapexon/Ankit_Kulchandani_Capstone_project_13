@@ -1,59 +1,35 @@
 # Production Readiness Checklist
 
-Use this checklist before demoing, handing over, or promoting a build.
-
-## Latest Sync Notes (Jul 2026)
-
-- Legacy VS Code PowerShell tasks are migrated to Python label-dispatch through `scripts/task_runner.py`.
-- Run Context in live demo now shows screenshot name for screenshot flow; Run ID is intentionally not displayed.
-- Live result summary intentionally omits Telemetry/App Profile Preset/Artifact lifecycle and self-healing quality rows.
-- Governance and telemetry data remain available via backend APIs and artifact index files.
+Use this checklist before demo or handover.
 
 ## Environment
 
-- [ ] `.env` exists and all mandatory keys are set.
-- [ ] `STRICT_CONFIG_VALIDATION=true` is enabled.
-- [ ] `APP_PROFILE_PRESET` matches target app (`generic`, `ecommerce`, `banking`, `social`).
-- [ ] `ENABLE_DYNAMIC_JOURNEY_MODE=true` is set for cross-app deterministic artifacts.
+- [ ] Virtual environment is active.
+- [ ] Dependencies are installed from `requirements.txt`.
+- [ ] Required environment variables are configured.
 
-## Mobile Runtime
+## Service Readiness
 
-- [ ] Appium server is reachable at `APPIUM_SERVER_URL`.
-- [ ] At least one device/emulator is visible in `adb devices`.
-- [ ] Target app package/activity are valid (`APP_PACKAGE`, `APP_ACTIVITY`).
-- [ ] `APP_PATH` points to an existing app binary.
+- [ ] Live demo backend responds on `http://127.0.0.1:8080/`.
+- [ ] UI **Start / Restart Services** reports all services ready.
+- [ ] Appium server is reachable.
+- [ ] Android emulator/device is connected.
 
-## Live Demo Flows
+## Functional Validation
 
-- [ ] Screenshot flow smoke passes (`tests/test_live_demo_flow_smoke_contract.py -k screenshot`).
-- [ ] Realtime flow smoke passes (`tests/test_live_demo_flow_smoke_contract.py -k realtime`).
-- [ ] Preflight Readiness card shows services/config ready for target flow.
-- [ ] UI state reset works on flow switch and run submit.
-- [ ] Telemetry dashboard is available at `/telemetry-dashboard`.
+- [ ] Screenshot pipeline run completes.
+- [ ] Deterministic realtime run completes.
+- [ ] Expected artifacts are generated under `artifacts/`.
+- [ ] HTML test execution report is generated.
 
-## Artifact Governance
+## Quality Gates
 
-- [ ] `ARTIFACT_RETENTION_DAYS` is set to a team-approved value.
-- [ ] Latest index files exist:
-  - `artifacts/indexes/latest_per_flow.json`
-  - `artifacts/indexes/latest_per_run.json`
-- [ ] Old artifacts are being expired as expected.
+- [ ] Relevant pytest suite passes.
+- [ ] UI contract checks pass.
+- [ ] No unintended runtime artifact files are staged.
 
-## Self-Healing Quality Signals
+## Release Hygiene
 
-- [ ] Healing success rate is available from backend telemetry/governance output.
-- [ ] Top unstable elements data is reviewable from backend output when enabled.
-- [ ] Recurring failed locator count is tracked and trending down.
-
-## CI/CD
-
-- [ ] Core tests pass.
-- [ ] Screenshot flow smoke job passes.
-- [ ] Realtime flow smoke job passes.
-- [ ] Security and lint jobs complete without critical issues.
-
-## Operational Handover
-
-- [ ] Team has reviewed `README.md` and `LIVE_DEMO_RUN_STEPS.md`.
-- [ ] Known app-profile assumptions are documented.
-- [ ] Troubleshooting runbook is available to demo operators.
+- [ ] Docs match current behavior.
+- [ ] Commit contains only intended source/config/doc changes.
+- [ ] Push to `main` is verified.

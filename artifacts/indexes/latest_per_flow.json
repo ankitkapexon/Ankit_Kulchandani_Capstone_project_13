@@ -1,0 +1,18 @@
+{
+  "screenshot_pipeline": {
+    "run_id": "7f6f0fcedc7640a9bc0b53a720fd0f7f",
+    "flow_type": "screenshot_pipeline",
+    "mode": "real",
+    "report_path": "artifacts/test_execution_reports/screenshot_pipeline/2026-07-28_01-13-57/report.html",
+    "outcome": "passed",
+    "updated_at": "2026-07-27T19:45:13Z"
+  },
+  "deterministic_realtime": {
+    "run_id": "e0bbe2a339a34ed3b4919c6ce3cfb377",
+    "flow_type": "deterministic_realtime",
+    "mode": "real",
+    "report_path": "artifacts/test_execution_reports/deterministic_realtime/2026-07-28_01-15-36/report.html",
+    "outcome": "passed",
+    "updated_at": "2026-07-27T19:50:20Z"
+  }
+}

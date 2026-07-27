@@ -1,0 +1,256 @@
+COUNT 85
+
+### check-cleanup-live-demo-flow
+ARGS: ['-NoProfile', '-Command', '$target = \'C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup\'; if (-not (Test-Path $target)) { Write-Output "MISSING_PATH`n$target"; exit 0 }; Write-Output "EXISTS_PATH`n$target"; Write-Output "`nTOP_LEVEL:"; Get-ChildItem -Path $target -Name; Write-Output "`nCANDIDATE_FILES:"; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Name -match \'live_demo|demo|run_all_enhanced|pipeline_composer|stage_runners\' -or $_.FullName -match \'web\\\\templates\' } | Select-Object -ExpandProperty FullName; Write-Output "`nCONTENT_HITS:"; Get-ChildItem -Path $target -Recurse -File -Include *.py,*.html,*.md,*.txt | Select-String -Pattern \'Flask\',\'run-demo\',\'live demo\',\'run_all_enhanced\',\'pipeline_composer\',\'StageFeatureFlags\',\'/run-demo\',\'input_screenshots/live_demo_uploads\' | Select-Object -First 120 | ForEach-Object { "{0}:{1}:{2}" -f $_.Path, $_.LineNumber, $_.Line.Trim() }']
+
+### check-cleanup-live-demo-flow-retry
+ARGS: ['-NoProfile', '-Command', '$target = \'C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup\'; if (-not (Test-Path $target)) { Write-Output "MISSING_PATH`n$target"; exit 0 }; Write-Output "EXISTS_PATH`n$target"; Write-Output "`nTOP_LEVEL:"; Get-ChildItem -Path $target -Name; Write-Output "`nCANDIDATE_FILES:"; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Name -match \'live_demo|demo|run_all_enhanced|pipeline_composer|stage_runners\' -or $_.FullName -match \'web\\\\templates\' } | Select-Object -ExpandProperty FullName; Write-Output "`nCONTENT_HITS:"; Get-ChildItem -Path $target -Recurse -File -Include *.py,*.html,*.md,*.txt | Select-String -Pattern \'Flask\',\'run-demo\',\'live demo\',\'run_all_enhanced\',\'pipeline_composer\',\'StageFeatureFlags\',\'/run-demo\',\'input_screenshots/live_demo_uploads\' | Select-Object -First 120 | ForEach-Object { Write-Output ($_.Path + \':\' + $_.LineNumber + \':\' + $_.Line.Trim()) }']
+
+### check-cleanup-broad-sweep
+ARGS: ['-NoProfile', '-Command', '$target=\'C:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone__main_cleanup\'; Write-Output \'FILES_UNDER_TARGET:\'; Get-ChildItem -Path $target -Recurse -File | Select-Object -ExpandProperty FullName; Write-Output "`nBROAD_CONTENT_HITS:"; $patterns = \'live_demo\',\'live demo\',\'flask\',\'run-demo\',\'run_all_enhanced\',\'pipeline_composer\',\'stage_runners\',\'demo\'; Get-ChildItem -Path $target -Recurse -File | Where-Object { $_.Extension -in \'.py\',\'.md\',\'.txt\',\'.html\',\'.yml\',\'.yaml\',\'.json\' } | Select-String -Pattern $patterns | Select-Object -First 200 | ForEach-Object { Write-Output ($_.Path + \':\' + $_.LineNumber + \':\' + $_.Line.Trim()) }']
+
+### run-live-demo-mock-now-retry
+ARGS: ['-NoProfile', '-Command', '$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match \'^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$\' } | Select-Object -First 1; if (-not $file) { Write-Output \'NO_SCREENSHOT_FOUND\'; exit 0 }; Write-Output (\'USING_SCREENSHOT=\' + $file.FullName); $resp = Invoke-WebRequest -Uri \'http://127.0.0.1:8080/run-demo\' -Method Post -Form @{ mode=\'mock\'; screenshot=(Get-Item $file.FullName) }; Write-Output (\'HTTP_STATUS=\' + $resp.StatusCode); if ($resp.Content -match \'Demo run completed\') { Write-Output \'DEMO_STATUS=COMPLETED\' } else { Write-Output \'DEMO_STATUS=UNKNOWN\' }; $reportLines = $resp.Content -split "`n" | Where-Object { $_ -match \'report\\.html\' } | Select-Object -First 3; if ($reportLines) { Write-Output \'REPORT_LINE_START\'; $reportLines | ForEach-Object { $_.Trim() }; Write-Output \'REPORT_LINE_END\' } else { Write-Output \'REPORT_LINE_NOT_FOUND\' }']
+
+### py-compile-live-demo
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'PY_COMPILE_OK' } else { Write-Output ('PY_COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### verify-jinja-template-parse
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe -c "from jinja2 import Environment, FileSystemLoader; env=Environment(loader=FileSystemLoader(\'web/templates\')); env.get_template(\'live_demo.html\'); print(\'TEMPLATE_OK\')"']
+
+### verify-jinja-template-parse-retry
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe -c \'from jinja2 import Environment, FileSystemLoader; env = Environment(loader=FileSystemLoader("web/templates")); env.get_template("live_demo.html"); print("TEMPLATE_OK")\'']
+
+### verify-jinja-template-heredoc
+ARGS: ['-NoProfile', '-Command', '$code = @\'\nfrom jinja2 import Environment, FileSystemLoader\nenv = Environment(loader=FileSystemLoader("web/templates"))\nenv.get_template("live_demo.html")\nprint("TEMPLATE_OK")\n\'@; .\\.venv\\Scripts\\python.exe -c $code']
+
+### py-compile-pipeline-composer
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile pipelines\\pipeline_composer.py; if ($LASTEXITCODE -eq 0) { Write-Output 'PIPELINE_COMPOSER_OK' } else { Write-Output ('PIPELINE_COMPOSER_FAIL=' + $LASTEXITCODE) }"]
+
+### stop-live-demo-processes
+ARGS: ['-NoProfile', '-Command', "$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + ($procs | Measure-Object | Select-Object -ExpandProperty Count))"]
+
+### verify-live-demo-updated-ui
+ARGS: ['-NoProfile', '-Command', '$resp = Invoke-WebRequest -Uri \'http://127.0.0.1:8080/\' -UseBasicParsing; Write-Output (\'HTTP=\' + $resp.StatusCode); if ($resp.Content -match \'Show compact filenames only\') { Write-Output \'TOGGLE_PRESENT=YES\' } else { Write-Output \'TOGGLE_PRESENT=NO\' }; if ($resp.Content -match \'body class="show-filenames"\') { Write-Output \'DEFAULT_COMPACT=YES\' } else { Write-Output \'DEFAULT_COMPACT=NO\' }']
+
+### inspect-live-demo-body-tag
+ARGS: ['-NoProfile', '-Command', '$resp = Invoke-WebRequest -Uri \'http://127.0.0.1:8080/\' -UseBasicParsing; ($resp.Content -split "`n" | Select-Object -First 40) | ForEach-Object { $_ }']
+
+### inspect-live-demo-markers
+ARGS: ['-NoProfile', '-Command', "$resp = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; if ($resp.Content -match '<body[^>]*>') { Write-Output ('BODY_TAG=' + $Matches[0]) } else { Write-Output 'BODY_TAG=NOT_FOUND' }; if ($resp.Content -match 'Space Grotesk') { Write-Output 'NEW_UI_FONT=YES' } else { Write-Output 'NEW_UI_FONT=NO' }"]
+
+### verify-live-demo-run-scope
+ARGS: ['-NoProfile', '-Command', '$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match \'^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$\' } | Select-Object -First 1; if (-not $file) { Write-Output \'NO_SCREENSHOT\'; exit 0 }; Write-Output (\'USING=\' + $file.FullName); & "$env:SystemRoot\\System32\\curl.exe" -s -o artifacts/live_demo_check.html -w "HTTP=%{http_code}`n" -F "mode=mock" -F "screenshot=@$($file.FullName)" "http://127.0.0.1:8080/run-demo"; $manual = Get-ChildItem artifacts/manual_testcases -File -ErrorAction SilentlyContinue; Write-Output (\'MANUAL_COUNT=\' + ($manual | Measure-Object | Select-Object -ExpandProperty Count)); $manual | Sort-Object LastWriteTime -Descending | Select-Object -First 5 | ForEach-Object { $_.Name }; if (Select-String -Path artifacts/live_demo_check.html -Pattern \'Show compact filenames only\' -Quiet) { Write-Output \'TOGGLE_IN_RESULT=YES\' } else { Write-Output \'TOGGLE_IN_RESULT=NO\' }']
+
+### clean-manual-testcase-history
+ARGS: ['-NoProfile', '-Command', "$dir = 'artifacts/manual_testcases'; if (Test-Path $dir) { Get-ChildItem $dir -File | Remove-Item -Force }; $count = (Get-ChildItem $dir -File -ErrorAction SilentlyContinue | Measure-Object).Count; Write-Output ('MANUAL_TESTCASE_FILES_NOW=' + $count)"]
+
+### clean-generated-scripts-history
+ARGS: ['-NoProfile', '-Command', "$dir = 'artifacts/generated_appium_scripts'; if (Test-Path $dir) { Get-ChildItem $dir -Recurse -File | Remove-Item -Force }; $count = (Get-ChildItem $dir -Recurse -File -ErrorAction SilentlyContinue | Measure-Object).Count; Write-Output ('GENERATED_SCRIPT_FILES_NOW=' + $count)"]
+
+### verify-server-still-up
+ARGS: ['-NoProfile', '-Command', "$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('HTTP=' + $r.StatusCode)"]
+
+### git-status-and-branch
+ARGS: ['-NoProfile', '-Command', 'git branch --show-current; git status --short']
+
+### restore-unintended-deletions
+ARGS: ['-NoProfile', '-Command', 'git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short']
+
+### commit-live-demo-fixes
+ARGS: ['-NoProfile', '-Command', 'git add live_demo.py pipelines/pipeline_composer.py web/templates/live_demo.html; git commit -m "Fix live demo run scoping and improve UI readability"']
+
+### commit-live-demo-fixes-retry
+ARGS: ['-NoProfile', '-Command', "git add live_demo.py pipelines/pipeline_composer.py web/templates/live_demo.html; git commit -m 'Fix live demo run scoping and improve UI readability'"]
+
+### push-main
+ARGS: ['-NoProfile', '-Command', 'git push origin main; git rev-parse HEAD; git rev-parse origin/main']
+
+### git-status-before-push
+ARGS: ['-NoProfile', '-Command', 'git branch --show-current; git status --short']
+
+### restore-artifact-placeholders
+ARGS: ['-NoProfile', '-Command', 'git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short']
+
+### commit-ui-section-removal
+ARGS: ['-NoProfile', '-Command', "git add web/templates/live_demo.html; git commit -m 'Remove non-functional live demo stats section'"]
+
+### push-main-ui-fix
+ARGS: ['-NoProfile', '-Command', 'git push origin main; git rev-parse HEAD; git rev-parse origin/main']
+
+### restart-live-demo-new-ui
+ARGS: ['-NoProfile', '-Command', "$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"]
+
+### verify-live-demo-new-ui-running
+ARGS: ['-NoProfile', '-Command', "$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; Write-Output ('HTTP=' + $r.StatusCode); if ($r.Content -match 'Show compact filenames only') { Write-Output 'NEW_UI_MARKER=YES' } else { Write-Output 'NEW_UI_MARKER=NO' }"]
+
+### verify-removed-stats-section
+ARGS: ['-NoProfile', '-Command', "$r = Invoke-WebRequest -Uri 'http://127.0.0.1:8080/' -UseBasicParsing; if ($r.Content -match 'Input Type|Output Scope|Single Screenshot|Enhanced Flow') { Write-Output 'OLD_STATS_PRESENT=YES' } else { Write-Output 'OLD_STATS_PRESENT=NO' }; if ($r.Content -match 'Live Demo: Screenshot to Test Automation') { Write-Output 'NEW_PAGE_LOADED=YES' } else { Write-Output 'NEW_PAGE_LOADED=NO' }"]
+
+### check-git-status-for-doc-updates
+ARGS: ['-NoProfile', '-Command', 'git branch --show-current; git status --short']
+
+### git-status-before-doc-commit
+ARGS: ['-NoProfile', '-Command', 'git status --short']
+
+### restore-unrelated-artifact-deletions-doc-push
+ARGS: ['-NoProfile', '-Command', 'git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git status --short']
+
+### commit-doc-updates-live-demo
+ARGS: ['-NoProfile', '-Command', "git add README.md CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md LIVE_DEMO_RUN_STEPS.md; git commit -m 'Update docs for run-scoped live demo and new UI behavior'"]
+
+### push-main-doc-updates
+ARGS: ['-NoProfile', '-Command', 'git push origin main; git rev-parse HEAD; git rev-parse origin/main']
+
+### validate-live-demo-filter-change
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'LIVE_DEMO_PY_OK' } else { Write-Output ('LIVE_DEMO_PY_FAIL=' + $LASTEXITCODE) }"]
+
+### restart-live-demo-after-gitkeep-fix
+ARGS: ['-NoProfile', '-Command', "$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"]
+
+### git-status-check-before-sleep-fix
+ARGS: ['-NoProfile', '-Command', 'git status --short']
+
+### compile-updated-scripts
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py artifacts\\generated_appium_scripts\\test_product_detail_screen.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### rerun-reviewer-for-generated-scripts
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe -c "from agents.reviewer_agent import ReviewerAgent; from pathlib import Path; ReviewerAgent(project_root=Path(\'.\')).review_scripts(); print(\'REVIEW_DONE\')"']
+
+### rerun-reviewer-for-generated-scripts-retry
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe -c \'from agents.reviewer_agent import ReviewerAgent; from pathlib import Path; ReviewerAgent(project_root=Path(".")).review_scripts(); print("REVIEW_DONE")\'']
+
+### run-reviewer-agent-main
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe agents\\reviewer_agent.py']
+
+### status-after-review-fix
+ARGS: ['-NoProfile', '-Command', 'git status --short']
+
+### prepare-and-push-latest-fixes
+ARGS: ['-NoProfile', '-Command', "git status --short; git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add live_demo.py agents/self_healing_appium_generator.py; git commit -m 'Filter placeholder artifacts and remove hardcoded sleep in generated startup flow'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"]
+
+### validate-live-demo-snapshot-filter
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'LIVE_DEMO_OK' } else { Write-Output ('LIVE_DEMO_FAIL=' + $LASTEXITCODE) }"]
+
+### restart-live-demo-after-delta-filter
+ARGS: ['-NoProfile', '-Command', "$procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'live_demo\\.py' }; foreach ($p in $procs) { Stop-Process -Id $p.ProcessId -Force }; Write-Output ('STOPPED=' + (($procs | Measure-Object).Count))"]
+
+### push-latest-delta-filter-fix
+ARGS: ['-NoProfile', '-Command', "git status --short; git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add live_demo.py; git commit -m 'Scope live demo artifact panels to current upload run via folder delta snapshots'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"]
+
+### verify-and-push-latest-main
+ARGS: ['-NoProfile', '-Command', 'git branch --show-current; git status --short; git rev-parse HEAD; git rev-parse origin/main; git push origin main']
+
+### status-before-doc-refresh
+ARGS: ['-NoProfile', '-Command', 'git status --short; git rev-parse --short HEAD']
+
+### status-before-doc-push-latest
+ARGS: ['-NoProfile', '-Command', 'git status --short']
+
+### commit-and-push-latest-doc-refresh
+ARGS: ['-NoProfile', '-Command', "git restore artifacts/generated_appium_scripts/.gitkeep artifacts/generated_appium_scripts/test_login_screen.py artifacts/locator_output/.gitkeep artifacts/manual_testcases/.gitkeep artifacts/review_reports/.gitkeep artifacts/ssm_json_output/.gitkeep; git add README.md LIVE_DEMO_RUN_STEPS.md CHANGES_FROM_INITIAL_PRIYANKA_BASELINE.md; git commit -m 'Refresh docs with latest live demo run-scoping and artifact filtering updates'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"]
+
+### status-after-readme-architecture-update
+ARGS: ['-NoProfile', '-Command', 'git status --short']
+
+### commit-and-push-readme-architecture-update
+ARGS: ['-NoProfile', '-Command', "git status --short; git add README.md; git commit -m 'Expand README with detailed project structure and architecture overview'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"]
+
+### commit-and-push-architecture-diagram
+ARGS: ['-NoProfile', '-Command', "git status --short; git add README.md; git commit -m 'Add dedicated system architecture diagram to README'; git push origin main; git rev-parse HEAD; git rev-parse origin/main"]
+
+### precheck-emulator-and-appium
+ARGS: ['-NoProfile', '-Command', 'adb devices; try { $r = Invoke-WebRequest -Uri \'http://127.0.0.1:4723/status\' -UseBasicParsing; Write-Output (\'APPIUM_STATUS=\' + $r.StatusCode) } catch { Write-Output \'APPIUM_STATUS=DOWN\' }; .\\.venv\\Scripts\\python.exe -c "import os; print(\'VISION_AGENT_PROVIDER=\' + os.getenv(\'VISION_AGENT_PROVIDER\',\'\')); print(\'TESTCASE_AGENT_PROVIDER=\' + os.getenv(\'TESTCASE_AGENT_PROVIDER\',\'\')); print(\'OPENAI_API_KEY_SET=\' + str(bool(os.getenv(\'OPENAI_API_KEY\'))))"']
+
+### run-one-shot-emulator-demo
+ARGS: ['-NoProfile', '-Command', "$src = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object -First 1; if (-not $src) { Write-Output 'NO_SCREENSHOT_FOUND'; exit 1 }; $demoDir = 'artifacts/input_screenshots/tmp_one_run'; if (Test-Path $demoDir) { Remove-Item $demoDir -Recurse -Force }; New-Item -ItemType Directory -Path $demoDir | Out-Null; Copy-Item $src.FullName -Destination (Join-Path $demoDir $src.Name) -Force; Write-Output ('USING_SCREENSHOT=' + $src.FullName); $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $demoDir --no-browser"]
+
+### inspect-latest-generated-and-reports
+ARGS: ['-NoProfile', '-Command', "Write-Output '--- GENERATED SCRIPTS ---'; Get-ChildItem artifacts/generated_appium_scripts -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name; Write-Output '--- LATEST TEST REPORT FOLDER ---'; $latest = Get-ChildItem artifacts/test_execution_reports -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if ($latest) { Write-Output $latest.FullName; Get-ChildItem $latest.FullName -File | Select-Object -ExpandProperty Name }"]
+
+### inspect-latest-report-testids
+ARGS: ['-NoProfile', '-Command', "$latest = Get-ChildItem artifacts/test_execution_reports -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if (-not $latest) { Write-Output 'NO_REPORT_DIR'; exit 0 }; $report = Join-Path $latest.FullName 'report.html'; Write-Output ('REPORT=' + $report); if (Test-Path $report) { Select-String -Path $report -Pattern 'generated_appium_scripts/.*::Test' | Select-Object -First 20 | ForEach-Object { $_.Line.Trim() } } else { Write-Output 'REPORT_HTML_NOT_FOUND' }"]
+
+### list-available-screenshots
+ARGS: ['-NoProfile', '-Command', "Get-ChildItem artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Select-Object FullName | Format-Table -AutoSize"]
+
+### find-key-screenshots-by-name
+ARGS: ['-NoProfile', '-Command', "Get-ChildItem artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match '^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$' } | Where-Object { $_.BaseName -match 'login|menu|product|detail|listing|cart' } | Select-Object -First 40 FullName, BaseName | ForEach-Object { $_.BaseName + ' | ' + $_.FullName }"]
+
+### run-multi-screen-validation-demo
+ARGS: ['-NoProfile', '-Command', "$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } else { Write-Output ('MISSING=' + $n) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"]
+
+### inspect-generated-flow-depth
+ARGS: ['-NoProfile', '-Command', "Write-Output '--- TAP COUNTS ---'; Get-ChildItem artifacts/generated_appium_scripts/test_*_screen.py -File | ForEach-Object { $c = (Select-String -Path $_.FullName -Pattern 'self\\.tap\\(' | Measure-Object).Count; Write-Output ($_.Name + ' => tap_steps=' + $c) }; Write-Output '--- TYPE COUNTS ---'; Get-ChildItem artifacts/generated_appium_scripts/test_*_screen.py -File | ForEach-Object { $c = (Select-String -Path $_.FullName -Pattern 'self\\.type_text\\(' | Measure-Object).Count; Write-Output ($_.Name + ' => type_steps=' + $c) }"]
+
+### validate-generator-syntax
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'GENERATOR_OK' } else { Write-Output ('GENERATOR_FAIL=' + $LASTEXITCODE) }"]
+
+### run-enhanced-pipeline-once
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py']
+
+### run-enhanced-pipeline-live-demo
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py artifacts\\input_screenshots\\live_demo_uploads']
+
+### run-enhanced-pipeline-root-input
+ARGS: ['-NoProfile', '-Command', '.\\.venv\\Scripts\\python.exe pipelines\\run_all_enhanced.py artifacts\\input_screenshots']
+
+### compile-generator-and-session-utils
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py utils\\shared_appium_session.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### run-multi-screen-validation-after-fix
+ARGS: ['-NoProfile', '-Command', "$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run2'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"]
+
+### recompile-generator-after-stability-fix
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### run-multi-screen-validation-after-stability-fix
+ARGS: ['-NoProfile', '-Command', "$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run3'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"]
+
+### recompile-generator-after-anchor-fix
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### run-multi-screen-validation-after-anchor-fix
+ARGS: ['-NoProfile', '-Command', "$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run4'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"]
+
+### recompile-generator-after-login-state-fix
+ARGS: ['-NoProfile', '-Command', ".\\.venv\\Scripts\\python.exe -m py_compile agents\\self_healing_appium_generator.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### run-multi-screen-validation-after-login-state-fix
+ARGS: ['-NoProfile', '-Command', "$names = @('Cart','Login','Menu','Product_detail','Product_listing'); $srcDir = 'artifacts/input_screenshots'; $runDir = 'artifacts/input_screenshots/tmp_validation_run5'; if (Test-Path $runDir) { Remove-Item $runDir -Recurse -Force }; New-Item -ItemType Directory -Path $runDir | Out-Null; foreach ($n in $names) { $f = Get-ChildItem $srcDir -File | Where-Object { $_.BaseName -ieq $n } | Select-Object -First 1; if ($f) { Copy-Item $f.FullName -Destination (Join-Path $runDir $f.Name) -Force; Write-Output ('ADDED=' + $f.Name) } }; $env:VISION_AGENT_PROVIDER='mock'; $env:TESTCASE_AGENT_PROVIDER='mock'; $env:SINGLE_APP_SESSION='1'; .\\.venv\\Scripts\\python.exe pipelines/run_all_enhanced.py $runDir --no-browser"]
+
+### run-realtime-e2e-flow-test
+ARGS: ['-NoProfile', '-Command', 'c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m pytest tests/test_realtime_e2e_flow.py -q -s']
+
+### rerun-realtime-e2e-flow-test-clean
+ARGS: ['-NoProfile', '-Command', 'c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m pytest tests/test_realtime_e2e_flow.py -q']
+
+### compile-live-demo-dual-flow
+ARGS: ['-NoProfile', '-Command', "c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### sanity-check-live-demo-routes
+ARGS: ['-NoProfile', '-Command', 'c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -c "import live_demo; print(\'ROUTES_OK\')"']
+
+### sanity-check-live-demo-import
+ARGS: ['-NoProfile', '-Command', '& \'c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe\' -c "import live_demo; print(\'ROUTES_OK\')"']
+
+### compile-live-demo-after-badges
+ARGS: ['-NoProfile', '-Command', "c:/Users/ankit.kulchandani/Desktop/Apexon/Project13_Captstone/.venv/Scripts/python.exe -m py_compile live_demo.py; if ($LASTEXITCODE -eq 0) { Write-Output 'COMPILE_OK' } else { Write-Output ('COMPILE_FAIL=' + $LASTEXITCODE) }"]
+
+### poll-run-status-1b7076-ps
+ARGS: ['-NoProfile', '-Command', '$run=\'1b7076a052a44f138dbef319f404fbd1\'; for ($i=0; $i -lt 90; $i++) { $resp = Invoke-WebRequest -Uri ("http://127.0.0.1:8080/run-status/" + $run) -UseBasicParsing; $payload = $resp.Content | ConvertFrom-Json; Write-Output ("POLL=" + $payload.status + "|" + $payload.stage); if ($payload.status -eq \'completed\' -or $payload.status -eq \'failed\') { Write-Output ("FINAL=" + ($payload | ConvertTo-Json -Compress)); break }; Start-Sleep -Seconds 2 }']
+
+### poll-run-status-1b7076-ps2
+ARGS: ['-NoProfile', '-Command', "$run='1b7076a052a44f138dbef319f404fbd1'; for ($i=0; $i -lt 90; $i++) { $payload = Invoke-RestMethod -Method Get -Uri ('http://127.0.0.1:8080/run-status/' + $run); Write-Output ('POLL=' + $payload.status + ':' + $payload.stage); if ($payload.status -eq 'completed' -or $payload.status -eq 'failed') { Write-Output ('FINAL=' + ($payload | ConvertTo-Json -Compress)); break }; Start-Sleep -Seconds 2 }"]
+
+### stop-appium-node-processes-now
+ARGS: ['-NoProfile', '-Command', "$appiumProcs = Get-CimInstance Win32_Process | Where-Object { ($_.Name -match 'node|cmd|powershell') -and $_.CommandLine -match 'appium' }; foreach ($p in $appiumProcs) { try { Stop-Process -Id $p.ProcessId -Force } catch {} }; Write-Output ('APPPIUM_STOPPED=' + (($appiumProcs | Measure-Object).Count))"]
+
+### start-live-demo-server-now
+ARGS: ['-NoProfile', '-Command', "$p = Resolve-Path .; $py = Join-Path $p '.venv\\Scripts\\python.exe'; Start-Process -FilePath $py -ArgumentList 'live_demo.py' -WorkingDirectory $p -WindowStyle Hidden; Write-Output 'LIVE_DEMO_STARTED=YES'"]
+
+### run-screenshot-flow-after-login-fix
+ARGS: ['-NoProfile', '-Command', "$code = @'\nimport requests\nfrom pathlib import Path\nimgs = [p for p in Path('artifacts/input_screenshots').rglob('*') if p.is_file() and p.suffix.lower() in {'.png','.jpg','.jpeg','.webp','.bmp'}]\nif not imgs:\n    raise SystemExit('NO_IMAGE_FOUND')\nimg = imgs[0]\nwith img.open('rb') as fh:\n    resp = requests.post('http://127.0.0.1:8080/run-demo-async', data={'mode': 'real', 'flow_type': 'screenshot_pipeline'}, files={'screenshot': (img.name, fh, 'image/png')}, timeout=120)\nprint('HTTP=' + str(resp.status_code))\nprint(resp.text)\n'@; .\\.venv\\Scripts\\python.exe -c $code"]
+
+### run-screenshot-flow-after-login-fix-curl
+ARGS: ['-NoProfile', '-Command', '$file = Get-ChildItem -Path artifacts/input_screenshots -Recurse -File | Where-Object { $_.Extension -match \'^(\\.png|\\.jpg|\\.jpeg|\\.webp|\\.bmp)$\' } | Select-Object -First 1; if (-not $file) { Write-Output \'NO_SCREENSHOT_FOUND\'; exit 0 }; Write-Output (\'USING=\' + $file.FullName); curl.exe -s -F mode=real -F flow_type=screenshot_pipeline -F "screenshot=@$($file.FullName)" http://127.0.0.1:8080/run-demo-async']

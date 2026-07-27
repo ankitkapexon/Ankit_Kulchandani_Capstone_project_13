@@ -1,264 +1,54 @@
 # Live Demo Run Steps
 
-This guide covers the current live demo flow on main branch.
+This guide documents the current supported live demo flow.
 
-## Latest Documentation Sync (Jul 2026)
+## 1) Start Backend
 
-- Legacy VS Code task labels were migrated from PowerShell commands to Python runner dispatch:
-	- `.vscode/tasks.json` now routes migrated labels through `scripts/task_runner.py run-label --label <task label>`.
-- Run Context behavior changed for screenshot upload flow:
-	- displays uploaded screenshot name,
-	- no longer displays Run ID in Run Context.
-- Result panel simplification in `web/templates/live_demo.html`:
-	- removed Telemetry link row,
-	- removed App Profile Preset row,
-	- removed Artifact lifecycle row,
-	- removed self-healing quality signal rows from the result UI summary.
-- Telemetry/indexing/lifecycle logic remains available in backend APIs and artifact indexes for governance usage.
-
-## Latest Updates (Jul 2026)
-
-- Final reliability/productization pack completed:
-	- Preflight Readiness card added in UI to validate service health + flow config before run,
-	- Config validation endpoint added: `/config-validation`,
-	- Telemetry APIs added: `/telemetry/latest` and `/telemetry-dashboard`,
-	- Artifact lifecycle governance added:
-		- expiry based on `ARTIFACT_RETENTION_DAYS`,
-		- index files: `artifacts/indexes/latest_per_flow.json` and `artifacts/indexes/latest_per_run.json`,
-	- Dynamic journey plan added for deterministic runs from captured step screenshots,
-	- Self-healing quality signals surfaced (success rate, fallback depth estimate, recurring failed locators, top unstable elements),
-	- Profile presets introduced (`generic`, `ecommerce`, `banking`, `social`) via `APP_PROFILE_PRESET`.
-
-- Live demo result page now includes a Self-Healing Output panel with:
-	- Enabled,
-	- Generated scripts,
-	- Scripts with self-healing markers,
-	- Healing repository updated,
-	- Matching self-healing script links when present.
-- Backend reliability hardening was added without changing core flow behavior:
-	- mode-specific env overrides are scoped to each run,
-	- deterministic realtime execution has an explicit pytest timeout,
-	- async run state has inactivity timeout protection,
-	- UI now shows concise failure text while detailed tracebacks remain in server logs.
-- Artifact panel markup was consolidated using a Jinja macro for maintainability (same rendered behavior).
-- Flow selection now refreshes the page into a clean run state (`/?flow_type=screenshot_pipeline` or `/?flow_type=deterministic_realtime`) before execution.
-- Report artifact routing now supports both legacy and normalized path forms to avoid 404s:
-	- `/artifacts/artifacts/...`
-	- `/artifacts/...`
-- Direct `healing_repository.db` link exposure was removed from the frontend result panel.
-- Cross-app compatibility updates were added:
-	- app-specific locator hints and navigation presets are now controlled by env toggles,
-	- default behavior auto-enables these only for SauceLabs package profiles.
-- New `.env.example` toggles are available for quick cross-app setup:
-	- `ENABLE_APP_SPECIFIC_LOCATOR_HINTS`
-	- `ENABLE_APP_SPECIFIC_NAVIGATION`
-- Generated Appium scripts now respect env-provided app targets:
-	- `APP_PACKAGE`
-	- `APP_ACTIVITY`
-- Screenshot pipeline generation is now profile-aware:
-	- reference demo profiles keep self-healing generator by default,
-	- non-reference profiles use generic generator path for safer cross-app output.
-- Stale-result cleanup behavior is now immediate:
-	- when flow is changed or a new run is submitted, old report/screenshot result sections are removed before the new run completes.
-
-## Prerequisites
-
-- Python virtual environment exists and is activated.
-- Dependencies are installed from requirements.txt.
-- At least one mobile screenshot is available in png, jpg, jpeg, webp, or bmp format.
-- For real-provider runs, OPENAI or LiteLLM environment values are configured.
-- For offline or safe demo runs, use mock providers in .env.
-- Appium server can be started locally. The UI flow attempts to auto-start Appium if it is not already running.
-
-## 1) Activate Environment
-
-Windows PowerShell:
-
-```powershell
-Set-Location C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone
-.\.venv\Scripts\Activate.ps1
-```
-
-## 2) Configure Provider Environment (Optional)
-
-Option A: Real provider environment
-
-```dotenv
-VISION_AGENT_PROVIDER=openai
-TESTCASE_AGENT_PROVIDER=openai
-OPENAI_API_KEY=your_key
-OPENAI_MODEL=gpt-4o-mini
-OPENAI_API_BASE=https://api.openai.com/v1
-```
-
-Option B: Mock provider environment
-
-```dotenv
-VISION_AGENT_PROVIDER=mock
-TESTCASE_AGENT_PROVIDER=mock
-```
-
-## 3) Choose Run Path
-
-### Path A: HTML Upload UI (recommended for walkthroughs)
-
-```powershell
+```bash
 python live_demo.py
 ```
 
-Open http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator and then:
+Open `http://127.0.0.1:8080/`.
 
-1. Select flow type:
-	- Check Flow By Uploading A Screenshot, or
-	- Realtime End To End Flow Of Application.
-2. If upload flow is selected, upload one screenshot.
-3. Click Run Live Demo.
-4. Open generated artifact links and the HTML execution report from the same page.
+## 2) Prepare Services
 
-Default UI behavior:
+Click **Start / Restart Services** in the UI.
 
-- Realtime End To End Flow Of Application is selected by default.
-- Screenshot upload section is visible only when Check Flow By Uploading A Screenshot is selected.
-- Mode selector is removed from the page; current UI submits mock mode by default.
-- Preflight Readiness card is available before run and can be re-triggered manually.
+Expected ready state:
+- Flask backend
+- Appium server
+- Android emulator/device
+- No run lock in progress
 
-Notes:
+## 3) Choose Flow
 
-- Uploaded files are stored under artifacts/input_screenshots/live_demo_uploads/<timestamp>/.
-- UI run output includes pipeline logs and diagnostics stream (stderr) for quick troubleshooting.
-- Diagnostics (stderr) can contain warnings/tool-level messages and is not always a test failure.
-- Upload flow preview shows the uploaded screenshot and hides emulator live stream.
-- Realtime flow preview shows live emulator frames while the run is active.
-- The live demo now isolates output to the current run: manual testcase artifacts are reset before Stage 2 to avoid historical carry-over.
-- Result panels are intended to show only files generated for the current run.
-- Result panels are now also cleared immediately on flow switch/new submit to prevent interim stale report or screenshot display.
-- Preflight checks use:
-	- `/required-services-status?quick=1`
-	- `/config-validation?mode=...&flow_type=...`
-- Artifact panels use pre-run snapshots + post-run deltas to strictly scope SSM/manual/locator/script/review files to the current uploaded screenshot run.
-- Placeholder and noise files (.gitkeep, hidden files, .pyc, __pycache__) are excluded from UI artifact links.
-- The old decorative stats section (Input Type / Pipeline / Output Scope) has been removed from the header.
-- Deterministic realtime flow executes `tests/test_realtime_e2e_flow.py` directly from the live demo backend.
-- Deterministic realtime flow executes Appium/pytest once per user-triggered run.
-- Deterministic artifact pipeline report generation does not trigger a second realtime Appium run.
-- After deterministic run reaches completion, artifact report publishing is report-only and should redirect directly to results without reopening product listing or other app pages.
-- Reports are flow-scoped:
-	- Screenshot flow: `artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html`
-	- Realtime final: `artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html`
-	- Realtime artifact pass: `artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html`
-- Deterministic flow captures step screenshots under:
-	- `artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/`
-- Deterministic screenshot capture is restricted to business pages only:
-	- Product Listing
-	- Product Details
-	- Cart
-	- Menu
-	- Login
-- Captured step screenshots are surfaced in the result UI under:
-	- Captured Step Screenshots
-- Screenshot capture is page-anchor gated to avoid black/blank pre-launch or transitional frames.
-- If deterministic run has no prior seed screenshot available, backend auto-captures one via adb screencap.
+Supported flow options:
+- `screenshot_pipeline`
+- `deterministic_realtime`
 
-### Path A.1: One-click localhost launcher (new)
+### Screenshot Pipeline
+- Upload one screenshot.
+- Run context shows uploaded screenshot name.
+- Start run and wait for completion.
 
-Windows PowerShell:
+### Deterministic Realtime
+- No screenshot upload required.
+- Start run and wait for completion.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start_live_demo_localhost.ps1
+## 4) Review Outputs
+
+Run outputs are written to `artifacts/`:
+- `ssm_json_output/`
+- `manual_testcases/`
+- `locator_output/`
+- `generated_appium_scripts/`
+- `review_reports/`
+- `test_execution_reports/`
+
+## 5) Quick Checks
+
+```bash
+python scripts/task_runner.py check-server
+python scripts/task_runner.py check-appium
+python scripts/task_runner.py check-adb
 ```
-
-Both launchers start live_demo if needed and open:
-
-- `http://127.0.0.1:8080/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator`
-
-### Path B: Enhanced CLI flow
-
-Put one or more screenshots into artifacts/input_screenshots/ and run:
-
-```powershell
-python pipelines/run_all_enhanced.py artifacts/input_screenshots
-```
-
-Without auto-opening report:
-
-```powershell
-python pipelines/run_all_enhanced.py artifacts/input_screenshots --no-browser
-```
-
-## 4) Output Locations to Show in Demo
-
-After completion, share these outputs:
-
-- artifacts/ssm_json_output/
-- artifacts/manual_testcases/
-- artifacts/locator_output/
-- artifacts/generated_appium_scripts/
-- artifacts/review_reports/
-- artifacts/test_execution_reports/screenshot_pipeline/<timestamp>/report.html
-- artifacts/test_execution_reports/deterministic_realtime/<timestamp>/report.html
-- artifacts/test_execution_reports/deterministic_realtime/artifact_pipeline/<timestamp>/report.html
-- artifacts/input_screenshots/live_demo_uploads/deterministic_steps_<timestamp>/
-
-## 5) Validation Checklist
-
-- Generated login script does not use hardcoded sleep for screen transitions.
-- Generated self-healing scripts use explicit wait re-resolution on stale element retry instead of fixed sleep.
-- Login navigation flow uses actionable elements and avoids unnecessary taps on static UI.
-- Report HTML exists in the latest timestamped execution folder.
-- Deterministic run report contains verbose runtime logs (pytest CLI logs enabled).
-- Deterministic realtime E2E flow passes with one test run:
-
-```powershell
-python -m pytest tests/test_realtime_e2e_flow.py -q
-```
-
-- Expected output:
-	- `1 passed`
-
-## 6) Deterministic Realtime Flow (Strict Step Order)
-
-When stakeholders ask for one fixed journey in one run, execute:
-
-- `tests/test_realtime_e2e_flow.py`
-
-Flow covered in order:
-
-1. Relaunch app (if open, restart app state).
-2. Dismiss popup if present.
-3. Reach product listing/base screen.
-4. Open product detail and add item to cart.
-5. Open cart.
-6. Open menu.
-7. Open login, enter credentials, submit login.
-8. Close app.
-
-Additional realtime evidence:
-
-- Step screenshots are captured during runtime for five business pages only and should be visible in UI results.
-- Generated artifact set (SSM/manual/locator/script/review/report) is built from this run only.
-
-## 6) Troubleshooting
-## 7) Troubleshooting
-
-- If imports or commands fail, reactivate venv and run pip install -r requirements.txt.
-- If provider-backed runs fail, verify OPENAI_API_KEY and API base values used by your environment.
-- If Appium is not reachable, start it manually and rerun:
-
-```powershell
-appium --session-override
-```
-
-- If report does not open automatically, open report.html manually from artifacts/test_execution_reports/<timestamp>/.
-- If UI appears stale after updates, stop all running live_demo.py processes, start one fresh server, then hard refresh the browser.
-- If old scripts/reviews appear in UI, run one fresh upload after restart; result panels should now include only delta files created/updated by that run.
-
-## 8) Suggested Talk Track
-
-1. Input screenshot is analyzed into SSM JSON.
-2. Manual test cases are generated from SSM.
-3. Multi-strategy locators are created.
-4. Self-healing Appium script is generated.
-5. Script review report is produced.
-6. Test execution runs and creates a timestamped HTML report.
-
-This gives an end-to-end screenshot-to-automation demonstration in one flow.

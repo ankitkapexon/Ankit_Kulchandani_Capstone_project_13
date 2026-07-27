@@ -1,0 +1,1251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile Test Generator Live Demo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&display=swap');
+
+    :root {
+      --bg1: #fefbf2;
+      --bg2: #e7f4ff;
+      --bg3: #f0f8ec;
+      --card: #ffffff;
+      --ink: #1e293b;
+      --muted: #526079;
+      --line: #d9e3ef;
+      --accent: #0c5b8f;
+      --accent2: #2e8f4e;
+      --surface: #f8fbff;
+      --good: #166534;
+      --bad: #991b1b;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: "Space Grotesk", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 12%, var(--bg1), transparent 34%),
+        radial-gradient(circle at 84% 16%, var(--bg2), transparent 30%),
+        radial-gradient(circle at 70% 88%, var(--bg3), transparent 30%),
+        #f6f9fd;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 26px auto 40px;
+      padding: 0 14px;
+    }
+    .hero {
+      margin-bottom: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 24px rgba(12, 51, 82, 0.08);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .tone-card {
+      background: linear-gradient(140deg, #ffffff 0%, #f7fbff 60%, #f0f8f1 100%);
+    }
+    h1 {
+      margin: 0;
+      font-family: "Source Serif 4", Georgia, serif;
+      font-size: clamp(1.45rem, 2.8vw, 2.1rem);
+      line-height: 1.15;
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 1.02rem;
+      letter-spacing: 0.2px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin: 10px 0 6px;
+    }
+    .flow-choice {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0;
+      margin-top: 4px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(160deg, #f3f9ff 0%, #edf5fd 60%, #f4fbf2 100%);
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .flow-indicator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      border-radius: 12px;
+      margin: 0;
+      background: linear-gradient(150deg, #ffffff 0%, #f7fbff 55%, #f2fbf2 100%);
+      box-shadow: 0 10px 24px rgba(12, 91, 143, 0.16);
+      border: 1px solid #c5d9ea;
+      transition: transform 220ms cubic-bezier(.22, 1, .36, 1);
+      z-index: 0;
+      pointer-events: none;
+    }
+    .flow-btn {
+      margin: 4px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink);
+      border-radius: 12px;
+      padding: 12px 13px;
+      text-align: left;
+      transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background 140ms ease;
+      box-shadow: none;
+      position: relative;
+      z-index: 1;
+    }
+    .flow-btn[data-flow-value="screenshot_pipeline"] {
+      grid-column: 1;
+      margin-right: 6px;
+    }
+    .flow-btn[data-flow-value="deterministic_realtime"] {
+      grid-column: 2;
+      margin-left: 6px;
+    }
+    .upload-section-hidden {
+      display: none !important;
+    }
+    .flow-btn .flow-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.96rem;
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+    .flow-btn .flow-sub {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .flow-btn:hover {
+      transform: translateY(-1px);
+      border-color: #bfd5e8;
+      box-shadow: 0 4px 12px rgba(12, 51, 82, 0.09);
+    }
+    .flow-btn.active {
+      border-color: transparent;
+      background: transparent;
+      box-shadow: none;
+    }
+    .flow-btn.active .flow-title {
+      color: #0c5b8f;
+    }
+    input[type="file"], select {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+      background: #fff;
+      font: inherit;
+      color: var(--ink);
+    }
+    button {
+      margin-top: 14px;
+      border: 0;
+      background: linear-gradient(105deg, var(--accent), #1c7ab3 70%, var(--accent2));
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font: inherit;
+    }
+    button:hover { filter: brightness(1.06); }
+    .error {
+      white-space: pre-wrap;
+      color: var(--bad);
+      background: #ffebeb;
+      border-left: 4px solid #ef4444;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .ok {
+      color: var(--good);
+      background: #e9fbe9;
+      border-left: 4px solid #22c55e;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .status-badges {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.84rem;
+      background: #f4f8ff;
+      color: var(--ink);
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .badge.good {
+      background: #e9fbe9;
+      color: #13512b;
+      border-color: #bbf7d0;
+    }
+    .badge.warn {
+      background: #fff7e6;
+      color: #8a5800;
+      border-color: #fde68a;
+    }
+    .badge.bad {
+      background: #feecec;
+      color: #8a1f1f;
+      border-color: #fecaca;
+    }
+    .run-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .meta {
+      margin: 0;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      overflow-wrap: anywhere;
+      line-height: 1.4;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+      gap: 12px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+      background: var(--surface);
+      min-width: 0;
+      overflow: hidden;
+    }
+    .panel h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.98rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+    .thumb-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      max-height: none;
+      overflow: visible;
+    }
+    .thumb-list li {
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 6px;
+    }
+    .thumb-list img {
+      width: 100%;
+      height: 110px;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+      background: #0f172a;
+    }
+    .thumb-label {
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      max-height: 250px;
+      overflow: auto;
+    }
+    li {
+      margin: 5px 0;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0b1627;
+      color: #dbeafe;
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid #2e455c;
+    }
+    a {
+      color: var(--accent);
+      text-decoration-thickness: 1.4px;
+      overflow-wrap: anywhere;
+    }
+    .hint {
+      margin-top: 8px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+      margin: 6px 0;
+    }
+    .run-progress {
+      display: none;
+      margin-top: 12px;
+      border: 1px dashed #9ac1dc;
+      background: linear-gradient(140deg, #f3f9ff 0%, #eef9f3 100%);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #13425f;
+    }
+    .run-progress.active {
+      display: block;
+    }
+    .run-progress-title {
+      font-weight: 700;
+      margin: 0 0 4px;
+      font-size: 0.95rem;
+    }
+    .run-progress-detail {
+      margin: 0;
+      font-size: 0.88rem;
+      color: #35516b;
+    }
+    .run-progress-elapsed {
+      margin-top: 8px;
+      font-size: 0.84rem;
+      color: #4a6077;
+    }
+    .run-context {
+      display: none;
+      margin-top: 10px;
+      border: 1px solid #c7dbec;
+      background: #f5fbff;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .run-context.active {
+      display: block;
+    }
+    .run-context h3 {
+      margin: 0 0 8px;
+      font-size: 0.93rem;
+    }
+    .run-context-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .run-context-item {
+      margin: 0;
+      font-size: 0.84rem;
+      color: #274660;
+      overflow-wrap: anywhere;
+    }
+    .run-context-note {
+      margin: 8px 0 0;
+      font-size: 0.82rem;
+      color: #0f5132;
+      background: #e7f8ef;
+      border: 1px solid #b7ebcf;
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+    .preflight-card {
+      margin-top: 12px;
+      border: 1px solid #cde0f1;
+      border-radius: 10px;
+      background: #f4f9ff;
+      padding: 10px 12px;
+    }
+    .preflight-card h3 {
+      margin: 0 0 8px;
+      font-size: 0.93rem;
+    }
+    .preflight-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .preflight-btn {
+      margin-top: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: linear-gradient(105deg, #2f6d95, #3b80ad 68%, #2f7e57);
+      font-size: 0.86rem;
+    }
+    .preflight-status {
+      margin: 0;
+      font-size: 0.84rem;
+      color: #294760;
+    }
+    .preflight-status.good { color: #166534; }
+    .preflight-status.bad { color: #991b1b; }
+    .preflight-list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      max-height: 140px;
+      overflow: auto;
+      font-size: 0.82rem;
+      color: #334a63;
+    }
+    .emulator-live {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #cfe0ef;
+      border-radius: 10px;
+      background: #f6fbff;
+      padding: 10px;
+    }
+    .emulator-live.active {
+      display: block;
+    }
+    .emulator-live h3 {
+      margin: 0 0 8px;
+      font-size: 0.94rem;
+    }
+    .emulator-live img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border: 1px solid #b7ccdf;
+      border-radius: 8px;
+      background: #0f172a;
+    }
+    .emulator-live p {
+      margin: 8px 0 0;
+      font-size: 0.82rem;
+      color: #4e6074;
+    }
+    .run-dot::after {
+      content: "";
+      animation: dots 1.25s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0% { content: ""; }
+      25% { content: "."; }
+      50% { content: ".."; }
+      75% { content: "..."; }
+      100% { content: ""; }
+    }
+    .artifact-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin: 0 0 8px;
+    }
+    .toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 0.88rem;
+      color: var(--muted);
+      background: #f0f6ff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      user-select: none;
+    }
+    .toggle-wrap input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .artifact-path { display: inline; }
+    .artifact-file { display: none; }
+    body.show-filenames .artifact-path { display: none; }
+    body.show-filenames .artifact-file { display: inline; }
+    body.run-in-progress #liveRunResultsContainer {
+      display: none !important;
+    }
+    @media (max-width: 960px) {
+      .run-summary {
+        grid-template-columns: 1fr;
+      }
+      .artifact-toolbar {
+        justify-content: flex-start;
+      }
+    }
+    @media (max-width: 720px) {
+      .flow-choice {
+        grid-template-columns: 1fr;
+        row-gap: 6px;
+      }
+      .flow-indicator {
+        display: none;
+      }
+      .flow-btn[data-flow-value="screenshot_pipeline"] {
+        grid-column: 1;
+        margin: 4px;
+      }
+      .flow-btn[data-flow-value="deterministic_realtime"] {
+        grid-column: 1;
+        margin: 4px;
+      }
+      .flow-btn.active {
+        border-color: #68a5cf;
+        background: linear-gradient(160deg, #f5fbff 0%, #edf8ff 55%, #f3fbf4 100%);
+      }
+    }
+  </style>
+</head>
+<body class="show-filenames" data-app-package="com.saucelabs.mydemoapp.android">
+  <div class="wrap">
+    
+    <div class="hero">
+      <div class="card tone-card">
+        <h1>Live Demo: Screenshot to Test Automation</h1>
+        <p class="subtitle">Choose a flow: upload-based pipeline (single screenshot) or deterministic realtime E2E flow. The selected option runs end-to-end and shows run-specific outputs.</p>
+        <form id="liveDemoForm" method="post" action="/run-demo" enctype="multipart/form-data">
+          <label>Flow Type</label>
+          <input id="flow_type" name="flow_type" type="hidden" value="screenshot_pipeline" />
+          <div id="flowChoice" class="flow-choice" role="group" aria-label="Flow Type">
+            <span id="flowIndicator" class="flow-indicator" aria-hidden="true"></span>
+            <button
+              id="flowBtnUpload"
+              class="flow-btn"
+              type="button"
+              data-flow-value="screenshot_pipeline"
+              aria-pressed="true"
+            >
+              <span class="flow-title">Check Flow By Uploading A Screenshot</span>
+              <span class="flow-sub">Upload one screenshot and run all generation stages.</span>
+            </button>
+            <button
+              id="flowBtnDeterministic"
+              class="flow-btn"
+              type="button"
+              data-flow-value="deterministic_realtime"
+              aria-pressed="false"
+            >
+              <span class="flow-title">Realtime End To End Flow Of Application</span>
+              <span class="flow-sub">Run strict E2E emulator flow without screenshot upload.</span>
+            </button>
+          </div>
+
+          <div id="uploadSection" class="" >
+            <label for="screenshot">Screenshot</label>
+            <input id="screenshot" type="file" name="screenshot" accept=".png,.jpg,.jpeg,.webp,.bmp" required />
+          </div>
+          <input id="mode" name="mode" type="hidden" value="mock" />
+
+          <div id="screenshotHint" class="hint">Tip: upload a focused screen image for cleaner locator and testcase generation.</div>
+          <div class="preflight-card" id="preflightCard" aria-live="polite" aria-atomic="true">
+            <h3>Preflight Readiness</h3>
+            <div class="preflight-actions">
+              <button id="runPreflightBtn" class="preflight-btn" type="button">Run Preflight Check</button>
+              <p id="preflightStatus" class="preflight-status">Run preflight to validate services and config for the selected flow.</p>
+            </div>
+            <ul id="preflightDetails" class="preflight-list"></ul>
+          </div>
+          <button id="runLiveDemoBtn" type="submit">Run Live Demo</button>
+          <div id="runProgress" class="run-progress" aria-live="polite" aria-atomic="true">
+            <p id="runProgressTitle" class="run-progress-title">Starting run<span class="run-dot"></span></p>
+            <p id="runProgressDetail" class="run-progress-detail">Checking prerequisites and preparing execution.</p>
+            <p id="runProgressElapsed" class="run-progress-elapsed">Elapsed: 0s</p>
+          </div>
+          <div id="runContext" class="run-context" aria-live="polite" aria-atomic="true">
+            <h3>Run Context</h3>
+            <div class="run-context-grid">
+              <p class="run-context-item"><strong>Flow:</strong> <span id="ctxFlow">N/A</span></p>
+              <p id="ctxScreenshotWrap" class="run-context-item" hidden><strong>Screenshot:</strong> <span id="ctxScreenshotName">N/A</span></p>
+              <p class="run-context-item"><strong>Started:</strong> <span id="ctxStartedAt">N/A</span></p>
+              <p class="run-context-item"><strong>App Package:</strong> <span id="ctxAppPackage">N/A</span></p>
+            </div>
+            <p id="ctxResetNote" class="run-context-note">Previous results cleared for this run.</p>
+          </div>
+          <div id="runPreviewPanel" class="emulator-live">
+            <h3 id="runPreviewTitle">Run Preview</h3>
+            <img id="runPreviewImage" alt="Run preview" src="" />
+            <p id="runPreviewNote">Preview appears when a flow starts.</p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    
+
+    <div id="liveRunResultsContainer">
+    
+    <div id="runResultSections">
+    <div class="card">
+      <div class="ok">Demo run completed using screenshot_pipeline.</div>
+      <div class="status-badges">
+        <span class="badge">Flow: Check Flow By Uploading A Screenshot</span>
+        <span class="badge good">Appium: running</span>
+        <span class="badge good">Test outcome: passed</span>
+        <span class="badge warn">
+          Self-healing scripts: 0
+        </span>
+      </div>
+      <div class="run-summary">
+        <p class="meta"><strong>Input:</strong> artifacts/input_screenshots/live_demo_uploads/20260728_005205/Cart.png</p>
+        <p class="meta"><strong>Appium:</strong> Appium already running</p>
+      </div>
+      <p class="meta" style="margin-top:10px;"><strong>Report:</strong> <a href="/artifacts/test_execution_reports/screenshot_pipeline/2026-07-28_00-52-05/report.html" target="_blank" rel="noopener">Open HTML report</a></p>
+    </div>
+
+    <div class="artifact-toolbar">
+      <label class="toggle-wrap" for="filenameToggle">
+        <input id="filenameToggle" type="checkbox" checked />
+        Show compact filenames only
+      </label>
+    </div>
+
+    
+
+    <div class="card grid">
+      <div class="panel">
+      <h3>SSM Output</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="/artifacts/ssm_json_output/ssm_cart_1785180125.json" target="_blank" rel="noopener">
+            <span class="artifact-path">artifacts/ssm_json_output/ssm_cart_1785180125.json</span>
+            <span class="artifact-file">ssm_cart_1785180125.json</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+    </div>
+      <div class="panel">
+      <h3>Manual Testcases</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="/artifacts/manual_testcases/manual_testcases_ssm_cart_1785180125_1785180125.txt" target="_blank" rel="noopener">
+            <span class="artifact-path">artifacts/manual_testcases/manual_testcases_ssm_cart_1785180125_1785180125.txt</span>
+            <span class="artifact-file">manual_testcases_ssm_cart_1785180125_1785180125.txt</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+    </div>
+      <div class="panel">
+      <h3>Locator Output</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="/artifacts/locator_output/locator_Cart.json" target="_blank" rel="noopener">
+            <span class="artifact-path">artifacts/locator_output/locator_Cart.json</span>
+            <span class="artifact-file">locator_Cart.json</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+    </div>
+      <div class="panel">
+      <h3>Generated Scripts</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="/artifacts/generated_appium_scripts/test_cart_screen.py" target="_blank" rel="noopener">
+            <span class="artifact-path">artifacts/generated_appium_scripts/test_cart_screen.py</span>
+            <span class="artifact-file">test_cart_screen.py</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+    </div>
+      <div class="panel">
+      <h3>Review Reports</h3>
+      
+      <ul>
+        
+        <li>
+          <a href="/artifacts/review_reports/test_cart_screen_review.md" target="_blank" rel="noopener">
+            <span class="artifact-path">artifacts/review_reports/test_cart_screen_review.md</span>
+            <span class="artifact-file">test_cart_screen_review.md</span>
+          </a>
+        </li>
+        
+      </ul>
+      
+    </div>
+      <div class="panel">
+        <h3>Self-Healing Output</h3>
+        
+        <p class="meta"><strong>Enabled:</strong> Yes</p>
+        <p class="meta"><strong>Generated scripts:</strong> 1</p>
+        <p class="meta"><strong>Scripts with self-healing markers:</strong> 0</p>
+        <p class="meta"><strong>Healing repository updated:</strong> Yes</p>
+        
+        
+      </div>
+      <div class="panel">
+        <h3>Captured Step Screenshots</h3>
+        
+        <p class="empty">No step screenshots captured for this run.</p>
+        
+      </div>
+      <div class="panel">
+        <h3>Dynamic Journey Plan</h3>
+        
+        <p class="empty">Dynamic journey mode is disabled for this run.</p>
+        
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 class="section-title">Pipeline Logs</h3>
+      <pre>Reviewed 1 scripts successfully.
+[ReporterAgent] Running tests from: C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\generated_appium_scripts
+[ReporterAgent] Saving report to:   C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\test_execution_reports\screenshot_pipeline\2026-07-28_00-52-05\report.html
+[ReporterAgent] Test run complete — PASSED (exit code 0)
+[ReporterAgent] Report: C:\Users\ankit.kulchandani\Desktop\Apexon\Project13_Captstone\artifacts\test_execution_reports\screenshot_pipeline\2026-07-28_00-52-05\report.html
+</pre>
+      
+    </div>
+    </div>
+    
+    </div>
+  </div>
+  <script>
+    (function () {
+      const toggle = document.getElementById("filenameToggle");
+      const flowType = document.getElementById("flow_type");
+      const liveDemoForm = document.getElementById("liveDemoForm");
+      const runLiveDemoBtn = document.getElementById("runLiveDemoBtn");
+      const runProgress = document.getElementById("runProgress");
+      const runProgressTitle = document.getElementById("runProgressTitle");
+      const runProgressDetail = document.getElementById("runProgressDetail");
+      const runProgressElapsed = document.getElementById("runProgressElapsed");
+      const runContext = document.getElementById("runContext");
+      const ctxFlow = document.getElementById("ctxFlow");
+      const ctxScreenshotWrap = document.getElementById("ctxScreenshotWrap");
+      const ctxScreenshotName = document.getElementById("ctxScreenshotName");
+      const ctxStartedAt = document.getElementById("ctxStartedAt");
+      const ctxAppPackage = document.getElementById("ctxAppPackage");
+      const ctxResetNote = document.getElementById("ctxResetNote");
+      const runPreviewPanel = document.getElementById("runPreviewPanel");
+      const runPreviewTitle = document.getElementById("runPreviewTitle");
+      const runPreviewImage = document.getElementById("runPreviewImage");
+      const runPreviewNote = document.getElementById("runPreviewNote");
+      const flowButtons = Array.from(document.querySelectorAll(".flow-btn[data-flow-value]"));
+      const flowIndicator = document.getElementById("flowIndicator");
+      const screenshot = document.getElementById("screenshot");
+      const uploadSection = document.getElementById("uploadSection");
+      const screenshotHint = document.getElementById("screenshotHint");
+      const runPreflightBtn = document.getElementById("runPreflightBtn");
+      const preflightStatus = document.getElementById("preflightStatus");
+      const preflightDetails = document.getElementById("preflightDetails");
+      let runResultSections = document.getElementById("runResultSections");
+      const liveRunResultsContainer = document.getElementById("liveRunResultsContainer");
+      let progressInterval = null;
+      let emulatorInterval = null;
+      let emulatorFrameInFlight = false;
+      let uploadedPreviewUrl = null;
+
+      const flowLabel = (flowValue) => {
+        if (flowValue === "deterministic_realtime") {
+          return "Realtime End To End Flow Of Application";
+        }
+        return "Check Flow By Uploading A Screenshot";
+      };
+
+      const getSelectedScreenshotName = () => {
+        if (!screenshot || !screenshot.files || screenshot.files.length === 0) {
+          return "N/A";
+        }
+        return screenshot.files[0].name || "N/A";
+      };
+
+      const updateRunContext = ({ flow, runId, startedAt, resetMessage, screenshotName } = {}) => {
+        if (!runContext) {
+          return;
+        }
+        const resolvedFlow = flow || currentFlowValue();
+        runContext.classList.add("active");
+        if (ctxFlow) {
+          ctxFlow.textContent = flowLabel(resolvedFlow);
+        }
+        if (ctxScreenshotWrap && ctxScreenshotName) {
+          const isScreenshotFlow = resolvedFlow === "screenshot_pipeline";
+          ctxScreenshotWrap.hidden = !isScreenshotFlow;
+          if (isScreenshotFlow) {
+            ctxScreenshotName.textContent = typeof screenshotName === "string" && screenshotName.length > 0
+              ? screenshotName
+              : getSelectedScreenshotName();
+          }
+        }
+        if (ctxStartedAt && startedAt instanceof Date) {
+          ctxStartedAt.textContent = startedAt.toLocaleString();
+        }
+        if (ctxAppPackage) {
+          const packageHint = document.body?.dataset?.appPackage || "N/A";
+          ctxAppPackage.textContent = packageHint || "N/A";
+        }
+        if (ctxResetNote && typeof resetMessage === "string") {
+          ctxResetNote.textContent = resetMessage;
+        }
+      };
+
+      const resetUiStateOnServer = async () => {
+        try {
+          const response = await fetch("/reset-ui-state", {
+            method: "POST",
+            keepalive: true,
+          });
+          const payload = await response.json().catch(() => ({}));
+          return {
+            ok: response.ok && Boolean(payload.ok),
+            message: payload.message || "Previous results cleared for this run.",
+          };
+        } catch (_) {
+          return {
+            ok: false,
+            message: "Previous results cleared for this run.",
+          };
+        }
+      };
+
+      const clearPreviousRunResults = () => {
+        document.body.classList.add("run-in-progress");
+
+        if (!runResultSections) {
+          runResultSections = document.getElementById("runResultSections");
+        }
+        if (runResultSections) {
+          runResultSections.remove();
+          runResultSections = null;
+        }
+
+        if (liveRunResultsContainer) {
+          liveRunResultsContainer.innerHTML = "";
+        }
+
+        updateRunContext({
+          flow: currentFlowValue(),
+          runId: "pending",
+          startedAt: new Date(),
+          resetMessage: "Previous results cleared for this run.",
+        });
+      };
+
+      const renderPreflight = (ok, statusText, details) => {
+        if (!preflightStatus || !preflightDetails) {
+          return;
+        }
+        preflightStatus.textContent = statusText;
+        preflightStatus.classList.toggle("good", Boolean(ok));
+        preflightStatus.classList.toggle("bad", !ok);
+        preflightDetails.innerHTML = "";
+
+        (details || []).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          preflightDetails.appendChild(li);
+        });
+      };
+
+      const runPreflightCheck = async () => {
+        const flow = currentFlowValue();
+        const mode = document.getElementById("mode")?.value || "mock";
+
+        if (runPreflightBtn) {
+          runPreflightBtn.disabled = true;
+          runPreflightBtn.textContent = "Checking...";
+        }
+        renderPreflight(true, "Running preflight checks...", []);
+
+        try {
+          const [servicesRes, configRes] = await Promise.all([
+            fetch("/required-services-status?quick=1", { method: "GET" }),
+            fetch(`/config-validation?mode=${encodeURIComponent(mode)}&flow_type=${encodeURIComponent(flow)}`, { method: "GET" }),
+          ]);
+
+          const servicesPayload = await servicesRes.json().catch(() => ({}));
+          const configPayload = await configRes.json().catch(() => ({}));
+
+          const serviceLines = Array.isArray(servicesPayload.services)
+            ? servicesPayload.services.map((item) => `${item.name}: ${item.ok ? "OK" : "NOT READY"} (${item.message || "no message"})`)
+            : ["Service status unavailable"];
+
+          const configLines = Array.isArray(configPayload.errors) && configPayload.errors.length > 0
+            ? configPayload.errors.map((error) => `Config: ${error}`)
+            : ["Config: validation passed for selected flow/mode"];
+
+          const allOk = Boolean(servicesPayload.ok) && Boolean(configPayload.ok);
+          renderPreflight(
+            allOk,
+            allOk
+              ? "Preflight ready: services and config look good."
+              : "Preflight needs attention before run.",
+            [...serviceLines, ...configLines],
+          );
+        } catch (_) {
+          renderPreflight(false, "Preflight check failed due to a network error.", ["Unable to fetch readiness endpoints."]);
+        } finally {
+          if (runPreflightBtn) {
+            runPreflightBtn.disabled = false;
+            runPreflightBtn.textContent = "Run Preflight Check";
+          }
+        }
+      };
+
+      const currentFlowValue = () => {
+        if (!flowType || !flowType.value) {
+          return "screenshot_pipeline";
+        }
+        return flowType.value;
+      };
+
+      const syncActiveFlowButton = () => {
+        const selected = currentFlowValue();
+        let activeButton = null;
+        flowButtons.forEach((btn) => {
+          const isActive = btn.dataset.flowValue === selected;
+          btn.classList.toggle("active", isActive);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+          if (isActive) {
+            activeButton = btn;
+          }
+        });
+
+        if (flowIndicator && activeButton) {
+          flowIndicator.style.width = `${activeButton.offsetWidth}px`;
+          flowIndicator.style.transform = `translateX(${activeButton.offsetLeft}px)`;
+        }
+      };
+
+      const syncFlowUI = () => {
+        if (!flowType || !screenshot) {
+          return;
+        }
+        const uploadMode = currentFlowValue() === "screenshot_pipeline";
+        screenshot.required = uploadMode;
+        screenshot.disabled = !uploadMode;
+        if (!uploadMode) {
+          screenshot.value = "";
+        }
+        if (uploadSection) {
+          uploadSection.classList.toggle("upload-section-hidden", !uploadMode);
+          uploadSection.hidden = !uploadMode;
+        }
+        if (screenshotHint) {
+          screenshotHint.textContent = uploadMode
+            ? "Tip: upload a focused screen image for cleaner locator and testcase generation."
+            : "Deterministic flow ignores screenshot upload and runs the strict end-to-end emulator sequence.";
+        }
+
+        // For screenshot flow, never show live emulator stream; show uploaded preview when available.
+        if (uploadMode) {
+          if (emulatorInterval) {
+            clearInterval(emulatorInterval);
+            emulatorInterval = null;
+          }
+          emulatorFrameInFlight = false;
+          if (runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            if (screenshot.files && screenshot.files.length > 0) {
+              if (uploadedPreviewUrl) {
+                URL.revokeObjectURL(uploadedPreviewUrl);
+              }
+              uploadedPreviewUrl = URL.createObjectURL(screenshot.files[0]);
+              runPreviewTitle.textContent = "Uploaded Screenshot Preview";
+              runPreviewImage.src = uploadedPreviewUrl;
+              runPreviewImage.alt = "Uploaded screenshot preview";
+              runPreviewNote.textContent = "This preview is used for screenshot upload flow. Emulator stream is hidden for this flow.";
+              runPreviewPanel.classList.add("active");
+            } else {
+              runPreviewPanel.classList.remove("active");
+            }
+          }
+        } else if (runPreviewPanel) {
+          runPreviewPanel.classList.remove("active");
+        }
+
+        if (ctxScreenshotWrap && ctxScreenshotName) {
+          ctxScreenshotWrap.hidden = !uploadMode;
+          if (uploadMode) {
+            ctxScreenshotName.textContent = getSelectedScreenshotName();
+          }
+        }
+
+        syncActiveFlowButton();
+      };
+
+      if (screenshot) {
+        screenshot.addEventListener("change", syncFlowUI);
+      }
+
+      flowButtons.forEach((btn) => {
+        btn.addEventListener("pointerdown", clearPreviousRunResults);
+        btn.addEventListener("click", () => {
+          if (!flowType) {
+            return;
+          }
+          const nextFlow = btn.dataset.flowValue || "screenshot_pipeline";
+          clearPreviousRunResults();
+          void resetUiStateOnServer();
+          window.location.href = `/?flow_type=${encodeURIComponent(nextFlow)}`;
+        });
+      });
+
+      syncFlowUI();
+
+      if (runPreflightBtn) {
+        runPreflightBtn.addEventListener("click", runPreflightCheck);
+      }
+
+      void runPreflightCheck();
+
+      if (runLiveDemoBtn) {
+        runLiveDemoBtn.addEventListener("pointerdown", clearPreviousRunResults);
+        runLiveDemoBtn.addEventListener("click", clearPreviousRunResults);
+      }
+
+      if (liveDemoForm && runLiveDemoBtn && runProgress && runProgressTitle && runProgressDetail && runProgressElapsed) {
+        liveDemoForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          clearPreviousRunResults();
+          const selected = currentFlowValue();
+          const selectedScreenshotName = selected === "screenshot_pipeline" ? getSelectedScreenshotName() : "";
+          const startedAt = new Date();
+          const resetStateResult = await resetUiStateOnServer();
+          updateRunContext({
+            flow: selected,
+            runId: "pending",
+            startedAt,
+            resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+            screenshotName: selectedScreenshotName,
+          });
+          const formData = new FormData(liveDemoForm);
+          const detail = selected === "deterministic_realtime"
+            ? "Starting Appium-backed deterministic E2E flow. This may take 1-3 minutes on emulator."
+            : "Running screenshot pipeline stages and collecting artifacts.";
+          runProgress.classList.add("active");
+          runProgressTitle.innerHTML = "Run in progress<span class=\"run-dot\"></span>";
+          runProgressDetail.textContent = detail;
+
+          runLiveDemoBtn.disabled = true;
+          runLiveDemoBtn.textContent = "Running...";
+          flowButtons.forEach((btn) => {
+            btn.disabled = true;
+          });
+          if (screenshot) {
+            screenshot.disabled = true;
+          }
+
+          const startedAtEpoch = Date.now();
+          runProgressElapsed.textContent = "Elapsed: 0s";
+          if (progressInterval) {
+            clearInterval(progressInterval);
+          }
+          progressInterval = setInterval(() => {
+            const elapsedSec = Math.max(0, Math.floor((Date.now() - startedAtEpoch) / 1000));
+            runProgressElapsed.textContent = `Elapsed: ${elapsedSec}s`;
+          }, 1000);
+
+          if (selected === "deterministic_realtime" && runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            runPreviewPanel.classList.add("active");
+            runPreviewTitle.textContent = "Live Emulator View";
+            runPreviewImage.alt = "Live emulator frame";
+            runPreviewNote.textContent = "Frames refresh every second while the run is active.";
+            const refreshEmulatorFrame = () => {
+              if (emulatorFrameInFlight) {
+                return;
+              }
+              emulatorFrameInFlight = true;
+              runPreviewImage.onload = () => {
+                emulatorFrameInFlight = false;
+              };
+              runPreviewImage.onerror = () => {
+                emulatorFrameInFlight = false;
+              };
+              runPreviewImage.src = `/emulator-frame?ts=${Date.now()}`;
+            };
+            refreshEmulatorFrame();
+            if (emulatorInterval) {
+              clearInterval(emulatorInterval);
+            }
+            emulatorInterval = setInterval(refreshEmulatorFrame, 1000);
+          } else if (selected === "screenshot_pipeline" && runPreviewPanel && runPreviewTitle && runPreviewImage && runPreviewNote) {
+            if (uploadedPreviewUrl) {
+              runPreviewImage.src = uploadedPreviewUrl;
+            }
+            runPreviewPanel.classList.add("active");
+            runPreviewTitle.textContent = "Uploaded Screenshot Preview";
+            runPreviewImage.alt = "Uploaded screenshot preview";
+            runPreviewNote.textContent = "This preview is used for screenshot upload flow. Emulator stream is hidden for this flow.";
+          }
+
+          const setRequestFailedState = (message) => {
+            runProgressTitle.textContent = "Run failed to start";
+            runProgressDetail.textContent = message;
+            runLiveDemoBtn.disabled = false;
+            runLiveDemoBtn.textContent = "Run Live Demo";
+            flowButtons.forEach((btn) => {
+              btn.disabled = false;
+            });
+            if (screenshot) {
+              screenshot.disabled = false;
+            }
+            if (progressInterval) {
+              clearInterval(progressInterval);
+            }
+            if (emulatorInterval) {
+              clearInterval(emulatorInterval);
+            }
+            emulatorFrameInFlight = false;
+          };
+
+          const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+          const waitForEmulatorReady = async (maxAttempts = 30, intervalMs = 4000) => {
+            for (let i = 0; i < maxAttempts; i += 1) {
+              try {
+                const response = await fetch("/required-services-status", { method: "GET" });
+                const payload = await response.json().catch(() => ({}));
+                if (Array.isArray(payload.services)) {
+                  const adb = payload.services.find((s) => s.name === "Android emulator/device");
+                  const devices = Array.isArray(adb?.devices) ? adb.devices : [];
+                  const hasEmulator = devices.some((d) => typeof d === "string" && d.startsWith("emulator-"));
+                  if (hasEmulator) {
+                    return true;
+                  }
+                }
+              } catch (_) {
+                // Ignore transient status failures while emulator is booting.
+              }
+
+              await sleep(intervalMs);
+            }
+            return false;
+          };
+
+          try {
+            if (selected === "deterministic_realtime") {
+              runProgressDetail.textContent = "Preparing emulator for realtime E2E run...";
+              const startEmulatorResponse = await fetch("/start-emulator", { method: "POST" });
+              const startEmulatorPayload = await startEmulatorResponse.json().catch(() => ({}));
+              if (!startEmulatorResponse.ok) {
+                const serverMessage = startEmulatorPayload.message || startEmulatorPayload.error || "Unable to start emulator.";
+                setRequestFailedState(serverMessage);
+                return;
+              }
+
+              runProgressDetail.textContent = startEmulatorPayload.message || "Waiting for emulator boot...";
+              const ready = await waitForEmulatorReady(30, 4000);
+              if (!ready) {
+                setRequestFailedState("Emulator did not become ready in time. Please verify Android SDK/emulator setup.");
+                return;
+              }
+              runProgressDetail.textContent = "Emulator ready. Starting deterministic E2E flow...";
+            }
+
+            const startResponse = await fetch("/run-demo-async", {
+              method: "POST",
+              body: formData,
+            });
+
+            const startPayload = await startResponse.json().catch(() => ({}));
+            if (!startResponse.ok || !startPayload.run_id) {
+              const serverMessage = startPayload.error || "Unable to start demo run.";
+              setRequestFailedState(serverMessage);
+              return;
+            }
+
+            const runId = startPayload.run_id;
+            updateRunContext({
+              flow: selected,
+              runId,
+              startedAt,
+              resetMessage: resetStateResult.message || "Previous results cleared for this run.",
+              screenshotName: selectedScreenshotName,
+            });
+            let statusInterval = null;
+
+            const pollStatus = async () => {
+              try {
+                const statusResponse = await fetch(`/run-status/${runId}`);
+                const statusPayload = await statusResponse.json().catch(() => ({}));
+                if (!statusResponse.ok) {
+                  return;
+                }
+
+                const stage = statusPayload.stage || "Running";
+                const message = statusPayload.message || "Processing...";
+                runProgressDetail.textContent = `${stage}: ${message}`;
+
+                if (statusPayload.status === "completed" || statusPayload.status === "failed") {
+                  if (statusInterval) {
+                    clearInterval(statusInterval);
+                  }
+                  if (progressInterval) {
+                    clearInterval(progressInterval);
+                  }
+                  if (emulatorInterval) {
+                    clearInterval(emulatorInterval);
+                  }
+                  emulatorFrameInFlight = false;
+                  window.location.href = `/run-result/${runId}`;
+                }
+              } catch (_) {
+                // Keep polling; temporary network errors should not kill the run.
+              }
+            };
+
+            await pollStatus();
+            statusInterval = setInterval(pollStatus, 1000);
+          } catch (_) {
+            setRequestFailedState("Network error while starting demo run.");
+          }
+        });
+      }
+
+      if (!toggle) {
+        return;
+      }
+
+      const applyState = () => {
+        document.body.classList.toggle("show-filenames", toggle.checked);
+      };
+
+      applyState();
+      toggle.addEventListener("change", applyState);
+    })();
+  </script>
+</body>
+</html>

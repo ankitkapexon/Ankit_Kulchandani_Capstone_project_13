@@ -1626,6 +1626,58 @@
 				".vscode/tasks.json"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "finalize-push-latest-main-commit-once",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Sync latest task metadata updates"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "finalize-push-latest-main-push-once",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-healing-db-counts-now",
+			"type": "shell",
+			"command": "c:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone\\.venv\\Scripts\\python.exe",
+			"args": [
+				"-c",
+				"import sqlite3, pathlib; p=pathlib.Path('artifacts/healing_repository.db'); print('DB_EXISTS', p.exists());\nif p.exists():\n c=sqlite3.connect(str(p)); cur=c.cursor();\n cur.execute('select count(*) from locator_attempts'); print('LOCATOR_ATTEMPTS', cur.fetchone()[0]);\n cur.execute('select count(*) from healing_events'); print('HEALING_EVENTS', cur.fetchone()[0]);\n cur.execute('select count(*) from reliability_scores'); print('RELIABILITY_ROWS', cur.fetchone()[0]); c.close()"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "inspect-healing-db-counts-now-2",
+			"type": "shell",
+			"command": "c:\\Users\\ankit.kulchandani\\Desktop\\Apexon\\Project13_Captstone\\.venv\\Scripts\\python.exe",
+			"args": [
+				"-c",
+				"import sqlite3,pathlib; p=pathlib.Path('artifacts/healing_repository.db'); print('DB_EXISTS',p.exists());\nif p.exists():\n c=sqlite3.connect(str(p)); cur=c.cursor();\n print('LOCATOR_ATTEMPTS',cur.execute('select count(*) from locator_attempts').fetchone()[0]);\n print('HEALING_EVENTS',cur.execute('select count(*) from healing_events').fetchone()[0]);\n print('RELIABILITY_ROWS',cur.execute('select count(*) from reliability_scores').fetchone()[0]); c.close()"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "stage-all-current-changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				"-A"
+			],
+			"isBackground": false
 		}
 	]
 }

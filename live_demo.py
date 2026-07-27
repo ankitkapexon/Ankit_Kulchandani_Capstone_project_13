@@ -987,7 +987,7 @@ def _script_uses_self_healing(script_path: Path) -> bool:
 def _collect_self_healing_details(
     script_artifacts: list[str],
     db_path: Path,
-    db_mtime_before: float | None,
+    healing_events_before: int,
 ) -> dict[str, Any]:
     scripts_with_self_healing: list[str] = []
     for rel_path in script_artifacts:
@@ -998,10 +998,15 @@ def _collect_self_healing_details(
     db_updated = False
     if db_path.exists():
         try:
-            current_mtime = db_path.stat().st_mtime
-            db_updated = db_mtime_before is None or current_mtime > db_mtime_before + 1e-6
+            with sqlite3.connect(str(db_path)) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM healing_events")
+                healing_events_after = int((cursor.fetchone() or [0])[0] or 0)
+            # Mark repository as updated only when at least one new healing
+            # event was recorded in this run.
+            db_updated = healing_events_after > healing_events_before
         except Exception:
-            db_updated = True
+            db_updated = False
 
     return {
         "enabled": True,
@@ -1056,7 +1061,15 @@ def _run_demo_pipeline(
     locator_before = _folder_snapshot(locator_dir)
     scripts_before = _folder_snapshot(scripts_dir)
     reviews_before = _folder_snapshot(reviews_dir)
-    healing_db_mtime_before = healing_db.stat().st_mtime if healing_db.exists() else None
+    healing_events_before = 0
+    if healing_db.exists():
+        try:
+            with sqlite3.connect(str(healing_db)) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM healing_events")
+                healing_events_before = int((cursor.fetchone() or [0])[0] or 0)
+        except Exception:
+            healing_events_before = 0
 
     if progress_cb:
         progress_cb("Preparing", "Configuring pipeline mode and environment.")
@@ -1119,7 +1132,7 @@ def _run_demo_pipeline(
     locator_artifacts = _artifact_listing_delta(locator_dir, locator_before)
     script_artifacts = _artifact_listing_delta(scripts_dir, scripts_before)
     review_artifacts = _artifact_listing_delta(reviews_dir, reviews_before)
-    self_healing = _collect_self_healing_details(script_artifacts, healing_db, healing_db_mtime_before)
+    self_healing = _collect_self_healing_details(script_artifacts, healing_db, healing_events_before)
 
     self_healing_artifacts: list[str] = []
 
