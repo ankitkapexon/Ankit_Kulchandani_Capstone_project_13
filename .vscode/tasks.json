@@ -1678,6 +1678,48 @@
 				"-A"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "commit-all-current-changes",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"commit",
+				"-m",
+				"Sync docs cleanup, healing flag logic, and latest runtime updates"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "push-all-current-changes-main",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"push",
+				"origin",
+				"main"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-status-clean-check-direct",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "git-add-remaining-tasksjson",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"add",
+				".vscode/tasks.json"
+			],
+			"isBackground": false
 		}
 	]
 }
