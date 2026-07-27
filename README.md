@@ -6,13 +6,18 @@
 	- enabled status,
 	- generated script count,
 	- scripts-with-self-healing count, and
-	- healing repository update status/link.
+	- healing repository update status.
 - Runtime hardening added in live demo backend:
 	- temporary environment scoping for mode-specific provider vars,
 	- deterministic realtime pytest timeout guard,
 	- async run inactivity watchdog,
 	- safer user-facing failure messages (tracebacks remain server-side).
 - Live demo artifact panels were refactored with a Jinja macro to reduce duplication while preserving UI behavior.
+- Flow selection now resets to a clean page state (`/?flow_type=...`) before starting the next run, so screenshot and deterministic runs do not visually carry previous run artifacts.
+- Report route serving now supports both legacy and normalized URL styles to prevent report 404s:
+	- `/artifacts/artifacts/...`
+	- `/artifacts/...`
+- Direct frontend link exposure for `healing_repository.db` was removed from the live demo result UI.
 - Latest validation snapshot:
 	- screenshot upload flow completes end to end,
 	- deterministic realtime flow completes end to end,

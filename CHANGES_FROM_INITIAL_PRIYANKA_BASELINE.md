@@ -2,7 +2,7 @@
 
 Baseline used for comparison:
 - First full synced project commit: e076648 ("Sync capstone code from local branch")
-- Current state includes updates up to: 6bed2d7
+- Current state includes updates up to: 8b19ade
 
 ## 1) What We Changed Since Initial Baseline
 
@@ -163,6 +163,14 @@ Baseline used for comparison:
   - Re-ran reviewer agent after generated-script stabilization update.
   - Prior hardcoded sleep finding for cart screen review now resolved (issues detected: 0).
   - File: artifacts/review_reports/test_05_step_5_cart_opened_screen_review.md
+
+- Live demo report accessibility and run-reset UX fixes (latest):
+  - Artifact route serving now resolves from artifacts root and supports both URL styles:
+    - `/artifacts/artifacts/...` (legacy)
+    - `/artifacts/...` (normalized)
+  - Flow switch actions now refresh to a clean page state (`/?flow_type=...`) so each run starts without stale previous-run result panels.
+  - Direct `healing_repository.db` link exposure was removed from the live demo result panel to avoid non-actionable 404s.
+  - Files: live_demo.py, web/templates/live_demo.html
 
 ## 2) New Things Implemented
 

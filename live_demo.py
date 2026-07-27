@@ -1164,7 +1164,16 @@ def _run_deterministic_flow(
 
 @app.get("/")
 def index() -> str:
-    return render_template("live_demo.html", result=None, error=None, default_mode=_default_mode())
+    preferred_flow = request.args.get("flow_type", "").strip().lower()
+    if preferred_flow not in {"screenshot_pipeline", "deterministic_realtime"}:
+        preferred_flow = "deterministic_realtime"
+    return render_template(
+        "live_demo.html",
+        result=None,
+        error=None,
+        default_mode=_default_mode(),
+        preferred_flow=preferred_flow,
+    )
 
 
 @app.get("/Capstone_project_13_Cross-Platform-Mobile-Test-Script-Generator")

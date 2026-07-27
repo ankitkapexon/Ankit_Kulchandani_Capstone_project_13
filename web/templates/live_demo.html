@@ -448,7 +448,7 @@
 </head>
 <body class="show-filenames">
   <div class="wrap">
-    {% set selected_flow = result.flow_type if result and result.flow_type else 'deterministic_realtime' %}
+    {% set selected_flow = result.flow_type if result and result.flow_type else (preferred_flow if preferred_flow in ['screenshot_pipeline', 'deterministic_realtime'] else 'deterministic_realtime') %}
     <div class="hero">
       <div class="card tone-card">
         <h1>Live Demo: Screenshot to Test Automation</h1>
@@ -722,8 +722,8 @@
           if (!flowType) {
             return;
           }
-          flowType.value = btn.dataset.flowValue || "screenshot_pipeline";
-          syncFlowUI();
+          const nextFlow = btn.dataset.flowValue || "screenshot_pipeline";
+          window.location.href = `/?flow_type=${encodeURIComponent(nextFlow)}`;
         });
       });
 

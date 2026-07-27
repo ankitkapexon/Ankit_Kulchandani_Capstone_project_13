@@ -16,6 +16,20 @@
    - live demo deterministic realtime flow completion,
    - deterministic realtime test pass (`1 passed`).
 
+## ✅ Latest Live Demo UX + Report Fixes (Jul 2026)
+
+1. ✅ Report artifact serving hardened:
+   - `/artifacts/<path>` now resolves from artifacts root and supports both:
+     - `/artifacts/artifacts/...` (legacy)
+     - `/artifacts/...` (normalized)
+2. ✅ Flow selection now starts from a fresh run page:
+   - selecting screenshot or deterministic flow triggers clean-page refresh using `/?flow_type=...`.
+3. ✅ Removed direct frontend exposure of `healing_repository.db` link from the result panel.
+4. ✅ Verification:
+   - `PY_COMPILE_OK`
+   - `TEMPLATE_OK`
+   - report route checks returned HTTP 200 for both URL styles.
+
 ## ✅ **All P0 & P2 Tasks Completed**
 
 ### **P0 Priority (DONE ✓)**

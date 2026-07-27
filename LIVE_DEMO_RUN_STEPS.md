@@ -9,13 +9,18 @@ This guide covers the current live demo flow on main branch.
 	- Generated scripts,
 	- Scripts with self-healing markers,
 	- Healing repository updated,
-	- Artifact links (`healing_repository.db` and matching scripts when present).
+	- Matching self-healing script links when present.
 - Backend reliability hardening was added without changing core flow behavior:
 	- mode-specific env overrides are scoped to each run,
 	- deterministic realtime execution has an explicit pytest timeout,
 	- async run state has inactivity timeout protection,
 	- UI now shows concise failure text while detailed tracebacks remain in server logs.
 - Artifact panel markup was consolidated using a Jinja macro for maintainability (same rendered behavior).
+- Flow selection now refreshes the page into a clean run state (`/?flow_type=screenshot_pipeline` or `/?flow_type=deterministic_realtime`) before execution.
+- Report artifact routing now supports both legacy and normalized path forms to avoid 404s:
+	- `/artifacts/artifacts/...`
+	- `/artifacts/...`
+- Direct `healing_repository.db` link exposure was removed from the frontend result panel.
 
 ## Prerequisites
 

@@ -11,13 +11,13 @@ This guide explains how to use the enhanced mobile test automation framework wit
   - generated scripts count,
   - scripts containing self-healing markers,
   - healing repository update state.
-- The healing repository database is exposed via artifact link when present:
-  - `artifacts/healing_repository.db`
+- The healing repository database is tracked internally for update status, but direct DB link exposure was removed from the frontend result panel.
 - Runtime hardening around self-healing execution path:
   - mode/provider env overrides are scoped to each run,
   - async run watchdog marks stale runs failed,
   - deterministic realtime subprocess execution has timeout protection,
   - user-facing errors are concise while tracebacks remain server-side.
+- Flow-selection UX now resets to a clean page state (`/?flow_type=...`) before each run.
 
 ---
 

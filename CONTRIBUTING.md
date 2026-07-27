@@ -54,6 +54,12 @@ Latest doc sync rule (Jul 2026):
         - `GITHUB_ACTIONS_SETUP.md`
         - `CONTRIBUTING.md`
 
+Additional live-demo consistency rules:
+
+- If flow-switch behavior is changed, preserve clean-run semantics for each user selection (`screenshot_pipeline` / `deterministic_realtime`) and update docs accordingly.
+- If artifact links are changed, maintain compatibility for existing shared URLs where practical (legacy + normalized path styles) to avoid report 404 regressions.
+- Do not expose low-level internal DB artifacts (for example `healing_repository.db`) as mandatory user-facing links in the result UI.
+
 1. **Screenshot → SSM JSON:** Vision LLM analyses a screenshot and produces a structured Screen Semantic Model.
 2. **SSM JSON → Manual Test Cases:** Language model generates human-readable test cases from the SSM.
 3. **SSM JSON → Locator JSON:** LocatorAgent extracts UI element locators (resource IDs, accessibility IDs).

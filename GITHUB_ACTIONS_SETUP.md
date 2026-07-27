@@ -4,6 +4,8 @@
 
 - Runtime hardening updates were delivered in live demo/backend logic (env scoping, realtime timeout, async stale-run watchdog, concise user-facing failures).
 - Self-healing result visibility was added in live demo UI for easier post-run verification.
+- Report-serving compatibility was hardened so both legacy and normalized artifact URL styles resolve correctly during manual demo checks.
+- Live demo flow selection now refreshes to a clean run state (`/?flow_type=...`) to prevent stale previous-run result views.
 - When validating after pull from `main`, include at least one deterministic realtime check:
 
 ```powershell

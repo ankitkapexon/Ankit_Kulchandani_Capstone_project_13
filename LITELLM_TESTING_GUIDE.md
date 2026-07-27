@@ -6,6 +6,8 @@
 - Deterministic realtime execution path has explicit timeout handling and stale async-run watchdog logic.
 - User-facing live-demo errors are now concise; detailed tracebacks are logged server-side for debugging.
 - Self-healing output visibility in live demo results can be used as a quick post-run health signal.
+- Flow selection now refreshes to a clean page state (`/?flow_type=...`) so each new run starts without stale result carry-over.
+- Report links remain accessible with both legacy and normalized artifact path styles via hardened artifact route handling.
 
 ## ✅ **Configuration Complete**
 
