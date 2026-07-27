@@ -569,12 +569,14 @@
         {% if result.artifacts.self_healing %}
         <ul>
           {% for item in result.artifacts.self_healing %}
+          {% if not item.endswith('healing_repository.db') %}
           <li>
             <a href="{{ '/artifacts/' + (item[10:] if item.startswith('artifacts/') else item) }}" target="_blank" rel="noopener">
               <span class="artifact-path">{{ item }}</span>
               <span class="artifact-file">{{ item.rsplit('/', 1)[-1] }}</span>
             </a>
           </li>
+          {% endif %}
           {% endfor %}
         </ul>
         {% endif %}
